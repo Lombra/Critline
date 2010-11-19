@@ -55,7 +55,7 @@ do
 	target:SetWidth(144)
 	target:SetPoint("LEFT", channel, "RIGHT", 0, 2)
 	target:SetScript("OnEscapePressed", target.ClearFocus)
-	target:SetScript("OnEnterPressed", function(self) module:AnnounceRecords(self:GetText():trim()) end)
+	target:SetScript("OnEnterPressed", function(self) module:AnnounceRecords() end)
 	target:Hide()
 	module.target = target
 end
@@ -64,10 +64,11 @@ end
 addon.RegisterCallback(module, "SpellsChanged", "Update")
 
 
-function module:AnnounceRecords(target)
+function module:AnnounceRecords()
 	local channel = self.channel:GetSelectedValue()
 	local tree = self.tree:GetSelectedValue()
 	local spells = addon.percharDB.profile.spells[tree]
+	local target = self.target:GetText():trim()
 	
 	if channel == "WHISPER" then
 		if target == "" then

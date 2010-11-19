@@ -334,7 +334,7 @@ end
 do	-- dropdown menu frame
 	local function setSelectedValue(self, value)
 		UIDropDownMenu_SetSelectedValue(self, value)
-		UIDropDownMenu_SetText(self, self.menu[value] or value)
+		UIDropDownMenu_SetText(self, self.menu and self.menu[value] or value)
 	end
 	
 	local function getSelectedValue(self)
@@ -357,6 +357,7 @@ do	-- dropdown menu frame
 			info.value = v.value
 			info.func = onClick or v.func
 			info.owner = self
+			info.fontObject = v.fontObject
 			UIDropDownMenu_AddButton(info)
 		end
 	end
