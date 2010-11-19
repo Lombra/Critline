@@ -1,6 +1,7 @@
 local addonName, addon = ...
 
 local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
+local LSM = LibStub("LibSharedMedia-3.0")
 local templates = addon.templates
 
 
@@ -145,7 +146,7 @@ do	-- create the options frame
 	moveSplash:SetScript("OnClick", function()
 		-- don't want to be interrupted by new records
 		addon.UnregisterCallback(splash, "NewRecord")
-		splash:SetFrameStrata("DIALOG")
+		splash:SetFrameStrata("FULLSCREEN")
 		splash:EnableMouse(true)
 		splash:SetFading(false)
 		splash:Clear()
@@ -156,32 +157,24 @@ do	-- create the options frame
 	end)
 	options.button = moveSplash
 	
-	local menu = {
-		onClick = function(self)
-			self.owner:SetSelectedValue(self.value)
-			local font = splash.profile.font
-			font.name = self.value
-			splash:SetFont(format("Fonts\\%s.ttf", font.name), font.size, font.flags)
-		end,
-		{
-			text = "Arial Narrow",
-			value = "ARIALN",
-		},
-		{
-			text = "Friz Quadrata",
-			value = "FRIZQT__",
-		},
-		{
-			text = "Morpheus",
-			value = "MORPHEUS",
-		},
-		{
-			text = "Skurri",
-			value = "skurri",
-		},
-	}
+	local function onClick(self)
+		self.owner:SetSelectedValue(self.value)
+		local font = splash.profile.font
+		font.name = self.value
+		splash:SetFont(LSM:Fetch("font", font.name), font.size, font.flags)
+	end
 	
-	local font = templates:CreateDropDownMenu("CritlineSplashFont", config, menu)
+	local function initialize(self)
+		for _, v in ipairs(LSM:List("font")) do
+			local info = UIDropDownMenu_CreateInfo()
+			info.text = v
+			info.func = onClick
+			info.owner = self
+			UIDropDownMenu_AddButton(info)
+		end
+	end
+	
+	local font = templates:CreateDropDownMenu("CritlineSplashFont", config, nil, initialize)
 	font:SetFrameWidth(120)
 	font:SetPoint("TOPLEFT", config.title, "BOTTOM", 0, -28)
 	font.label:SetText(L["Font"])
@@ -192,7 +185,7 @@ do	-- create the options frame
 			self.owner:SetSelectedValue(self.value)
 			local font = splash.profile.font
 			font.flags = self.value
-			splash:SetFont(format("Fonts\\%s.ttf", font.name), font.size, font.flags)
+			splash:SetFont(LSM:Fetch("font", font.name), font.size, font.flags)
 		end,
 		{
 			text = L["None"],
@@ -225,7 +218,7 @@ do	-- create the options frame
 			self.value:SetText(value)
 			local font = splash.profile.font
 			font.size = value
-			splash:SetFont(format("Fonts\\%s.ttf", font.name), font.size, font.flags)
+			splash:SetFont(LSM:Fetch("font", font.name), font.size, font.flags)
 		end,
 	})
 	fontSize:SetPoint("TOP", fontFlags, "BOTTOM", 0, -24)
@@ -241,7 +234,7 @@ local defaults = {
 		scale = 1,
 		duration = 2,
 		font = {
-			name = "skurri",
+			name = "Skurri",
 			size = 30,
 			flags = "OUTLINE",
 		},
@@ -279,7 +272,7 @@ function splash:LoadSettings()
 	end
 	
 	local font = self.profile.font
-	self:SetFont(format("Fonts\\%s.ttf", font.name), font.size, font.flags)
+	self:SetFont(LSM:Fetch("font", font.name), font.size, font.flags)
 	
 	options.font:SetSelectedValue(font.name)
 	options.fontFlags:SetSelectedValue(font.flags)

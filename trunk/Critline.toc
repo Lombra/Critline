@@ -5,6 +5,7 @@
 ## Author: L'ombra
 ## SavedVariables: CritlineDB
 ## SavedVariablesPerCharacter: CritlinePerCharDB
+## OptionalDeps: Ace3, LibSharedMedia-3.0
 
 libs\LibStub.lua
 libs\CallbackHandler-1.0.lua
@@ -13,6 +14,7 @@ libs\AceDBOptions-3.0.lua
 libs\AceLocale-3.0.lua
 libs\LibDataBroker-1.1.lua
 libs\LibDualSpec-1.0.lua
+libs\LibSharedMedia-3.0.lua
 
 locales\enUS.lua
 locales\deDE.lua
