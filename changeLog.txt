@@ -1,3 +1,9 @@
+3.1.2
+- Clicking the Announce button rather than pressing enter should now properly announce.
+- Added support for LibSharedMedia for selecting splash font.
+- Disabled adding spells to filter from the spell book to avoid tainting.
+- Removed leftover debugging for when moving the display frame.
+
 3.1.1
 - Fixed adding spells to filter from the spell book.
 - Fixed display moving on login when using a scale other than 100%.

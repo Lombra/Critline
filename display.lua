@@ -21,7 +21,6 @@ local function onDragStop(self)
 	owner:StopMovingOrSizing()
 	local pos = owner.profile.pos
 	pos.point, pos.x, pos.y = select(3, owner:GetPoint())
-	print(pos.point, pos.x, pos.y)
 end
 
 local function onEnter(self)

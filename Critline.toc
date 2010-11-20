@@ -1,6 +1,6 @@
 ## Interface: 40000
 ## Title: Critline
-## Version: 3.1.1
+## Version: 3.1.2
 ## Notes: Saves your normal and critical records and flashes a message if you break the record.
 ## Author: L'ombra
 ## SavedVariables: CritlineDB
