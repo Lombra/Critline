@@ -646,20 +646,20 @@ end
 
 
 do
-	local spellButton_OnModifiedClick = SpellButton_OnModifiedClick
+	-- local spellButton_OnModifiedClick = SpellButton_OnModifiedClick
 
-	function SpellButton_OnModifiedClick(self, button, ...)
-		local slot = SpellBook_GetSpellBookSlot(self)
-		if ( slot > MAX_SPELLS ) then
-			return
-		end
-		if IsShiftKeyDown() and filters.spell:IsVisible() and filters:GetParent() then
-			local spellName, subSpellName = GetSpellBookItemName(slot, SpellBookFrame.bookType)
-			filters:AddSpell(filters.spell.tree:GetSelectedValue(), spellName)
-			return
-		end
-		return spellButton_OnModifiedClick(self, button)
-	end
+	-- hooksecurefunc("SpellButton_OnModifiedClick", function(self, button, ...)
+		-- local slot = SpellBook_GetSpellBookSlot(self)
+		-- if ( slot > MAX_SPELLS ) then
+			-- return
+		-- end
+		-- if IsShiftKeyDown() and filters.spell:IsVisible() and filters:GetParent() then
+			-- local spellName, subSpellName = GetSpellBookItemName(slot, SpellBookFrame.bookType)
+			-- filters:AddSpell(filters.spell.tree:GetSelectedValue(), spellName)
+			-- return
+		-- end
+		-- return spellButton_OnModifiedClick(self, button)
+	-- end)
 
 	--[[
 	local function onClick(self, button)
