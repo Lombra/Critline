@@ -28,6 +28,9 @@ local specialMobs = {
 	[34497] = true, -- Fjola Lightbane
 	[34797] = true, -- Icehowl
 	[38567] = true, -- Phantom Hallucination
+	[39698] = true, -- Karsh Steelbender
+	[40793] = true, -- Ragnaros (Mount Hyjal)
+	[46273] = true, -- Debilitated Apexar
 }
 
 -- auras that when gained will suppress record tracking
@@ -62,6 +65,14 @@ local specialAuras = {
 	[70867] = true, -- Essence of the Blood Queen (Blood Queen Lana'thel)
 	[70879] = true, -- Essence of the Blood Queen (Blood Queen Lana'thel, bitten by a player)
 	[72219] = true, -- Gastric Bloat (Festergut)
+	[76133] = true, -- Tidal Surge (Neptulon)
+	[76159] = true, -- Pyrogenics (Sun-Touched Spriteling)
+	[76355] = true, -- Blessing of the Sun (Rajh)
+	[76693] = true, -- Empowering Twilight (Crimsonborne Warlord)
+	[81096] = true, -- Red Mist (Red Mist)
+	[86872] = true, -- Frothing Rage (Thundermar Ale)
+	[90933] = true, -- Ragezone (Defias Blood Wizard)
+	[93777] = true, -- Invocation of Flame (Skullcrusher the Mountain)
 }
 
 -- these heals are treated as periodic, but has no aura associated with them, or is associated to an aura with a different name, need to add exceptions for them to filter properly
