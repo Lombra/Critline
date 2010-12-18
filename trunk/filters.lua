@@ -29,6 +29,7 @@ local specialMobs = {
 	[34797] = true, -- Icehowl
 	[38567] = true, -- Phantom Hallucination
 	[39698] = true, -- Karsh Steelbender
+	[40484] = true, -- Erudax
 	[40793] = true, -- Ragnaros (Mount Hyjal)
 	[46273] = true, -- Debilitated Apexar
 }
@@ -66,6 +67,7 @@ local specialAuras = {
 	[70879] = true, -- Essence of the Blood Queen (Blood Queen Lana'thel, bitten by a player)
 	[72219] = true, -- Gastric Bloat (Festergut)
 	[76133] = true, -- Tidal Surge (Neptulon)
+	[76155] = true, -- Tidal Surge (Neptulon)
 	[76159] = true, -- Pyrogenics (Sun-Touched Spriteling)
 	[76355] = true, -- Blessing of the Sun (Rajh)
 	[76693] = true, -- Empowering Twilight (Crimsonborne Warlord)

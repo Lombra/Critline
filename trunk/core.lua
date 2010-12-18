@@ -310,13 +310,13 @@ local defaults = {
 -- which trees are enabled by default for a given class
 local treeDefaults = {
 	DEATHKNIGHT	= {dmg = true, heal = false, pet = false},
-	DRUID		= {dmg = true, heal = true, pet = false},
+	DRUID		= {dmg = true, heal = true,  pet = false},
 	HUNTER		= {dmg = true, heal = false, pet = true},
 	MAGE		= {dmg = true, heal = false, pet = false},
-	PALADIN		= {dmg = true, heal = true, pet = false},
-	PRIEST		= {dmg = true, heal = true, pet = false},
+	PALADIN		= {dmg = true, heal = true,  pet = false},
+	PRIEST		= {dmg = true, heal = true,  pet = false},
 	ROGUE		= {dmg = true, heal = false, pet = false},
-	SHAMAN		= {dmg = true, heal = true, pet = false},
+	SHAMAN		= {dmg = true, heal = true,  pet = false},
 	WARLOCK		= {dmg = true, heal = false, pet = true},
 	WARRIOR		= {dmg = true, heal = false, pet = false},
 }
