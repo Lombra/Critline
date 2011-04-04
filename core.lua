@@ -1,13 +1,21 @@
 local addonName, Critline = ...
 _G.Critline = Critline
 
+-- local addon = { }
+-- local mt_func  = { __index = function() return function() end end }
+-- local empty_tbl = { }
+-- local mt = { __index = function() return setmetatable(empty_tbl, mt_func) end }
+-- setmetatable(addon, mt)
+-- print(addon.module.method())
+
 local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 local templates = Critline.templates
 local playerClass = select(2, UnitClass("player"))
 local debugging
 
 -- auto attack spell
-local AUTOATK = GetSpellInfo(6603)
+local AUTOATK_ID = 6603
+local AUTOATK = GetSpellInfo(AUTOATK_ID)
 
 -- local references to commonly used functions and variables for faster access
 local HasPetUI = HasPetUI
@@ -25,17 +33,17 @@ local COMBATLOG_OBJECT_TYPE_GUARDIAN = COMBATLOG_OBJECT_TYPE_GUARDIAN
 
 
 local treeNames = {
-	dmg = L["damage"],
+	dmg  = L["damage"],
 	heal = L["healing"],
-	pet = L["pet"],
+	pet  = L["pet"],
 }
 Critline.treeNames = treeNames
 
 
 Critline.icons = {
-	dmg = "Interface\\Icons\\Ability_SteelMelee",
-	heal = "Interface\\Icons\\Spell_Holy_FlashHeal",
-	pet = "Interface\\Icons\\Ability_Hunter_Pet_Bear",
+	dmg  = [[Interface\Icons\Ability_SteelMelee]],
+	heal = [[Interface\Icons\Spell_Holy_FlashHeal]],
+	pet  = [[Interface\Icons\Ability_Hunter_Pet_Bear]],
 }
 
 
@@ -49,17 +57,101 @@ local classPets = {
 	[37994] = true, -- Water Elemental (glyphed)
 }
 
+-- spells that are essentially the same, but has different IDs, we'll register them under the same ID
+local similarSpells = {
+	[27285] = 27243, -- Seed of Corruption (direct)
+	[33778] = 33763, -- Lifebloom (direct)
+	[44461] = 44457, -- Living Bomb (direct)
+	[47960] = 47897, -- Shadowflame (tick)
+	[81170] = 6785,  -- Ravage (Stampede)
+	[83853] = 11129, -- Combustion (tick)
+	[88148] = 2120,  -- Flamestrike (Improved Flamestrike)
+	[92315] = 11366, -- Pyroblast (Hot Streak)
+}
+
+-- spells whose actual effect is the result of a different spell, eg seals, damage shields, used for displaying relevant records in spell tooltips
+local indirectSpells = {
+	[324] = 26364, -- Lightning Shield
+	[724] = 7001, -- Lightwell
+	[740] = 44203, -- Tranquility
+	[772] = 94009, -- Rend
+	[974] = 379, -- Earth Shield
+	[1329] = 5374, -- Mutilate
+	[1535] = 8349, -- Fire Nova
+	[1949] = 5857, -- Hellfire
+	[5938] = 5940, -- Shiv
+	[8024] = 10444, -- Flametongue Weapon
+	[8033] = 8034, -- Frostbrand Weapon
+	[8232] = 25504, -- Windfury Weapon
+	[16857] = 60089, -- Faerie Fire (Feral)
+	[16914] = 42231, -- Hurricane
+	[17364] = 32175, -- Stormstrike
+	[20154] = 25742, -- Seal of Righteousness
+	[20164] = 20170, -- Seal of Justice
+	[20165] = 20167, -- Seal of Insight
+	[20473] = 25912, -- Holy Shock
+	[22842] = 22845, -- Frenzied Regeneration
+	[26573] = 81297, -- Consecration
+	[31801] = 42463, -- Seal of Truth
+	[31850] = 66235, -- Ardent Defender
+	[33076] = 33110, -- Prayer of Mending
+	[43265] = 52212, -- Death and Decay
+	[47540] = 47666, -- Penance
+	[47541] = 47632, -- Death Coil (death knight)
+	[47788] = 48153, -- Guardian Spirit
+	[48045] = 49821, -- Mind Sear
+	[51730] = 51945, -- Earthliving
+	[61882] = 77478, -- Earthquake
+	[64843] = 64844, -- Divine Hymn
+	[73920] = 73921, -- Healing Rain
+	[82327] = 86452, -- Holy Radiance
+	[88685] = 88686, -- Holy Word: Sanctuary
+}
+
+-- those that has both a damage and a healing component has their healing spell listed here
+local indirectHeals = {
+	[15237] = 23455, -- Holy Nova
+	[20473] = 25914, -- Holy Shock
+	[47540] = 47750, -- Penance
+	[47541] = 47633, -- Death Coil (death knight)
+	[49998] = 45470, -- Death Strike
+	[53385] = 54172, -- Divine Storm
+}
+
+-- cache of spell ID -> spell name
+local spellNameCache = {
+	-- add form name to hybrid druid abilities, so the user can tell which is cat and which is bear
+	[33878] = format("%s (%s)", GetSpellInfo(33878)), -- Mangle (Bear Form)
+	[33876] = format("%s (%s)", GetSpellInfo(33876)), -- Mangle (Cat Form)
+	[779] = format("%s (%s)", GetSpellInfo(779)), -- Swipe (Bear Form)
+	[62078] = format("%s (%s)", GetSpellInfo(62078)), -- Swipe (Cat Form)
+}
+
+-- cache of spell textures
+local spellTextureCache = {
+	-- use a static icon for auto attack (otherwise uses your weapon's icon)
+	[AUTOATK_ID] = [[Interface\Icons\INV_Sword_04]],
+	-- "fix" some other misleading icons
+	[20253] = GetSpellTexture(20252), -- Intercept
+	[26364] = GetSpellTexture(324), -- use Lightning Shield icon for Lightning Shield damage
+	[66235] = GetSpellTexture(31850), -- Ardent Defender icon for Ardent Defender heal
+}
+
 
 local swingDamage = function(amount, _, school, resisted, _, _, critical)
-	return AUTOATK, amount, resisted, critical, school
+	return AUTOATK_ID, AUTOATK, amount, resisted, critical, school
 end
 
-local spellDamage = function(_, spellName, _, amount, _, school, resisted, _, _, critical)
-	return spellName, amount, resisted, critical, school
+local spellDamage = function(spellID, spellName, _, amount, _, school, resisted, _, _, critical)
+	return spellID, spellName, amount, resisted, critical, school
 end
 
-local healing = function(_, spellName, _, amount, _, _, critical)
-	return spellName, amount, 0, critical, 0
+local healing = function(spellID, spellName, _, amount, _, _, critical)
+	return spellID, spellName, amount, 0, critical, 0
+end
+
+local absorb = function(spellID, spellName, _, _, amount)
+	return spellID, spellName, amount, 0, critical, 0
 end
 
 
@@ -70,60 +162,59 @@ local combatEvents = {
 	SPELL_PERIODIC_DAMAGE = spellDamage,
 	SPELL_HEAL = healing,
 	SPELL_PERIODIC_HEAL = healing,
+	SPELL_AURA_APPLIED = absorb,
+	SPELL_AURA_REFRESH = absorb,
 }
 
 
-local recordSorters = {
-	-- alpha: sort by name
-	alpha = function(a, b)
-		if a == b then return end
-		if a.spellName == b.spellName then
+-- alpha: sort by name
+local alpha = function(a, b)
+	if a == b then return end
+	if a.spellName == b.spellName then
+		if a.spellID == b.spellID then
 			-- sort DoT entries after non DoT
-			return b.isPeriodic
+			return a.periodic < b.periodic
 		else
-			return a.spellName < b.spellName
+			return a.spellID < b.spellID
 		end
-	end,
-	-- crit: sort by crit > normal > name
-	crit = function(a, b)
-		if a == b then return end
+	else
+		return a.spellName < b.spellName
+	end
+end
+
+-- normal: sort by normal > crit > name
+local normal = function(a, b)
+	if a == b then return end
+	local normalA, normalB = (a.normal and a.normal.amount or 0), (b.normal and b.normal.amount or 0)
+	if normalA == normalB then
+		-- equal normal amounts, sort by crit amount instead
 		local critA, critB = (a.crit and a.crit.amount or 0), (b.crit and b.crit.amount or 0)
 		if critA == critB then
-			-- equal crit amounts, sort by normal amount instead
-			local normalA, normalB = (a.normal and a.normal.amount or 0), (b.normal and b.normal.amount or 0)
-			if normalA == normalB then
-				-- equal normal amounts, sort by name instead
-				if a.spellName == b.spellName then
-					return b.isPeriodic
-				else
-					return a.spellName < b.spellName
-				end
-			else
-				return normalA > normalB
-			end
+			-- equal crit amounts too, sort by name instead
+			return alpha(a, b)
 		else
 			return critA > critB
 		end
-	end,
-	-- normal: sort by normal > crit > name
-	normal = function(a, b)
-		if a == b then return end
-		local normalA, normalB = (a.normal and a.normal.amount or 0), (b.normal and b.normal.amount or 0)
-		if normalA == normalB then
-			local critA, critB = (a.crit and a.crit.amount or 0), (b.crit and b.crit.amount or 0)
-			if critA == critB then
-				if a.spellName == b.spellName then
-					return b.isPeriodic
-				else
-					return a.spellName < b.spellName
-				end
-			else
-				return critA > critB
-			end
-		else
-			return normalA > normalB
-		end
-	end,
+	else
+		return normalA > normalB
+	end
+end
+
+-- crit: sort by crit > normal > name
+local crit = function(a, b)
+	if a == b then return end
+	local critA, critB = (a.crit and a.crit.amount or 0), (b.crit and b.crit.amount or 0)
+	if critA == critB then
+		return normal(a, b)
+	else
+		return critA > critB
+	end
+end
+
+local recordSorters = {
+	alpha = alpha,
+	normal = normal,
+	crit = crit,
 }
 
 
@@ -134,6 +225,23 @@ Critline.callbacks = callbacks
 -- this will hold the text for the summary tooltip
 local tooltips = {dmg = {}, heal = {}, pet = {}}
 
+-- indicates whether a given tree will need to have its tooltip updated before next use
+local doTooltipUpdate = {}
+
+-- overall record for each tree
+local topRecords = {
+	dmg =  {normal = 0, crit = 0},
+	heal = {normal = 0, crit = 0},
+	pet =  {normal = 0, crit = 0},
+}
+
+-- sortable spell tables
+local spellArrays = {dmg = {}, heal = {}, pet = {}}
+
+
+-- tooltip for level scanning
+local tooltip = CreateFrame("GameTooltip", "CritlineTooltip", nil, "GameTooltipTemplate")
+
 
 Critline.eventFrame = CreateFrame("Frame")
 function Critline:RegisterEvent(event)
@@ -143,6 +251,7 @@ function Critline:UnregisterEvent(event)
 	self.eventFrame:UnregisterEvent(event)
 end
 Critline:RegisterEvent("ADDON_LOADED")
+Critline:RegisterEvent("PLAYER_TALENT_UPDATE")
 Critline:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
 Critline.eventFrame:SetScript("OnEvent", function(self, event, ...)
 	return Critline[event] and Critline[event](Critline, ...)
@@ -157,6 +266,7 @@ do
 	Critline.options = options
 	
 	local function toggleTree(self)
+		callbacks:Fire("OnTreeStateChanged", self.setting, self:GetChecked())
 		local display = Critline.display
 		if display then
 			display:UpdateTree(self.setting)
@@ -199,9 +309,15 @@ do
 			setting = "PvP",
 		},
 		{
+			text = L["Ignore vulnerability"],
+			tooltipText = L["Enable to ignore additional damage due to vulnerability."],
+			setting = "ignoreVulnerability",
+		},
+		{
 			text = L["Chat output"],
 			tooltipText = L["Prints new record notifications to the chat frame."],
 			setting = "chatOutput",
+			newColumn = true,
 		},
 		{
 			text = L["Play sound"],
@@ -212,18 +328,24 @@ do
 			text = L["Screenshot"],
 			tooltipText = L["Saves a screenshot on a new record."],
 			setting = "screenshot",
-			newColumn = true,
+		},
+		{
+			text = L["Shorten records"],
+			tooltipText = L["Use shorter format for records numbers."],
+			setting = "shortFormat",
+			func = function(self) callbacks:Fire("OnNewTopRecord") Critline:UpdateTooltips() end,
+			gap = 16,
+		},
+		{
+			text = L["Records in spell tooltips"],
+			tooltipText = L["Include (unfiltered) records in spell tooltips."],
+			setting = "spellTooltips",
 		},
 		{
 			text = L["Detailed tooltip"],
 			tooltipText = L["Use detailed format in the summary tooltip."],
 			setting = "detailedTooltip",
 			func = function(self) Critline:UpdateTooltips() end,
-		},
-		{
-			text = L["Ignore vulnerability"],
-			tooltipText = L["Enable to ignore additional damage due to vulnerability."],
-			setting = "ignoreVulnerability",
 		},
 	}
 	
@@ -246,11 +368,6 @@ do
 	
 	-- summary sort dropdown
 	local menu = {
-		onClick = function(self)
-			self.owner:SetSelectedValue(self.value)
-			Critline.db.profile.tooltipSort = self.value
-			Critline:UpdateTooltips()
-		end,
 		{
 			text = L["Alphabetically"],
 			value = "alpha",
@@ -269,21 +386,24 @@ do
 	sorting:SetFrameWidth(120)
 	sorting:SetPoint("TOPLEFT", checkButtons[#checkButtons], "BOTTOMLEFT", -15, -24)
 	sorting.label:SetText(L["Tooltip sorting:"])
-	
+	sorting.onClick = function(self)
+		self.owner:SetSelectedValue(self.value)
+		Critline.db.profile.tooltipSort = self.value
+		Critline:UpdateTooltips()
+	end
 	options.tooltipSort = sorting
 end
 
 
+Critline.SlashCmdHandlers = {
+	debug = function() Critline:ToggleDebug() end,
+}
+
 SlashCmdList.CRITLINE = function(msg)
 	msg = msg:trim():lower()
-	if msg == "debug" then
-		Critline:ToggleDebug()
-	elseif msg == "reset" then
-		local display = Critline.display
-		if display then
-			display:ClearAllPoints()
-			display:SetPoint("CENTER")
-		end
+	local slashCmdHandler = Critline.SlashCmdHandlers[msg]
+	if slashCmdHandler then
+		slashCmdHandler()
 	else
 		Critline:OpenConfig()
 	end
@@ -297,11 +417,13 @@ local defaults = {
 	profile = {
 		PvE = true,
 		PvP = true,
+		ignoreVulnerability = true,
 		chatOutput = false,
 		sound = false,
 		screenshot = false,
+		shortFormat = false,
+		spellTooltips = false,
 		detailedTooltip = false,
-		ignoreVulnerability = true,
 		tooltipSort = "normal",
 	},
 }
@@ -356,18 +478,6 @@ function Critline:ADDON_LOADED(addon)
 		self:UnregisterEvent("ADDON_LOADED")
 		callbacks:Fire("AddonLoaded")
 		
-		-- import old records and mob filter
-		if CritlineSettings then
-			for i, v in ipairs({"dmg","heal","pet"}) do
-				percharDB.profile.spells[v] = CritlineDB[v]
-				CritlineDB[v] = nil
-			end
-			
-			if self.filters and CritlineMobFilter then
-				self.filters.db.global.mobs = CritlineMobFilter
-			end
-		end
-		
 		self:LoadSettings()
 		self:LoadPerCharSettings()
 		
@@ -376,10 +486,103 @@ function Critline:ADDON_LOADED(addon)
 end
 
 
-function Critline:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, sourceGUID, sourceName, sourceFlags, destGUID, destName, destFlags, ...)
+-- import native spells to new database format (4.0)
+function Critline:PLAYER_TALENT_UPDATE()
+	if GetMajorTalentTreeBonuses(1) then
+		self:UnregisterEvent("PLAYER_TALENT_UPDATE")
+		self.PLAYER_TALENT_UPDATE = nil
+	else
+		return
+	end
+	
+	local tooltip = CreateFrame("GameTooltip", "CritlineImportScanTooltip", nil, "GameTooltipTemplate")
+
+	local function getID(query)
+		local link = GetSpellLink(query)
+		if link then
+			return tonumber(link:match("spell:(%d+)"))
+		end
+		for tab = 1, 3 do
+			local id = GetMajorTalentTreeBonuses(tab)
+			if GetSpellInfo(id) == query then
+				return id
+			end
+			for i = 1, GetNumTalents(tab) do
+				local name, _, _, _, _, _, _, _, _, isExceptional = GetTalentInfo(tab, i)
+				if name == query and isExceptional then
+					tooltip:SetOwner(UIParent)
+					tooltip:SetTalent(tab, i)
+					return select(3, tooltip:GetSpell())
+				end
+			end
+		end
+	end
+
+	for k, profile in pairs(self.percharDB.profiles) do
+		if profile.spells then
+			for k, tree in pairs(profile.spells) do
+				local spells = {}
+				for i, spell in pairs(tree) do
+					if not spell.spellName then
+						return
+					end
+					local id = getID(spell.spellName)
+					id = (tree == heal and indirectHeals[id]) or indirectSpells[id] or id
+					if id and (spell.normal or spell.crit) then
+						spells[id] = spells[id] or {}
+						spells[id][spell.isPeriodic and 2 or 1] = spell
+						spell.spellName = nil
+						spell.isPeriodic = nil
+					end
+				end
+				profile.spells[k] = spells
+			end
+		end
+	end
+	
+	tooltip:Hide()
+	
+	-- invert filter flag on all spells if inverted filter was enabled
+	if self.filters then
+		if self.filters.db.profile.invertFilter then
+			for k, profile in pairs(self.percharDB.profiles) do
+				if profile.spells then
+					for k, tree in pairs(profile.spells) do
+						for i, spell in pairs(tree) do
+							for i, spell in pairs(spell) do
+								spell.filtered = not spell.filtered
+							end
+						end
+					end
+				end
+			end
+		end
+		for k, profile in pairs(self.filters.db.profiles) do
+			profile.invertFilter = nil
+		end
+	end
+	
+	self:LoadPerCharSettings()
+end
+
+
+local TOC
+local dummyTable = {}
+do
+	-- Because GetBuildInfo() still returns 40000 on the PTR
+	local major, minor, rev = strsplit(".", (GetBuildInfo()))
+	TOC = major * 10000 + minor * 100
+end
+
+function Critline:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, sourceGUID, sourceName, sourceFlags, destGUID, destName, destFlags, ...)
 	-- we seem to get events with standard arguments equal to nil, so they need to be ignored
 	if not (timestamp and eventType) then
 		self:Debug("nil errors on start")
+		return
+	end
+	
+	if TOC < 40100 and hideCaster ~= dummyTable then
+		self:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, dummyTable, hideCaster, sourceGUID, sourceName, sourceFlags, destGUID, destName, destFlags, ...)
 		return
 	end
 
@@ -389,13 +592,6 @@ function Critline:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, sourceGUID, 
 		return
 	end
 	
-	-- check for filtered auras
-	if self.filters then
-		if self.filters:IsAuraEvent(eventType, ..., sourceFlags, destFlags, destGUID) then
-			return
-		end
-	end
-	
 	local isPet
 	
 	-- if sourceGUID is not us or our pet, we leave
@@ -403,7 +599,7 @@ function Critline:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, sourceGUID, 
 		local isMyPet = CombatLog_Object_IsA(sourceFlags, COMBATLOG_FILTER_MY_PET)
 		local isGuardian = band(sourceFlags, COMBATLOG_OBJECT_TYPE_GUARDIAN) ~= 0
 		-- only register if it's a real pet, or a guardian tree pet that's included in the filter
-		if isMyPet and ((not isGuardian and HasPetUI()) or classPets[tonumber(sourceGUID:sub(6, 12), 16)]) then
+		if isMyPet and ((not isGuardian and HasPetUI()) or classPets[tonumber(sourceGUID:sub(7, 10), 16)]) then
 			isPet = true
 			-- self:Debug(format("This is my pet (%s)", sourceName))
 		else
@@ -418,23 +614,35 @@ function Critline:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, sourceGUID, 
 		return
 	end
 	
-	local isHeal
 	local isPeriodic
-	if eventType:find("_HEAL$") then
-		isHeal = true
-		if isPet then
-			return
-		end
+	local periodic = 1
+	local isHeal = eventType == "SPELL_HEAL" or eventType == "SPELL_PERIODIC_HEAL" or eventType == "SPELL_AURA_APPLIED" or eventType == "SPELL_AURA_REFRESH"
+	-- we don't care about healing done by the pet
+	if isHeal and isPet then
+		self:Debug("Pet healing. Return.")
+		return
 	end
-	if eventType:find("_PERIODIC_") then
+	if eventType == "SPELL_PERIODIC_DAMAGE" or eventType == "SPELL_PERIODIC_HEAL" then
 		isPeriodic = true
+		periodic = 2
 	end
 	
-	local spellName, amount, resisted, critical, school = combatEvents[eventType](...)
+	-- get the relevants arguments
+	local spellID, spellName, amount, resisted, critical, school = combatEvents[eventType](...)
 	
-	-- below are some checks to see if we want to register the hit at all
+	local similarSpell = similarSpells[spellID]
+	if similarSpell then
+		spellID = similarSpell
+		spellName = self:GetSpellName(similarSpell)
+	end
+	
+	-- return if the event has no amount (non-absorbing aura applied)
+	if not amount then
+		return
+	end
+
 	if amount <= 0 then
-		self:Debug(format("Amount <= 0. (%s) Return.", self:GetFullSpellName(tree, spellName, isPeriodic)))
+		self:Debug(format("Amount <= 0. (%s) Return.", self:GetFullSpellName(spellID, periodic)))
 		return
 	end
 
@@ -446,9 +654,10 @@ function Critline:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, sourceGUID, 
 		tree = "heal"
 	end
 	
-	local passed, isFiltered, targetLevel
+	local targetLevel = self:GetLevelFromGUID(destGUID)
+	local passed, isFiltered
 	if self.filters then
-		passed, isFiltered, targetLevel = self.filters:SpellPassesFilters(tree, spellName, ..., isPeriodic, destGUID, destName, school)
+		passed, isFiltered = self.filters:SpellPassesFilters(tree, spellName, spellID, isPeriodic, destGUID, destName, school, targetLevel)
 		if not passed then
 			return
 		end
@@ -480,12 +689,6 @@ function Critline:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, sourceGUID, 
 		return
 	end
 	
-	-- we only want damage spells from the pet
-	if isHeal and isPet then
-		self:Debug("Pet healing. Return.")
-		return
-	end
-
 	-- exit if not recording tree dmg
 	if not self.percharDB.profile[tree] then
 		self:Debug(format("Not recording this tree (%s). Return.", tree))
@@ -499,39 +702,69 @@ function Critline:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, sourceGUID, 
 	end
 	
 	local hitType = critical and "crit" or "normal"
-	
-	local data = self:GetSpellInfo(tree, spellName, isPeriodic)
+	local data = self:GetSpellInfo(tree, spellID, periodic)
+	local arrayData
 	
 	-- create spell database entries as required
 	if not data then
-		self:Debug(format("Creating data for %s (%s)", self:GetFullSpellName(tree, spellName, isPeriodic), tree))
-		data = {
-			spellName = spellName,
-			isPeriodic = isPeriodic,
-		}
-		self:AddSpell(tree, data)
+		self:Debug(format("Creating data for %s (%s)", self:GetFullSpellName(spellID, periodic), tree))
+		data, arrayData = self:AddSpell(tree, spellID, periodic, spellName, isFiltered)
 		self:UpdateSpells(tree)
 	end
 	
 	if not data[hitType] then
 		data[hitType] = {amount = 0}
+		(arrayData or self:GetSpellArrayEntry(tree, spellID, periodic))[hitType] = data[hitType]
 	end
 	
 	data = data[hitType]
 
+	-- if new amount is larger than the stored amount we'll want to store it
 	if amount > data.amount then
-		local oldAmount = data.amount
+		if not isFiltered then
+			self:NewRecord(self:GetFullSpellName(spellID, periodic, true), amount, critical)
+			
+			-- update the highest record if needed
+			local topRecords = topRecords[tree]
+			if amount > topRecords[hitType] then
+				topRecords[hitType] = amount
+				callbacks:Fire("OnNewTopRecord", tree)
+			end
+		end
+		callbacks:Fire("NewRecord", tree, spellID, periodic, amount, critical, data, isFiltered)
+
 		data.amount = amount
 		data.target = destName
 		data.targetLevel = targetLevel
 		data.isPvPTarget = isPlayer
 		
-		if not isFiltered then
-			self:NewRecord(self:GetFullSpellName(tree, spellName, isPeriodic), amount, critical, oldAmount)
-		end
-		
 		self:UpdateRecords(tree, isFiltered)
 	end
+end
+
+
+function Critline:GetLevelFromGUID(destGUID)
+	tooltip:SetOwner(UIParent, "ANCHOR_NONE")
+	tooltip:SetHyperlink("unit:"..destGUID)
+	
+	local level = -1
+	
+	for i = 1, tooltip:NumLines() do
+		local text = _G["CritlineTooltipTextLeft"..i]:GetText()
+		if text then
+			if text:match(LEVEL) then -- our destGUID has the word Level in it.
+				level = text:match("(%d+)")  -- find the level
+				if level then  -- if we found the level, break from the for loop
+					level = tonumber(level)
+				else
+					-- well, the word Level is in this tooltip, but we could not find the level
+					-- either the destGUID is at least 10 levels higher than us, or we just couldn't find it.
+					level = -1
+				end
+			end
+		end
+	end	
+	return level
 end
 
 
@@ -574,8 +807,25 @@ end
 
 
 function Critline:LoadPerCharSettings()
-	callbacks:Fire("PerCharSettingsLoaded")
+	for tree in pairs(treeNames) do
+		wipe(spellArrays[tree])
+		for spellID, spell in pairs(self.percharDB.profile.spells[tree]) do
+			for i, v in pairs(spell) do
+				if type(v) ~= "table" or v.spellName then return end -- avoid error in pre 4.0 DB
+				spellArrays[tree][#spellArrays[tree] + 1] = {
+					spellID = spellID,
+					spellName = self:GetSpellName(spellID),
+					filtered = v.filtered,
+					periodic = i,
+					normal = v.normal,
+					crit = v.crit,
+				}
+			end
+		end
+	end
 	
+	callbacks:Fire("PerCharSettingsLoaded")
+	self:UpdateTopRecords()
 	self:UpdateTooltips()
 	
 	for _, btn in ipairs(self.options.checkButtons.percharDB) do
@@ -584,9 +834,7 @@ function Critline:LoadPerCharSettings()
 end
 
 
-function Critline:NewRecord(spell, amount, crit, oldAmount)
-	callbacks:Fire("NewRecord", spell, amount, crit, oldAmount)
-	
+function Critline:NewRecord(spell, amount, crit)
 	if self.db.profile.chatOutput then
 		self:Message(format(L["New %s%s record - %d"], crit and L["critical "] or "", spell, amount))
 	end
@@ -601,26 +849,74 @@ function Critline:NewRecord(spell, amount, crit, oldAmount)
 end
 
 
--- return spell table from database, given tree, spell name and isPeriodic value
-function Critline:GetSpellInfo(tree, spellName, periodic)
-	for i, v in ipairs(self.percharDB.profile.spells[tree]) do
-		if v.spellName == spellName and v.isPeriodic == periodic then
-			return v, i
+local FIRST_NUMBER_CAP = FIRST_NUMBER_CAP:lower()
+
+function Critline:ShortenNumber(amount)
+	if tonumber(amount) and self.db.profile.shortFormat then
+		if amount >= 1e7 then
+			amount = (floor(amount / 1e5) / 10)..SECOND_NUMBER_CAP
+		elseif amount >= 1e6 then
+			amount = (floor(amount / 1e4) / 100)..SECOND_NUMBER_CAP
+		elseif amount >= 1e4 then
+			amount = (floor(amount / 100) / 10)..FIRST_NUMBER_CAP
+		end
+	end
+	return amount
+end
+
+
+function Critline:GetSpellArrayEntry(tree, spellID, periodic)
+	for i, v in ipairs(spellArrays[tree]) do
+		if v.spellID == spellID and v.periodic == periodic then
+			return v
 		end
 	end
 end
 
 
-function Critline:GetFullSpellName(tree, spellName, isPeriodic)
-	local suffix = ""
-	if isPeriodic then
-		if tree == "heal" then
-			suffix = L[" (HoT)"]
-		else
-			suffix = L[" (DoT)"]
-		end
+-- local previousTree
+-- local previousSort
+
+function Critline:GetSpellArray(tree, useProfileSort)
+	local array = spellArrays[tree]
+	local sortMethod = useProfileSort and self.db.profile.tooltipSort or "alpha"
+	-- no need to sort if it's already sorted the way we want it
+	-- if sortMethod ~= previousSort or tree ~= previousTree then
+		sort(array, recordSorters[sortMethod])
+		-- previousTree = tree
+		-- previousSort = sortMethod
+	-- end
+	return array
+end
+
+
+-- return spell table from database, given tree, spell name and isPeriodic value
+function Critline:GetSpellInfo(tree, spellID, periodic)
+	local spell = self.percharDB.profile.spells[tree][spellID]
+	return spell and spell[periodic]
+end
+
+
+function Critline:GetSpellName(spellID)
+	local spellName = spellNameCache[spellID] or GetSpellInfo(spellID)
+	spellNameCache[spellID] = spellName
+	return spellName
+end
+
+
+function Critline:GetSpellTexture(spellID)
+	local spellTexture = spellTextureCache[spellID] or GetSpellTexture(spellID)
+	spellTextureCache[spellID] = spellTexture
+	return spellTexture
+end
+
+
+function Critline:GetFullSpellName(spellID, periodic, verbose)
+	local spellName = self:GetSpellName(spellID)
+	if periodic == 2 then
+		spellName = format("%s (%s)", spellName, verbose and L["tick"] or "*")
 	end
-	return format("%s%s", spellName, suffix)
+	return spellName
 end
 
 
@@ -634,44 +930,94 @@ end
 
 
 -- retrieves the top, non filtered record amounts and spell names for a given tree
-function Critline:GetHighest(tree)
-	local normalRecord, critRecord = 0, 0
-	local normalSpell, critSpell
+function Critline:UpdateTopRecords(tree)
+	if not tree then
+		for tree in pairs(topRecords) do
+			self:UpdateTopRecords(tree)
+		end
+		return
+	end
 	
-	for _, data in ipairs(self.percharDB.profile.spells[tree]) do
-		if not (self.filters and self.filters:IsFilteredSpell(tree, data.spellName, data.isPeriodic)) then
-			local normal = data.normal
-			if normal and normal.amount > normalRecord then
-				normalRecord = normal.amount
-				normalSpell = data.spellName
-			end
-			local crit = data.crit
-			if crit and crit.amount > critRecord then
-				critRecord = crit.amount
-				critSpell = data.spellName
+	local normalRecord, critRecord = 0, 0
+	
+	for spellID, spell in pairs(self.percharDB.profile.spells[tree]) do
+		for i, v in pairs(spell) do
+			if type(v) ~= "table" then return end -- avoid error in pre 4.0 DB
+			if not (self.filters and v.filtered) then
+				local normal = v.normal
+				if normal then
+					normalRecord = max(normal.amount, normalRecord)
+				end
+				local crit = v.crit
+				if crit then
+					critRecord = max(crit.amount, critRecord)
+				end
 			end
 		end
 	end
-	return normalRecord, critRecord, normalSpell, critSpell
+	local topRecords = topRecords[tree]
+	topRecords.normal = normalRecord
+	topRecords.crit = critRecord
+	
+	callbacks:Fire("OnNewTopRecord", tree)
 end
 
 
-function Critline:AddSpell(tree, spell)
+-- retrieves the top, non filtered record amounts and spell names for a given tree
+function Critline:GetHighest(tree)
+	local topRecords = topRecords[tree]
+	return topRecords.normal, topRecords.crit
+end
+
+
+function Critline:AddSpell(tree, spellID, periodic, spellName, filtered)
 	local spells = self.percharDB.profile.spells[tree]
-	tinsert(spells, spell)
-	sort(spells, recordSorters.alpha)
+	
+	local spell = spells[spellID] or {}
+	spells[spellID] = spell
+	spell[periodic] = {filtered = filtered}
+	
+	local spellArray = spellArrays[tree]
+	local arrayData = {
+		spellID = spellID,
+		spellName = spellName,
+		filtered = filtered,
+		periodic = periodic,
+	}
+	spellArray[#spellArray + 1] = arrayData
+	
+	return spell[periodic], arrayData
 end
 
 
-function Critline:DeleteSpell(tree, index)
-	tremove(self.percharDB.profile.spells[tree], index)
+function Critline:DeleteSpell(tree, spellID, periodic)
+	do
+		local tree = self.percharDB.profile.spells[tree]
+		local spell = tree[spellID]
+		spell[periodic] = nil
+	
+		-- remove this entire spell entry if neither direct nor tick entries remain
+		if not spell[3 - periodic] then
+			tree[spellID] = nil
+		end
+	end
+	
+	for i, v in ipairs(spellArrays[tree]) do
+		if v.spellID == spellID and v.periodic == periodic then
+			tremove(spellArrays[tree], i)
+			self:Message(format(L["Reset %s (%s) records."], self:GetFullSpellName(v.spellID, v.periodic), treeNames[tree]))
+			break
+		end
+	end
+	
+	self:UpdateTopRecords(tree)
 end
 
 
 -- this "fires" when spells are added to/removed from the database
 function Critline:UpdateSpells(tree)
 	if tree then
-		self:UpdateTooltip(tree)
+		doTooltipUpdate[tree] = true
 		callbacks:Fire("SpellsChanged", tree)
 	else
 		for k in pairs(tooltips) do
@@ -684,7 +1030,7 @@ end
 -- this "fires" when a new record has been registered
 function Critline:UpdateRecords(tree, isFiltered)
 	if tree then
-		self:UpdateTooltip(tree)
+		doTooltipUpdate[tree] = true
 		callbacks:Fire("RecordsChanged", tree, isFiltered)
 	else
 		for k in pairs(tooltips) do
@@ -694,12 +1040,39 @@ function Critline:UpdateRecords(tree, isFiltered)
 end
 
 
+function Critline:UpdateTooltips()
+	for k in pairs(tooltips) do
+		doTooltipUpdate[k] = true
+	end
+end
+
+
+local LETHAL_LEVEL = "??"
+local leftFormat = "|cffc0c0c0%s:|r %s"
+local leftFormatIndent = leftFormat
+local rightFormat = format("%s%%s|r (%%s)", HIGHLIGHT_FONT_COLOR_CODE)
+local recordFormat = format("%s%%s|r", GREEN_FONT_COLOR_CODE)
+local r, g, b = HIGHLIGHT_FONT_COLOR.r, HIGHLIGHT_FONT_COLOR.g, HIGHLIGHT_FONT_COLOR.b
+
 function Critline:ShowTooltip(tree)
-	GameTooltip:AddLine("Critline "..treeNames[tree], HIGHLIGHT_FONT_COLOR.r, HIGHLIGHT_FONT_COLOR.g, HIGHLIGHT_FONT_COLOR.b)
-	for i, v in ipairs(tooltips[tree]) do
-		local left, right = v:match("(.+)\t(.+)")
-		if left and right then
-			GameTooltip:AddDoubleLine(left, right)
+	if doTooltipUpdate[tree] then
+		self:UpdateTooltip(tree)
+	end
+	local r, g, b = r, g, b
+	local rR, gR, bR
+	GameTooltip:AddLine("Critline "..treeNames[tree], r, g, b)
+	if not self.db.profile.detailedTooltip then
+		-- advanced tooltip uses different text color
+		rR, gR, bR = r, g, b
+		r, g, b = nil
+	end
+	local tooltip = tooltips[tree]
+	for i = 1, #tooltips[tree] do
+		local v = tooltip[i]
+		-- v is either an array containing the left and right tooltip strings, or a single string
+		if type(v) == "table" then
+			local left, right = unpack(v)
+			GameTooltip:AddDoubleLine(left, right, r, g, b, rR, gR, bR)
 		else
 			GameTooltip:AddLine(v)
 		end
@@ -708,88 +1081,152 @@ function Critline:ShowTooltip(tree)
 end
 
 
-function Critline:UpdateTooltips()
-	for k in pairs(tooltips) do
-		self:UpdateTooltip(k)
-	end
-end
-
-
-local sortedSpells = {}
-
 function Critline:UpdateTooltip(tree)
-	local line = "   |cffc0c0c0%s:|r %s\t%s (%s)"
-	
-	wipe(sortedSpells)
-	
-	local n = 1
-	
-	for i, v in ipairs(self.percharDB.profile.spells[tree]) do
-		if (v.normal or v.crit) and not (self.filters and self.filters:IsFilteredSpell(tree, v.spellName, v.isPeriodic)) then
-			sortedSpells[n] = {
-				spellName = v.spellName,
-				isPeriodic = v.isPeriodic,
-				normal = v.normal,
-				crit = v.crit,
-			}
-			n = n + 1
-		end
-	end
-	
-	sort(sortedSpells, recordSorters[self.db.profile.tooltipSort])
-	
 	local tooltip = tooltips[tree]
 	wipe(tooltip)
 	
 	local normalRecord, critRecord = self:GetHighest(tree)
-	n = 1
+	local n = 1
 	
-	for _, v in ipairs(sortedSpells) do
-		-- if this is a DoT/HoT, and a direct entry exists, add the proper suffix
-		if v.isPeriodic then
-			for _, v2 in ipairs(sortedSpells) do
-				if v2.spellName == v.spellName and not v2.isPeriodic then
-					v.spellName = self:GetFullSpellName(tree, v.spellName, true)
-					break
+	for _, v in ipairs(self:GetSpellArray(tree, true)) do
+		if not (self.filters and self:GetSpellInfo(tree, v.spellID, v.periodic).filtered) then
+			local spellName = self:GetFullSpellName(v.spellID, v.periodic)
+			
+			-- if this is a DoT/HoT, and a direct entry exists, add the proper suffix
+			-- if v.periodic == 2 and not (self.filters and self.filters:IsFilteredSpell(tree, v.spellID, 1)) then
+				-- spellName = self:GetFullSpellName(v.spellID, 2)
+			-- end
+			
+			if self.db.profile.detailedTooltip then
+				tooltip[n] = spellName
+				n = n + 1
+				tooltip[n] = {self:GetTooltipLine(v, "normal", tree)}
+				n = n + 1
+				tooltip[n] = {self:GetTooltipLine(v, "crit", tree)}
+			else
+				local normalAmount, critAmount = 0, 0
+				
+				-- color the top score amount green
+				local normal = v.normal
+				if normal then
+					normalAmount = self:ShortenNumber(normal.amount)
+					normalAmount = normal.amount == normalRecord and GREEN_FONT_COLOR_CODE..normalAmount..FONT_COLOR_CODE_CLOSE or normalAmount
 				end
+				
+				local crit = v.crit
+				if crit then
+					critAmount = self:ShortenNumber(crit.amount)
+					critAmount = crit.amount == critRecord and GREEN_FONT_COLOR_CODE..critAmount..FONT_COLOR_CODE_CLOSE or critAmount
+				end
+				
+				tooltip[n] = {spellName, crit and format("%s / %s", normalAmount, critAmount) or normalAmount}
 			end
+			
+			n = n + 1
 		end
-		
-		local normalAmount, critAmount = HIGHLIGHT_FONT_COLOR_CODE..(0)..FONT_COLOR_CODE_CLOSE, HIGHLIGHT_FONT_COLOR_CODE..(0)..FONT_COLOR_CODE_CLOSE
-		
-		-- color the top score amount green
-		local normal = v.normal
-		if normal then
-			normalAmount = (normal.amount == normalRecord and GREEN_FONT_COLOR_CODE or HIGHLIGHT_FONT_COLOR_CODE)..normal.amount..FONT_COLOR_CODE_CLOSE
-		end
-		
-		local crit = v.crit
-		if crit then
-			critAmount = (crit.amount == critRecord and GREEN_FONT_COLOR_CODE or HIGHLIGHT_FONT_COLOR_CODE)..crit.amount..FONT_COLOR_CODE_CLOSE
-		end
-		
-		if self.db.profile.detailedTooltip then
-			tooltip[n] = v.spellName
-			if normal then
-				n = n + 1
-				local target = HIGHLIGHT_FONT_COLOR_CODE..self:GetFullTargetName(normal)..FONT_COLOR_CODE_CLOSE
-				local level = (normal.targetLevel > 0) and normal.targetLevel or "??"
-				tooltip[n] = format(line, L["Normal"], normalAmount, target, level)
-			end
-			if crit then
-				n = n + 1
-				local target = HIGHLIGHT_FONT_COLOR_CODE..self:GetFullTargetName(crit)..FONT_COLOR_CODE_CLOSE
-				local level = (crit.targetLevel > 0) and crit.targetLevel or "??"
-				tooltip[n] = format(line, L["Crit"], critAmount, target, level)
-			end
-		else
-			tooltip[n] = format("%s\t%s%s", v.spellName, normalAmount, (crit and "/"..critAmount or ""))
-		end
-		
-		n = n + 1
 	end
 	
 	if #tooltip == 0 then
 		tooltip[1] = L["No records"]
 	end
+	
+	doTooltipUpdate[tree] = nil
 end
+
+
+local hitTypes = {
+	normal = L["Normal"],
+	crit = L["Crit"],
+}
+
+function Critline:GetTooltipLine(data, hitType, tree)
+	local leftFormat = tree and "   "..leftFormat or leftFormat
+	data = data and data[hitType]
+	if data then
+		local amount = self:ShortenNumber(data.amount)
+		if tree and data.amount == topRecords[tree][hitType] then
+			amount = format(recordFormat, amount)
+		end
+		local level = data.targetLevel
+		level = level > 0 and level or LETHAL_LEVEL
+		return format(leftFormat, hitTypes[hitType], amount), format(rightFormat, self:GetFullTargetName(data), level), r, g, b
+	end
+end
+
+
+function Critline:AddTooltipLine(data, tree)
+	GameTooltip:AddDoubleLine(self:GetTooltipLine(data, "normal", tree))
+	GameTooltip:AddDoubleLine(self:GetTooltipLine(data, "crit", tree))
+end
+
+
+local funcset = {}
+
+for k in pairs(treeNames)do
+	funcset[k] = function(spellID, num)
+		local data = Critline:GetSpellInfo(k, spellID, num)
+		return not (Critline.filters and data and data.filtered) and data
+	end
+end
+
+local function addLine(header, nonTick, tick)
+	if header then
+		GameTooltip:AddLine(L[header])
+	end
+	Critline:AddTooltipLine(nonTick)
+	if tick and nonTick then
+		GameTooltip:AddLine(" ")
+		GameTooltip:AddLine(L["Tick"])
+	end
+	Critline:AddTooltipLine(tick)
+end
+
+GameTooltip:HookScript("OnTooltipSetSpell", function(self)
+	if self.Critline or not Critline.db.profile.spellTooltips then
+		return
+	end
+	
+	local spellName, rank, spellID = self:GetSpell()
+	
+	local indirectSpell = indirectSpells[spellID]
+	local indirectHeal = indirectHeals[spellID]
+	
+	local dmg1 = funcset.dmg(indirectSpell or spellID, 1)
+	local dmg2 = funcset.dmg(indirectSpell or spellID, 2)
+	local dmg = dmg1 or dmg2
+	
+	local heal1 = funcset.heal(indirectHeal or indirectSpell or spellID, 1)
+	local heal2 = funcset.heal(indirectHeal or indirectSpell or spellID, 2)
+	local heal = heal1 or heal2
+	
+	local pet1 = funcset.pet(indirectSpell or spellID, 1)
+	local pet2 = funcset.pet(indirectSpell or spellID, 2)
+	local pet = pet1 or pet2
+	
+	if dmg or heal or pet then
+		self:AddLine(" ")
+	end
+	
+	if dmg then
+		addLine((heal or pet) and "Damage", dmg1, dmg2)
+	end
+	
+	if heal then
+		if dmg then
+			GameTooltip:AddLine(" ")
+		end
+		addLine((dmg or pet) and "Healing", heal1, heal2)
+	end
+	
+	if pet then
+		if dmg or heal then
+			GameTooltip:AddLine(" ")
+		end
+		addLine((dmg or heal) and "Pet", pet1, pet2)
+	end
+end)
+
+
+GameTooltip:HookScript("OnTooltipCleared", function(self)
+	self.Critline = nil
+end)

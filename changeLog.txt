@@ -1,3 +1,36 @@
+4.0.0
+ Core:
+* Rewrote database to store spells by ID rather than name. This is more flexible and opens up a few possibilities.
+* Most spells will be carried over to the new database, but others (mostly procs and item effects) will be lost.
+- Absorb effects are now stored as healing records. Uses the remaining absorb amount when you apply shields.
+- Added option to use shorter number format for records. (eg 13 k instead of 13000)
+- Added option to display records in its spell's tooltip.
+- Spells that have different versions, but identical effects, (such as "Pyroblast!" and "Ravage!") are now treated as one and the same.
+- Added compability for patch 4.1.
+- Certain guardian type pets should once again have their records properly registered.
+- Periodic damage is now annotated by an asterisk (*) or the word "tick" rather than DoT/HoT.
+- Removed some legacy code.
+- Some code and performance optimisation.
+ Filter:
+- Implemented basic filtering based on target auras. For now you have to be in combat log range when an aura is applied or removed for the addon to register it. See filters.lua for details.
+- Implemented a basic aura tracker (mostly for debugging purposes). Type '/critline aura' to show or hide it.
+- Removed option to invert spell filter. From now on unchecked spells are filtered, and new spells are not filtered by default.
+- Added option to automatically filter newly registered spells. (disabled by default)
+- Spell filter now shows spell tooltip and associated records on mouseover.
+- Spells with no records are no longer kept in the database for the purpose of saving its filter flag.
+- Added Drakeadon Mongrel and Exposed Head of Magmaw to mob filter.
+- Added Power Generator, Engulfing Magic, Lightning Charge and Blessing of the Sun (heroic) to aura filter.
+ Display:
+- The different panels' background color can now be changed as desired.
+- The frame can now be scaled up to 200%. (from 150%)
+- The frame's alpha can now be changed.
+- It should no longer be possible to force show the frame when no trees are enabled, resulting in a weird appearance.
+
+- Reset and announce spell lists had their appearance redesigned. Click to directly to your thing, instead of checking and then clicking.
+- New records achieved in the last fight can now be undone in the reset module. Eligible spells will have a different button.
+- Spell profiles should now display the correct used profiles at all times.
+- Updated libraries.
+
 3.1.3
 - Added Karsh Steelbender, Ragnaros (Mount Hyjal) and Debilitated Apexar to mob filter.
 - Added Tidal Surge, Pyrogenics, Blessing of the Sun, Empowering Twilight,

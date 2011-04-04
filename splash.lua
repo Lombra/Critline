@@ -164,7 +164,11 @@ do	-- create the options frame
 		splash:SetFont(LSM:Fetch("font", font.name), font.size, font.flags)
 	end
 	
-	local function initialize(self)
+	local font = templates:CreateDropDownMenu("CritlineSplashFont", config)
+	font:SetFrameWidth(120)
+	font:SetPoint("TOPLEFT", config.title, "BOTTOM", 0, -28)
+	font.label:SetText(L["Font"])
+	font.initialize = function(self)
 		for _, v in ipairs(LSM:List("font")) do
 			local info = UIDropDownMenu_CreateInfo()
 			info.text = v
@@ -173,38 +177,24 @@ do	-- create the options frame
 			UIDropDownMenu_AddButton(info)
 		end
 	end
-	
-	local font = templates:CreateDropDownMenu("CritlineSplashFont", config, nil, initialize)
-	font:SetFrameWidth(120)
-	font:SetPoint("TOPLEFT", config.title, "BOTTOM", 0, -28)
-	font.label:SetText(L["Font"])
 	options.font = font
 	
 	local menu = {
-		onClick = function(self)
-			self.owner:SetSelectedValue(self.value)
-			local font = splash.profile.font
-			font.flags = self.value
-			splash:SetFont(LSM:Fetch("font", font.name), font.size, font.flags)
-		end,
-		{
-			text = L["None"],
-			value = "",
-		},
-		{
-			text = L["Normal"],
-			value = "OUTLINE",
-		},
-		{
-			text = L["Thick"],
-			value = "THICKOUTLINE",
-		},
+		{text = L["None"],		value = ""},
+		{text = L["Normal"],	value = "OUTLINE"},
+		{text = L["Thick"],		value = "THICKOUTLINE"},
 	}
 	
 	local fontFlags = templates:CreateDropDownMenu("CritlineSplashFontFlags", config, menu)
 	fontFlags:SetFrameWidth(120)
 	fontFlags:SetPoint("TOP", font, "BOTTOM", 0, -16)
 	fontFlags.label:SetText(L["Font outline"])
+	fontFlags.onClick = function(self)
+		self.owner:SetSelectedValue(self.value)
+		local font = splash.profile.font
+		font.flags = self.value
+		splash:SetFont(LSM:Fetch("font", font.name), font.size, font.flags)
+	end
 	options.fontFlags = fontFlags
 	
 	local fontSize = templates:CreateSlider(config, {
@@ -239,7 +229,7 @@ local defaults = {
 			flags = "OUTLINE",
 		},
 		colors = {
-			spell = {r = 1, g = 1, b = 0},
+			spell  = {r = 1, g = 1, b = 0},
 			amount = {r = 1, g = 1, b = 1},
 		},
 		pos = {
@@ -298,17 +288,21 @@ end
 local red1 = {r = 1, g = 0, b = 0}
 local red255 = {r = 255, g = 0, b = 0}
 
-function splash:NewRecord(event, spell, amount, crit, oldAmount)
-	spell = format(L["New %s record!"], spell)
-	if splash.profile.oldRecord and oldAmount > 0 then
-		amount = format("%d (%d)", amount, oldAmount)
+function splash:NewRecord(event, tree, spellID, periodic, amount, crit, prevRecord, isFiltered)
+	if isFiltered then
+		return
 	end
 	
-	local colors = splash.profile.colors
+	spell = format(L["New %s record!"], addon:GetFullSpellName(spellID, periodic, true))
+	if self.profile.oldRecord and prevRecord.amount > 0 then
+		amount = format("%s (%s)", addon:ShortenNumber(amount), addon:ShortenNumber(prevRecord.amount))
+	end
+	
+	local colors = self.profile.colors
 	local spellColor = colors.spell
 	local amountColor = colors.amount
 	
-	if splash.profile.sct then
+	if self.profile.sct then
 		-- check if any custom SCT addon is loaded and use it accordingly
 		if MikSBT then
 			if crit then

@@ -23,16 +23,12 @@ minimap:RegisterForClicks("LeftButtonUp", "RightButtonUp")
 minimap:RegisterForDrag("LeftButton")
 minimap:SetPoint("TOPLEFT", -15, 0)
 minimap:SetSize(32, 32)
-minimap:SetHighlightTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight")
+minimap:SetHighlightTexture([[Interface\Minimap\UI-Minimap-ZoomButton-Highlight]])
 minimap:Hide()
 minimap:SetScript("OnClick", function(self, button)
 	local display = addon.display
 	if button == "LeftButton" and display then
-		if display:IsShown() then
-			display:Hide()
-		else
-			display:Show()
-		end
+		display:Toggle()
 	elseif button == "RightButton" then
 		addon:OpenConfig()
 	end
@@ -60,7 +56,7 @@ icon:SetSize(20, 20)
 icon:SetPoint("TOPLEFT", 6, -6)
 
 local border = minimap:CreateTexture(nil, "OVERLAY")
-border:SetTexture("Interface\\Minimap\\MiniMap-TrackingBorder")
+border:SetTexture([[Interface\Minimap\MiniMap-TrackingBorder]])
 border:SetSize(54, 54)
 border:SetPoint("TOPLEFT")
 
