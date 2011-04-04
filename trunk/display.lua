@@ -3,12 +3,12 @@
 local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 local templates = addon.templates
 
-local width, height
+local width, height = 128, 22
 
 local trees = {
-	dmg = L["Damage"],
+	dmg  = L["Damage"],
 	heal = L["Healing"],
-	pet = L["Pet"],
+	pet  = L["Pet"],
 }
 
 
@@ -33,12 +33,19 @@ local function onEnter(self)
 	GameTooltip:Show()
 end
 
+local backdrop = {
+	bgFile = [[Interface\ChatFrame\ChatFrameBackground]],
+	insets = {left = -1, right = -1, top = -1, bottom = -1},
+}
+
 local function createDisplay(parent)
 	local frame = CreateFrame("Frame", nil, parent)
+	frame:SetFrameStrata("LOW")
 	frame:EnableMouse(true)
 	frame:RegisterForDrag("LeftButton")
 	frame:SetPoint("LEFT", 4, 0)
 	frame:SetPoint("RIGHT", -4, 0)
+	frame:SetBackdrop(backdrop)
 	frame:SetScript("OnDragStart", onDragStart)
 	frame:SetScript("OnDragStop", onDragStop)
 	frame:SetScript("OnEnter", onEnter)
@@ -67,14 +74,17 @@ local display = CreateFrame("Frame", nil, UIParent)
 addon.display = display
 display:SetMovable(true)
 display:SetBackdrop({
-	bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
-	edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-	edgeSize = 16,
-	insets = {left = 4, right = 4, top = 4, bottom = 4}
+	edgeFile = [[Interface\Tooltips\UI-Tooltip-Border]],
+	edgeSize = 12,
 })
-display:SetBackdropColor(0, 0, 0, 0.8)
 display:SetBackdropBorderColor(0.5, 0.5, 0.5, 1)
 display.trees = {}
+
+
+Critline.SlashCmdHandlers["reset"] = function()
+	display:ClearAllPoints()
+	display:SetPoint("CENTER")
+end
 
 
 for k, treeName in pairs(trees) do
@@ -90,10 +100,6 @@ display.trees.dmg:SetPoint("TOP", 0, -4)
 
 local config = templates:CreateConfigFrame("Display", addonName, true)
 
-local function displayFunc(self)
-	self.module:UpdateLayout(self.setting, self:GetChecked())
-end
-
 local options = {
 	db = {},
 	{
@@ -101,11 +107,7 @@ local options = {
 		tooltipText = L["Show summary frame."],
 		setting = "show",
 		func = function(self)
-			if self:GetChecked() then
-				display:Show()
-			else
-				display:Hide()
-			end
+			display:UpdateLayout()
 		end,
 	},
 	{
@@ -156,14 +158,16 @@ for i, v in ipairs(options) do
 end
 
 
-local slider = templates:CreateSlider(config, {
+local sliders = {}
+
+sliders[1] = templates:CreateSlider(config, {
 	text = L["Scale"],
-	tooltipText = L["Sets the scale of the summary frame."],
+	tooltipText = L["Sets the scale of the display."],
 	minValue = 0.5,
-	maxValue = 1.5,
+	maxValue = 2,
 	valueStep = 0.05,
 	minText = "50%",
-	maxText = "150%",
+	maxText = "200%",
 	func = function(self)
 		local value = self:GetValue()
 		self.value:SetFormattedText("%.0f%%", value * 100)
@@ -174,8 +178,45 @@ local slider = templates:CreateSlider(config, {
 		display.profile.scale = value
 	end,
 })
-slider:SetPoint("TOPLEFT", options[#options], "BOTTOMLEFT", 4, -24)
+sliders[1]:SetPoint("TOPLEFT", options[#options], "BOTTOMLEFT", 4, -24)
 
+sliders[2] = templates:CreateSlider(config, {
+	text = L["Alpha"],
+	tooltipText = L["Sets the opacity of the display."],
+	minValue = 0,
+	maxValue = 1,
+	valueStep = 0.05,
+	minText = "0%",
+	maxText = "100%",
+	func = function(self)
+		local value = self:GetValue()
+		self.value:SetFormattedText("%.0f%%", value * 100)
+		display:SetAlpha(value)
+		display.profile.alpha = value
+	end,
+})
+sliders[2]:SetPoint("TOP", sliders[1], "BOTTOM", 0, -32)
+
+
+local function swatchFunc(self, r, g, b)
+	display.trees[self.setting]:SetBackdropColor(r, g, b)
+end
+
+local colorButtons = {}
+
+for i, v in ipairs({"dmg", "heal", "pet"}) do
+	local btn = templates:CreateColorButton(config)
+	if i == 1 then
+		btn:SetPoint("TOPLEFT", config.title, "BOTTOM", 0, -21)
+	else
+		btn:SetPoint("TOP", colorButtons[i - 1], "BOTTOM", 0, -18)
+	end
+	btn:SetText(trees[v])
+	btn.setting = v
+	btn.func = swatchFunc
+	btn.opacityFunc = opacityFunc
+	colorButtons[i] = btn
+end
 
 local defaults = {
 	profile = {
@@ -183,6 +224,12 @@ local defaults = {
 		locked = false,
 		icons = true,
 		scale = 1,
+		alpha = 1,
+		colors = {
+			dmg  = {r = 0, g = 0, b = 0},
+			heal = {r = 0, g = 0, b = 0},
+			pet  = {r = 0, g = 0, b = 0},
+		},
 		pos = {
 			point = "CENTER",
 		},
@@ -192,9 +239,7 @@ local defaults = {
 function display:AddonLoaded()
 	self.db = addon.db:RegisterNamespace("display", defaults)
 	addon.RegisterCallback(self, "SettingsLoaded")
-	addon.RegisterCallback(self, "PerCharSettingsLoaded", "UpdateRecords")
-	addon.RegisterCallback(self, "SpellsChanged", "UpdateRecords")
-	addon.RegisterCallback(self, "RecordsChanged", "UpdateRecords")
+	addon.RegisterCallback(self, "OnNewTopRecord", "UpdateRecords")
 end
 
 addon.RegisterCallback(display, "AddonLoaded")
@@ -203,10 +248,17 @@ addon.RegisterCallback(display, "AddonLoaded")
 function display:SettingsLoaded()
 	self.profile = self.db.profile
 	
-	self:UpdateRecords()
-	
 	for _, btn in ipairs(options.db) do
 		btn:LoadSetting()
+	end
+	
+	local colors = self.profile.colors
+	for _, btn in ipairs(colorButtons) do
+		local color = colors[btn.setting]
+		local r, g, b = color.r, color.g, color.b
+		btn:func(r, g, b)
+		btn.swatch:SetVertexColor(r, g, b)
+		btn.color = color
 	end
 	
 	-- restore stored position
@@ -217,18 +269,19 @@ function display:SettingsLoaded()
 	local scale = self.profile.scale
 	-- need to set scale separately first to ensure proper behaviour in scale-friendly repositioning
 	self:SetScale(scale)
-	slider:SetValue(scale)
+	sliders[1]:SetValue(scale)
+	
+	sliders[2]:SetValue(self.profile.alpha)
 end
 
 
-function display:UpdateRecords(event, tree, isFiltered)
-	if not isFiltered then
-		if tree then
-			self.trees[tree].text:SetFormattedText("%6d/%-6d", addon:GetHighest(tree))
-		else
-			for k in pairs(self.trees) do
-				self:UpdateRecords(nil, k)
-			end
+function display:UpdateRecords(event, tree)
+	if tree then
+		local normal, crit = addon:GetHighest(tree)
+		self.trees[tree].text:SetFormattedText("%8s / %-8s", addon:ShortenNumber(normal), addon:ShortenNumber(crit))
+	else
+		for k in pairs(trees) do
+			self:UpdateRecords(nil, k)
 		end
 	end
 end
@@ -244,6 +297,14 @@ function display:UpdateTree(tree)
 end
 
 
+function display:Toggle()
+	local show = not self.profile.show
+	self.profile.show = show
+	options[1]:SetChecked(show)
+	self:UpdateLayout()
+end
+
+
 -- rearrange display buttons when any of them is shown or hidden
 function display:UpdateLayout()
 	local trees = self.trees
@@ -253,16 +314,16 @@ function display:UpdateLayout()
 	
 	if heal:IsShown() then
 		if dmg:IsShown() then
-			heal:SetPoint("TOP", dmg, "BOTTOM")
+			heal:SetPoint("TOP", dmg, "BOTTOM", 0, -2)
 		else
 			heal:SetPoint("TOP", 0, -4)
 		end
 	end
 	if pet:IsShown() then
 		if heal:IsShown() then
-			pet:SetPoint("TOP", heal, "BOTTOM")
+			pet:SetPoint("TOP", heal, "BOTTOM", 0, -2)
 		elseif dmg:IsShown() then
-			pet:SetPoint("TOP", dmg, "BOTTOM")
+			pet:SetPoint("TOP", dmg, "BOTTOM", 0, -2)
 		else
 			pet:SetPoint("TOP", 0, -4)
 		end
@@ -280,12 +341,12 @@ function display:UpdateLayout()
 		n = n + 1
 	end
 	
-	self:SetSize(width, n * height + 8)
+	self:SetSize(width, n * (height + 2) + 6)
 	
 	-- hide the entire frame if it turns out none of the individual frames are shown
-	if n == 0 then
+	if n == 0 or not self.profile.show then
 		self:Hide()
-	elseif self.profile.show then
+	else
 		self:Show()
 	end
 end

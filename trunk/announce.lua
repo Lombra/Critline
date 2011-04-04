@@ -4,70 +4,59 @@ local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 local templates = addon.templates
 
 
-local module = templates:CreateList("CritlineAnnounce", L["Announce"])
-
-do
-	local button = module.button
-	button:SetScript("OnClick", function()
-		PlaySound("gsTitleOptionOK")
-		module:AnnounceRecords()
-	end)
-
-	local function onClick(self)
-		self.owner:SetSelectedValue(self.value)
-		local target = module.target
-		if self.value == "WHISPER" or self.value == "CHANNEL" then
-			target:Show()
-			target:SetFocus()
-		else
-			target:Hide()
-		end
-	end
-
-	local channels = {
-		"SAY",
-		"GUILD",
-		"PARTY",
-		"RAID",
-		"WHISPER",
-		"CHANNEL",
-	}
-	
-	local function initialize(self)
-		for i, v in ipairs(channels) do
-			local info = UIDropDownMenu_CreateInfo()
-			info.text = _G[v]
-			info.value = v
-			info.func = onClick
-			info.owner = self
-			UIDropDownMenu_AddButton(info)
-		end
-	end
-
-	local channel = templates:CreateDropDownMenu("CritlineAnnounceChannel", module, nil, initialize, _G)
-	channel:SetFrameWidth(120)
-	channel:SetPoint("TOPLEFT", module.tree, "BOTTOMLEFT")
-	channel:SetSelectedValue("SAY")
-	module.channel = channel
-
-	local target = templates:CreateEditBox(module)
-	target:SetAutoFocus(false)
-	target:SetWidth(144)
-	target:SetPoint("LEFT", channel, "RIGHT", 0, 2)
-	target:SetScript("OnEscapePressed", target.ClearFocus)
-	target:SetScript("OnEnterPressed", function(self) module:AnnounceRecords() end)
-	target:Hide()
-	module.target = target
-end
-
+local module = templates:CreateList("CritlineAnnounce", L["Announce"], "Announce")
 
 addon.RegisterCallback(module, "SpellsChanged", "Update")
 
+local function onClick(self)
+	self.owner:SetSelectedValue(self.value)
+	local target = module.target
+	if self.value == "WHISPER" or self.value == "CHANNEL" then
+		target:Show()
+		target:SetFocus()
+	else
+		target:Hide()
+	end
+end
 
-function module:AnnounceRecords()
+local channels = {
+	"SAY",
+	"GUILD",
+	"PARTY",
+	"RAID",
+	"WHISPER",
+	"CHANNEL",
+}
+
+local channel = templates:CreateDropDownMenu("CritlineAnnounceChannel", module, nil, _G)
+channel:SetFrameWidth(120)
+channel:SetPoint("TOPLEFT", module.tree, "BOTTOMLEFT")
+channel:SetSelectedValue("SAY")
+channel.initialize = function(self)
+	for i, v in ipairs(channels) do
+		local info = UIDropDownMenu_CreateInfo()
+		info.text = _G[v]
+		info.value = v
+		info.func = onClick
+		info.owner = self
+		UIDropDownMenu_AddButton(info)
+	end
+end
+module.channel = channel
+
+local target = templates:CreateEditBox(module)
+target:SetWidth(144)
+target:SetPoint("LEFT", channel, "RIGHT", 0, 2)
+target:SetScript("OnEnterPressed", target.ClearFocus)
+target:SetScript("OnEscapePressed", target.ClearFocus)
+target:Hide()
+module.target = target
+
+
+local announceFormat = format("%%s - %s: %%s %s: %%s", L["Normal"], L["Crit"])
+
+function module:Announce(data)
 	local channel = self.channel:GetSelectedValue()
-	local tree = self.tree:GetSelectedValue()
-	local spells = addon.percharDB.profile.spells[tree]
 	local target = self.target:GetText():trim()
 	
 	if channel == "WHISPER" then
@@ -83,21 +72,10 @@ function module:AnnounceRecords()
 		end
 	end
 	
-	local sent
-	
-	for i in pairs(self.selectedSpells) do
-		local data = spells[i]
-		local normal = data.normal and data.normal.amount
-		local crit = data.crit and data.crit.amount
-		local text = format("%s - %s: %s %s: %s", addon:GetFullSpellName(tree, data.spellName, data.isPeriodic), L["Normal"], (normal or "n/a"), L["Crit"], (crit or "n/a"))
-		SendChatMessage(text, channel, nil, target)
-		sent = true
-	end
-	
-	if sent then
-		wipe(self.selectedSpells)
-		self:Update()
-		self.button:Disable()
-		self.target:SetText("")
-	end
+	local normal = data.normal and addon:ShortenNumber(data.normal.amount)
+	local crit = data.crit and addon:ShortenNumber(data.crit.amount)
+	local text = format(announceFormat, addon:GetFullSpellName(data.spellID, data.periodic, true), (normal or L["n/a"]), (crit or L["n/a"]))
+	SendChatMessage(text, channel, nil, target)
+
+	self.target:SetText("")
 end
