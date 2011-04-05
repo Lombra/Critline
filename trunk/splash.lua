@@ -294,8 +294,9 @@ function splash:NewRecord(event, tree, spellID, periodic, amount, crit, prevReco
 	end
 	
 	spell = format(L["New %s record!"], addon:GetFullSpellName(spellID, periodic, true))
+	amount = addon:ShortenNumber(amount)
 	if self.profile.oldRecord and prevRecord.amount > 0 then
-		amount = format("%s (%s)", addon:ShortenNumber(amount), addon:ShortenNumber(prevRecord.amount))
+		amount = format("%s (%s)", amount, addon:ShortenNumber(prevRecord.amount))
 	end
 	
 	local colors = self.profile.colors

@@ -721,9 +721,9 @@ function Critline:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, 
 
 	-- if new amount is larger than the stored amount we'll want to store it
 	if amount > data.amount then
+		self:NewRecord(tree, spellID, periodic, amount, critical, data, isFiltered)
+		
 		if not isFiltered then
-			self:NewRecord(self:GetFullSpellName(spellID, periodic, true), amount, critical)
-			
 			-- update the highest record if needed
 			local topRecords = topRecords[tree]
 			if amount > topRecords[hitType] then
@@ -731,7 +731,6 @@ function Critline:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, 
 				callbacks:Fire("OnNewTopRecord", tree)
 			end
 		end
-		callbacks:Fire("NewRecord", tree, spellID, periodic, amount, critical, data, isFiltered)
 
 		data.amount = amount
 		data.target = destName
@@ -834,9 +833,21 @@ function Critline:LoadPerCharSettings()
 end
 
 
-function Critline:NewRecord(spell, amount, crit)
+function Critline:NewRecord(tree, spellID, periodic, amount, critical, prevRecord, isFiltered)
+	callbacks:Fire("NewRecord", tree, spellID, periodic, amount, critical, prevRecord, isFiltered)
+	
+	if isFiltered then
+		return
+	end
+	
+	amount = self:ShortenNumber(amount)
+	
+	if self.db.profile.oldRecord and prevRecord.amount > 0 then
+		amount = format("%s (%s)", amount, self:ShortenNumber(prevRecord.amount))
+	end
+
 	if self.db.profile.chatOutput then
-		self:Message(format(L["New %s%s record - %d"], crit and L["critical "] or "", spell, amount))
+		self:Message(format(L["New %s%s record - %s"], critical and L["critical "] or "", self:GetFullSpellName(spellID, periodic, true), amount))
 	end
 	
 	if self.db.profile.sound then 
