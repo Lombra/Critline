@@ -1,3 +1,12 @@
+4.0.1
+- Records printed to the chat frame can now be shortened, and can once again include the previous record.
+- Added Aerial Command Unit back to mob filter. Not eligible for aura tracking.
+- Splash frame records can now be shortened when no previous record is included in the message.
+- Do not try to load AceDBOptions since we're not using it.
+- You can now specify the sound effect played on new records. (LibSharedMedia)
+- Pet auto attack records are now displayed on the pet attack action tooltip.
+- Added Hellscream's Warsong, Strength of Wrynn, Singed and Chemical Cloud to aura filters.
+
 4.0.0
  Core:
 * Rewrote database to store spells by ID rather than name. This is more flexible and opens up a few possibilities.
