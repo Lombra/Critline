@@ -9,6 +9,7 @@ _G.Critline = Critline
 -- print(addon.module.method())
 
 local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
+local LSM = LibStub("LibSharedMedia-3.0")
 local templates = Critline.templates
 local playerClass = select(2, UnitClass("player"))
 local debugging
@@ -239,6 +240,9 @@ local topRecords = {
 local spellArrays = {dmg = {}, heal = {}, pet = {}}
 
 
+LSM:Register("sound", "Level up", [[Sound\Interface\LevelUp.ogg]])
+
+
 -- tooltip for level scanning
 local tooltip = CreateFrame("GameTooltip", "CritlineTooltip", nil, "GameTooltipTemplate")
 
@@ -322,12 +326,14 @@ do
 		{
 			text = L["Play sound"],
 			tooltipText = L["Plays a sound on a new record."],
-			setting = "sound",
+			setting = "playSound",
+			func = function(self) options.sound:SetDisabled(not self:GetChecked()) end,
 		},
 		{
 			text = L["Screenshot"],
 			tooltipText = L["Saves a screenshot on a new record."],
 			setting = "screenshot",
+			gap = 48,
 		},
 		{
 			text = L["Shorten records"],
@@ -363,8 +369,29 @@ do
 		btn.module = Critline
 		local btns = checkButtons[btn.db]
 		btns[#btns + 1] = btn
+		options[v.setting] = btn
 		checkButtons[i] = btn
 	end
+	
+	local function onClick(self)
+		self.owner:SetSelectedValue(self.value)
+		Critline.db.profile.sound = self.value
+		PlaySoundFile(LSM:Fetch("sound", self.value))
+	end
+	
+	local sound = templates:CreateDropDownMenu("CritlineSoundEffect", config)
+	sound:SetFrameWidth(160)
+	sound:SetPoint("TOPLEFT", options.playSound, "BOTTOMLEFT", -15, -8)
+	sound.initialize = function(self)
+		for _, v in ipairs(LSM:List("sound")) do
+			local info = UIDropDownMenu_CreateInfo()
+			info.text = v
+			info.func = onClick
+			info.owner = self
+			UIDropDownMenu_AddButton(info)
+		end
+	end
+	options.sound = sound
 	
 	-- summary sort dropdown
 	local menu = {
@@ -383,7 +410,7 @@ do
 	}
 	
 	local sorting = templates:CreateDropDownMenu("CritlineTooltipSorting", config, menu)
-	sorting:SetFrameWidth(120)
+	sorting:SetFrameWidth(160)
 	sorting:SetPoint("TOPLEFT", checkButtons[#checkButtons], "BOTTOMLEFT", -15, -24)
 	sorting.label:SetText(L["Tooltip sorting:"])
 	sorting.onClick = function(self)
@@ -419,7 +446,8 @@ local defaults = {
 		PvP = true,
 		ignoreVulnerability = true,
 		chatOutput = false,
-		sound = false,
+		playSound = true,
+		sound = "Level up",
 		screenshot = false,
 		shortFormat = false,
 		spellTooltips = false,
@@ -801,6 +829,7 @@ function Critline:LoadSettings()
 		btn:LoadSetting()
 	end
 	
+	options.sound:SetSelectedValue(self.db.profile.sound)
 	options.tooltipSort:SetSelectedValue(self.db.profile.tooltipSort)
 end
 
@@ -850,8 +879,8 @@ function Critline:NewRecord(tree, spellID, periodic, amount, critical, prevRecor
 		self:Message(format(L["New %s%s record - %s"], critical and L["critical "] or "", self:GetFullSpellName(spellID, periodic, true), amount))
 	end
 	
-	if self.db.profile.sound then 
-		PlaySound("LEVELUP", 1, 1, 0, 1, 3) 
+	if self.db.profile.playSound then 
+		PlaySoundFile(LSM:Fetch("sound", self.db.profile.sound))
 	end
 	
 	if self.db.profile.screenshot then 
@@ -1182,7 +1211,7 @@ end
 
 local function addLine(header, nonTick, tick)
 	if header then
-		GameTooltip:AddLine(L[header])
+		GameTooltip:AddLine(header)
 	end
 	Critline:AddTooltipLine(nonTick)
 	if tick and nonTick then
@@ -1219,25 +1248,36 @@ GameTooltip:HookScript("OnTooltipSetSpell", function(self)
 	end
 	
 	if dmg then
-		addLine((heal or pet) and "Damage", dmg1, dmg2)
+		addLine((heal or pet) and L["Damage"], dmg1, dmg2)
 	end
 	
 	if heal then
 		if dmg then
 			GameTooltip:AddLine(" ")
 		end
-		addLine((dmg or pet) and "Healing", heal1, heal2)
+		addLine((dmg or pet) and L["Healing"], heal1, heal2)
 	end
 	
 	if pet then
 		if dmg or heal then
 			GameTooltip:AddLine(" ")
 		end
-		addLine((dmg or heal) and "Pet", pet1, pet2)
+		addLine((dmg or heal) and L["Pet"], pet1, pet2)
 	end
 end)
 
 
 GameTooltip:HookScript("OnTooltipCleared", function(self)
 	self.Critline = nil
+end)
+
+hooksecurefunc(GameTooltip, "SetPetAction", function(self, action)
+	if not Critline.db.profile.spellTooltips then
+		return
+	end
+	
+	if GetPetActionInfo(action) == "PET_ACTION_ATTACK" then
+		addLine(" ", funcset.pet(AUTOATK_ID, 1))
+		self:Show()
+	end
 end)
