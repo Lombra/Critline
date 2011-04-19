@@ -27,11 +27,11 @@ local specialMobs = {
 	[34496] = true, -- Eydis Darkbane
 	[34497] = true, -- Fjola Lightbane
 	[38567] = true, -- Phantom Hallucination
-	[42347] = true, -- Exposed Head of Magmaw (Point of Vulnerability [79011]) *
+	[42347] = true, -- Exposed Head of Magmaw (Point of Vulnerability [79011]) ?
 	[42803] = true, -- Drakeadon Mongrel (Brood Power: Red/Green/Black/Blue/Bronze [80368+80369+80370+80371+80372])
 	[46083] = true, -- Drakeadon Mongrel (Brood Power: Red/Green/Black/Blue/Bronze [80368+80369+80370+80371+80372])
 	[46273] = true, -- Debilitated Apexar
-	[48270] = true, -- Exposed Head of Magmaw (Point of Vulnerability [79011])
+	[48270] = true, -- Exposed Head of Magmaw
 }
 
 -- auras that when gained will suppress record tracking
@@ -1058,14 +1058,14 @@ function filters:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, sourceGUID, s
 		if targetAuras[spellID] then
 			corruptTargets[destGUID] = corruptTargets[destGUID] or {}
 			corruptTargets[destGUID][spellID] = true
-			addon:Debug(format("Target (%s) gained filtered aura (%s). Ignore received damage.", destName, spellID))
+			addon:Debug(format("Target (%s) gained filtered aura. (%s) Ignore received damage.", destName, spellID))
 		end
 		if CombatLog_Object_IsA(destFlags, COMBATLOG_FILTER_ME) then
 			self:RegisterAura(playerAuras, sourceName, sourceGUID, spellID, spellName, auraType)
 			if self:IsFilteredAura(spellID) then
 				-- if we gain any aura in the filter we can just stop tracking records
 				if not (self:IsEmpowered() or self.profile.ignoreAuraFilter) then
-					addon:Debug("Filtered aura gained. Disabling combat log tracking.")
+					addon:Debug(format("Filtered aura gained. (%s) Disabling combat log tracking.", spellName))
 				end
 				activeAuras[spellID] = true
 			end
@@ -1286,7 +1286,9 @@ function filters:SpellPassesFilters(tree, spellName, spellID, isPeriodic, destGU
 		return
 	end
 	
-	if self:IsFilteredMob(destName, destGUID) then
+	local filteredMob = self:IsFilteredMob(destName, destGUID)
+	if filteredMob then
+		addon:Debug(format("Target (%s) is in %s target filter.", mobName, filteredMob))
 		return
 	end
 	
@@ -1320,16 +1322,12 @@ end
 
 function filters:IsFilteredMob(mobName, guid)
 	-- GUID is provided if the function was called from the combat event handler
-	if guid and not self.profile.ignoreMobFilter then
-		if specialMobs[tonumber(guid:sub(7, 10), 16)] then
-			addon:Debug("Mob ("..mobName..") is in integrated filter.")
-			return true
-		end
+	if guid and not self.profile.ignoreMobFilter and specialMobs[tonumber(guid:sub(7, 10), 16)] then
+		return "default"
 	end
 	for _, v in ipairs(self.db.global.mobs) do
 		if v:lower() == mobName:lower() then
-			addon:Debug("Mob ("..mobName..") is in custom filter.")
-			return true
+			return "custom"
 		end
 	end
 end
@@ -1362,7 +1360,7 @@ function filters:RegisterAura(auraTable, sourceName, sourceGUID, spellID, spellN
 		source = PVP
 		sourceType = "pvp"
 	else
-		source = tonumber(sourceGUID:sub(6, 10), 16)
+		source = tonumber(sourceGUID:sub(7, 10), 16)
 		sourceType = "npc"
 	end
 	
