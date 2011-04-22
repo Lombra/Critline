@@ -84,6 +84,8 @@ local indirectSpells = {
 	[8024] = 10444, -- Flametongue Weapon
 	[8033] = 8034, -- Frostbrand Weapon
 	[8232] = 25504, -- Windfury Weapon
+	[13795] = 13797, -- Immolation Trap
+	[13813] = 13812, -- Explosive Trap
 	[16857] = 60089, -- Faerie Fire (Feral)
 	[16914] = 42231, -- Hurricane
 	[17364] = 32175, -- Stormstrike
@@ -106,6 +108,8 @@ local indirectSpells = {
 	[64843] = 64844, -- Divine Hymn
 	[73920] = 73921, -- Healing Rain
 	[82327] = 86452, -- Holy Radiance
+	[82939] = 13812, -- Explosive Trap (trap launcher)
+	[82945] = 13797, -- Immolation Trap (trap launcher)
 	[88685] = 88686, -- Holy Word: Sanctuary
 }
 
@@ -336,6 +340,11 @@ do
 			gap = 48,
 		},
 		{
+			text = L["Include old record"],
+			tooltipText = L["Includes previous record along with \"New record\" messages."],
+			setting = "oldRecord",
+		},
+		{
 			text = L["Shorten records"],
 			tooltipText = L["Use shorter format for records numbers."],
 			setting = "shortFormat",
@@ -449,6 +458,7 @@ local defaults = {
 		playSound = true,
 		sound = "Level up",
 		screenshot = false,
+		oldRecord = false,
 		shortFormat = false,
 		spellTooltips = false,
 		detailedTooltip = false,
@@ -876,7 +886,7 @@ function Critline:NewRecord(tree, spellID, periodic, amount, critical, prevRecor
 	end
 
 	if self.db.profile.chatOutput then
-		self:Message(format(L["New %s%s record - %s"], critical and L["critical "] or "", self:GetFullSpellName(spellID, periodic, true), amount))
+		self:Message(format(L["New %s%s record - %s"], critical and "|cffff0000"..L["critical "].."|r" or "", self:GetFullSpellName(spellID, periodic, true), amount))
 	end
 	
 	if self.db.profile.playSound then 
@@ -1203,9 +1213,18 @@ end
 local funcset = {}
 
 for k in pairs(treeNames)do
-	funcset[k] = function(spellID, num)
-		local data = Critline:GetSpellInfo(k, spellID, num)
-		return not (Critline.filters and data and data.filtered) and data
+	funcset[k] = function(spellID)
+		local spell = Critline.percharDB.profile.spells[k][spellID]
+		if not spell then
+			return
+		end
+		local direct = spell[1]
+		local tick = spell[2]
+		if Critline.filters then
+			direct = direct and not direct.filtered and direct
+			tick = tick and not tick.filtered and tick
+		end
+		return direct, tick
 	end
 end
 
@@ -1231,16 +1250,14 @@ GameTooltip:HookScript("OnTooltipSetSpell", function(self)
 	local indirectSpell = indirectSpells[spellID]
 	local indirectHeal = indirectHeals[spellID]
 	
-	local dmg1 = funcset.dmg(indirectSpell or spellID, 1)
-	local dmg2 = funcset.dmg(indirectSpell or spellID, 2)
+	local dmg1, dmg2 = funcset.dmg(indirectSpell or spellID)
 	local dmg = dmg1 or dmg2
 	
-	local heal1 = funcset.heal(indirectHeal or indirectSpell or spellID, 1)
-	local heal2 = funcset.heal(indirectHeal or indirectSpell or spellID, 2)
+	local heal1, heal2 = funcset.heal(indirectHeal or indirectSpell or spellID)
 	local heal = heal1 or heal2
 	
-	local pet1 = funcset.pet(indirectSpell or spellID, 1)
-	local pet2 = funcset.pet(indirectSpell or spellID, 2)
+	-- ignore pet auto attack records here, since that's handled by another function
+	local pet1, pet2 = spellID ~= AUTOATK_ID and funcset.pet(indirectSpell or spellID)
 	local pet = pet1 or pet2
 	
 	if dmg or heal or pet then
@@ -1277,7 +1294,7 @@ hooksecurefunc(GameTooltip, "SetPetAction", function(self, action)
 	end
 	
 	if GetPetActionInfo(action) == "PET_ACTION_ATTACK" then
-		addLine(" ", funcset.pet(AUTOATK_ID, 1))
+		addLine(" ", (funcset.pet(AUTOATK_ID)))
 		self:Show()
 	end
 end)

@@ -51,11 +51,6 @@ do	-- create the options frame
 			end,
 		},
 		{
-			text = L["Show old record"],
-			tooltipText = L["Display previous record along with \"New record\" messages."],
-			setting = "oldRecord",
-		},
-		{
 			text = L["Use combat text splash"],
 			tooltipText = L["Enable to use scrolling combat text for \"New record\" messages instead of the default splash frame."],
 			setting = "sct",
@@ -219,7 +214,6 @@ end
 local defaults = {
 	profile = {
 		enabled = true,
-		oldRecord = false,
 		sct = false,
 		scale = 1,
 		duration = 2,
@@ -295,7 +289,7 @@ function splash:NewRecord(event, tree, spellID, periodic, amount, crit, prevReco
 	
 	spell = format(L["New %s record!"], addon:GetFullSpellName(spellID, periodic, true))
 	amount = addon:ShortenNumber(amount)
-	if self.profile.oldRecord and prevRecord.amount > 0 then
+	if addon.db.profile.oldRecord and prevRecord.amount > 0 then
 		amount = format("%s (%s)", amount, addon:ShortenNumber(prevRecord.amount))
 	end
 	
