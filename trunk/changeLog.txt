@@ -1,3 +1,10 @@
+4.0.2
+- Hunter traps will now properly display tooltip records.
+- "Include old record" moved from splash module to core. Applies to both chat frame and splash messages.
+- Second attempt at including old record in chat frame output.
+- Made critical record message in the chat frame slightly more distinguishable from a non crit.
+- Do not show pet auto attack records in the regular auto attack tooltip.
+
 4.0.1
 - Records printed to the chat frame can now be shortened, and can once again include the previous record.
 - Added Aerial Command Unit back to mob filter. Not eligible for aura tracking.
