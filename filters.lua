@@ -1053,7 +1053,7 @@ end
 addon.RegisterCallback(filters, "AddonLoaded")
 
 
-function filters:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, sourceGUID, sourceName, sourceFlags, destGUID, destName, destFlags, spellID, spellName, spellSchool, auraType)
+function filters:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, sourceGUID, sourceName, sourceFlags, destGUID, destName, destFlags, spellID, spellName, spellSchool, auraType)
 	if eventType == "SPELL_AURA_APPLIED" or eventType == "SPELL_AURA_REFRESH" then
 		if targetAuras[spellID] then
 			corruptTargets[destGUID] = corruptTargets[destGUID] or {}

@@ -1,3 +1,8 @@
+4.0.3
+- Updated for WoW 4.1.
+- Added Sweeping Strikes and Aimed Shot! exceptions.
+- Removed pre-4.1 compability code.
+
 4.0.2
 - Hunter traps will now properly display tooltip records.
 - "Include old record" moved from splash module to core. Applies to both chat frame and splash messages.

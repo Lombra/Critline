@@ -60,11 +60,13 @@ local classPets = {
 
 -- spells that are essentially the same, but has different IDs, we'll register them under the same ID
 local similarSpells = {
+	[26654] = 12723, -- Sweeping Strikes (Whirlwind)
 	[27285] = 27243, -- Seed of Corruption (direct)
 	[33778] = 33763, -- Lifebloom (direct)
 	[44461] = 44457, -- Living Bomb (direct)
 	[47960] = 47897, -- Shadowflame (tick)
 	[81170] = 6785,  -- Ravage (Stampede)
+	[82928] = 19434, -- Aimed Shot (Master Marksman)
 	[83853] = 11129, -- Combustion (tick)
 	[88148] = 2120,  -- Flamestrike (Improved Flamestrike)
 	[92315] = 11366, -- Pyroblast (Hot Streak)
@@ -84,6 +86,7 @@ local indirectSpells = {
 	[8024] = 10444, -- Flametongue Weapon
 	[8033] = 8034, -- Frostbrand Weapon
 	[8232] = 25504, -- Windfury Weapon
+	[12328] = 12723, -- Sweeping Strikes
 	[13795] = 13797, -- Immolation Trap
 	[13813] = 13812, -- Explosive Trap
 	[16857] = 60089, -- Faerie Fire (Feral)
@@ -604,14 +607,6 @@ function Critline:PLAYER_TALENT_UPDATE()
 end
 
 
-local TOC
-local dummyTable = {}
-do
-	-- Because GetBuildInfo() still returns 40000 on the PTR
-	local major, minor, rev = strsplit(".", (GetBuildInfo()))
-	TOC = major * 10000 + minor * 100
-end
-
 function Critline:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, sourceGUID, sourceName, sourceFlags, destGUID, destName, destFlags, ...)
 	-- we seem to get events with standard arguments equal to nil, so they need to be ignored
 	if not (timestamp and eventType) then
@@ -619,11 +614,6 @@ function Critline:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, 
 		return
 	end
 	
-	if TOC < 40100 and hideCaster ~= dummyTable then
-		self:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, dummyTable, hideCaster, sourceGUID, sourceName, sourceFlags, destGUID, destName, destFlags, ...)
-		return
-	end
-
 	-- if we don't have a destName (who we hit or healed) and we don't have a sourceName (us or our pets) then we leave
 	if not (destName or sourceName) then
 		self:Debug("nil source/dest")
