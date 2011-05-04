@@ -11,7 +11,7 @@ _G.Critline = Critline
 local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 local LSM = LibStub("LibSharedMedia-3.0")
 local templates = Critline.templates
-local playerClass = select(2, UnitClass("player"))
+local _, playerClass = UnitClass("player")
 local debugging
 
 -- auto attack spell
@@ -50,12 +50,10 @@ Critline.icons = {
 
 -- non hunter pets whose damage we may want to register
 local classPets = {
-	[510] = true,	-- Water Elemental
 	[11859] = true,	-- Doomguard
 	[15438] = true,	-- Greater Fire Elemental
 	[27829] = true, -- Ebon Gargoyle
 	[29264] = true,	-- Spirit Wolf
-	[37994] = true, -- Water Elemental (glyphed)
 }
 
 -- spells that are essentially the same, but has different IDs, we'll register them under the same ID
@@ -101,6 +99,7 @@ local indirectSpells = {
 	[31801] = 42463, -- Seal of Truth
 	[31850] = 66235, -- Ardent Defender
 	[33076] = 33110, -- Prayer of Mending
+	[34026] = 83381, -- Kill Command
 	[43265] = 52212, -- Death and Decay
 	[47540] = 47666, -- Penance
 	[47541] = 47632, -- Death Coil (death knight)
@@ -624,10 +623,8 @@ function Critline:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, 
 	
 	-- if sourceGUID is not us or our pet, we leave
 	if not CombatLog_Object_IsA(sourceFlags, COMBATLOG_FILTER_MINE) then
-		local isMyPet = CombatLog_Object_IsA(sourceFlags, COMBATLOG_FILTER_MY_PET)
-		local isGuardian = band(sourceFlags, COMBATLOG_OBJECT_TYPE_GUARDIAN) ~= 0
 		-- only register if it's a real pet, or a guardian tree pet that's included in the filter
-		if isMyPet and ((not isGuardian and HasPetUI()) or classPets[tonumber(sourceGUID:sub(7, 10), 16)]) then
+		if self:IsMyPet(sourceFlags, sourceGUID) then
 			isPet = true
 			-- self:Debug(format("This is my pet (%s)", sourceName))
 		else
@@ -691,16 +688,16 @@ function Critline:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, 
 		end
 	end
 	
-	local isPlayer = band(destFlags, COMBATLOG_OBJECT_CONTROL_PLAYER) ~= 0
+	local isPvPTarget = band(destFlags, COMBATLOG_OBJECT_CONTROL_PLAYER) ~= 0
 	local friendlyFire = band(destFlags, COMBATLOG_OBJECT_REACTION_FRIENDLY) ~= 0
 	local hostileTarget = band(destFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) ~= 0
 	
-	if not (isPlayer or self.db.profile.PvE or isHeal) then
+	if not (isPvPTarget or self.db.profile.PvE or isHeal) then
 		self:Debug(format("Target (%s) is an NPC and PvE damage is not registered.", destName))
 		return
 	end
 	
-	if isPlayer and not (self.db.profile.PvP or isHeal or friendlyFire) then
+	if isPvPTarget and not (self.db.profile.PvP or isHeal or friendlyFire) then
 		self:Debug(format("Target (%s) is a player and PvP damage is not registered.", destName))
 		return
 	end
@@ -763,10 +760,17 @@ function Critline:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, 
 		data.amount = amount
 		data.target = destName
 		data.targetLevel = targetLevel
-		data.isPvPTarget = isPlayer
+		data.isPvPTarget = isPvPTarget
 		
 		self:UpdateRecords(tree, isFiltered)
 	end
+end
+
+
+function Critline:IsMyPet(flags, guid)
+	local isMyPet = CombatLog_Object_IsA(flags, COMBATLOG_FILTER_MY_PET)
+	local isGuardian = band(flags, COMBATLOG_OBJECT_TYPE_GUARDIAN) ~= 0
+	return isMyPet and ((not isGuardian and HasPetUI()) or classPets[tonumber(guid:sub(7, 10), 16)])
 end
 
 

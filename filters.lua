@@ -3,15 +3,12 @@ local addonName, addon = ...
 local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 local templates = addon.templates
 
+local band = bit.band
+local CombatLog_Object_IsA = CombatLog_Object_IsA
 local IsSpellKnown = IsSpellKnown
 local UnitAura = UnitAura
-local UnitName = UnitName
-local UnitGUID = UnitGUID
-local CombatLog_Object_IsA = CombatLog_Object_IsA
-local band = bit.band
 
 local COMBATLOG_FILTER_ME = COMBATLOG_FILTER_ME
-local COMBATLOG_OBJECT_REACTION_FRIENDLY = COMBATLOG_OBJECT_REACTION_FRIENDLY
 
 -- mobs whose received hits won't be tracked due to various vulnerabilities
 local specialMobs = {
@@ -27,9 +24,9 @@ local specialMobs = {
 	[34496] = true, -- Eydis Darkbane
 	[34497] = true, -- Fjola Lightbane
 	[38567] = true, -- Phantom Hallucination
-	[42347] = true, -- Exposed Head of Magmaw (Point of Vulnerability [79011]) ?
-	[42803] = true, -- Drakeadon Mongrel (Brood Power: Red/Green/Black/Blue/Bronze [80368+80369+80370+80371+80372])
-	[46083] = true, -- Drakeadon Mongrel (Brood Power: Red/Green/Black/Blue/Bronze [80368+80369+80370+80371+80372])
+	[42347] = true, -- Exposed Head of Magmaw ?
+	[42803] = true, -- Drakeadon Mongrel
+	[46083] = true, -- Drakeadon Mongrel
 	[46273] = true, -- Debilitated Apexar
 	[48270] = true, -- Exposed Head of Magmaw
 }
@@ -37,6 +34,7 @@ local specialMobs = {
 -- auras that when gained will suppress record tracking
 local specialAuras = {
 	[18173] = true,	-- Burning Adrenaline (Vaelastrasz the Corrupt)
+	[24378] = true, -- Berserking (battlegrounds)
 	[41337] = true,	-- Aura of Anger (Reliquary of Souls)
 	[41350] = true,	-- Aura of Desire (Reliquary of Souls)
 	[44335] = true,	-- Energy Feedback (Vexallus)
@@ -51,18 +49,18 @@ local specialAuras = {
 	[58549] = true,	-- Tenacity (Lake Wintergrasp)
 	[59641] = true,	-- Warchief's Blessing (The Battle For The Undercity)
 	[60964] = true,	-- Strength of Wrynn (The Battle For The Undercity)
-	[61888] = true, -- Overwhelming Power (Assembly of Iron - 25 man)
+	[61888] = true, -- Overwhelming Power (Assembly of Iron 25)
 	[62243] = true, -- Unstable Sun Beam (Elder Brightleaf)
 	[62650] = true, -- Fortitude of Frost (Yogg-Saron)
 	[62670] = true, -- Resilience of Nature (Yogg-Saron)
 	[62671] = true, -- Speed of Invention (Yogg-Saron)
 	[62702] = true, -- Fury of the Storm (Yogg-Saron)
 	[63277] = true, -- Shadow Crash (General Vezax)
-	[63711] = true, -- Storm Power (Hodir - 10 man)
+	[63711] = true, -- Storm Power (Hodir 10)
 	[64320] = true, -- Rune of Power (Assembly of Iron)
 	[64321] = true, -- Potent Pheromones (Freya)
-	[64637] = true, -- Overwhelming Power (Assembly of Iron - 10 man)
-	[65134] = true, -- Storm Power (Hodir - 25 man)
+	[64637] = true, -- Overwhelming Power (Assembly of Iron 10)
+	[65134] = true, -- Storm Power (Hodir 25)
 	[70867] = true, -- Essence of the Blood Queen (Blood Queen Lana'thel)
 	[70879] = true, -- Essence of the Blood Queen (Blood Queen Lana'thel, bitten by a player)
 	[72219] = true, -- Gastric Bloat (Festergut)
@@ -74,16 +72,20 @@ local specialAuras = {
 	[76355] = true, -- Blessing of the Sun (Rajh)
 	[76693] = true, -- Empowering Twilight (Crimsonborne Warlord)
 	[79624] = true, -- Power Generator (Arcanotron) ?
+	[79629] = true, -- Power Generator (Arcanotron 10)
 	[81096] = true, -- Red Mist (Red Mist)
 	[86622] = true, -- Engulfing Magic (Theralion) ?
 	[86872] = true, -- Frothing Rage (Thundermar Ale)
-	[89879] = true, -- Blessing of the Sun (Rajh - heroic)
-	[90933] = true, -- Ragezone (Defias Blood Wizard)
+	[89879] = true, -- Blessing of the Sun (Rajh heroic)
+	[90932] = true, -- Ragezone (Defias Blood Wizard)
+	[90933] = true, -- Ragezone (Defias Blood Wizard heroic)
 	[91871] = true, -- Lightning Charge (Siamat)
+	[91555] = true, -- Power Generator (Arcanotron 25)
 	[93777] = true, -- Invocation of Flame (Skullcrusher the Mountain)
 	[95639] = true, -- Engulfing Magic (Theralion) ?
 	[95640] = true, -- Engulfing Magic (Theralion) ?
 	[95641] = true, -- Engulfing Magic (Theralion) ?
+	[96493] = true, -- Spirit's Vengeance (Bloodlord Mandokir)
 }
 
 -- these are auras that increases the target's damage or healing received
@@ -95,16 +97,19 @@ local targetAuras = {
 	[75846] = true, -- Superheated Quicksilver Armor (Karsh Steelbender) ?
 	[76015] = true, -- Superheated Quicksilver Armor (Karsh Steelbender) ?
 	[76232] = true, -- Storm's Fury (Ragnaros - Mount Hyjal) ?
-	[77717] = true, -- Vertigo (Atramedes)
+	[77615] = true, -- Debilitating Slime (Maloriak)
+	[77717] = true, -- Vertigo (Atramedes 10)
 	[80164] = true, -- Chemical Cloud (Toxitron)
 	[87683] = true, -- Dragon's Vengeance (Halfus Wyrmbreaker)
 	[87904] = true, -- Feedback (Al'Akir)
-	[90933] = true, -- Ragezone (Defias Blood Wizard) ?
-	[91086] = true, -- Shadow Gale (Erudax - heroic)
+	[91086] = true, -- Shadow Gale (Erudax heroic)
+	[91478] = true, -- Chemical Cloud (Toxitron 25) ?
+	[92389] = true, -- Vertigo (Atramedes 25) ?
 	[92390] = true, -- Vertigo (Atramedes) ?
 	[92910] = true, -- Debilitating Slime (Maloriak) ?
 	[93567] = true, -- Superheated Quicksilver Armor (Karsh Steelbender) ?
 	[95723] = true, -- Storm's Fury (Ragnaros - Mount Hyjal) ?
+	[97320] = true, -- Sunder Rift (Jin'do the Godbreaker)
 }
 
 -- these heals are treated as periodic, but has no aura associated with them, or is associated to an aura with a different name, need to add exceptions for them to filter properly
@@ -113,23 +118,15 @@ local directHoTs = {
 	-- [63106] = "Corruption", -- Siphon Life
 }
 
-local activeAuras = {}
-local corruptSpells = {}
+local activeAuras = {
+	player = {},
+	pet = {},
+}
+local corruptSpells = {
+	player = {},
+	pet = {},
+}
 local corruptTargets = {}
-
-local playerAuras = {
-	session = {},
-	instance = {},
-	lastFight = {},
-}
-local enemyAuras = {
-	session = {},
-	instance = {},
-	lastFight = {},
-}
-
--- name of current instance
-local currentInstance = L["n/a"]
 
 -- amount of buttons in the spell, mob and aura filter scroll lists
 local NUMSPELLBUTTONS = 8
@@ -507,9 +504,13 @@ do
 		delete:SetText(L["Delete aura"])
 		delete.msg = L["%s removed from aura filter."]
 		delete.func = function(spellID)
-			activeAuras[spellID] = nil
-			if not filters:IsEmpowered() then
-				addon:Debug("No filtered aura detected. Resuming record tracking.")
+			activeAuras.player[spellID] = nil
+			activeAuras.pet[spellID] = nil
+			if not filters:IsEmpowered("player") then
+				addon:Debug("No filtered aura detected on player. Resuming record tracking.")
+			end
+			if not filters:IsEmpowered("pet") then
+				addon:Debug("No filtered aura detected on pet. Resuming record tracking.")
 			end
 		end
 	end
@@ -545,346 +546,6 @@ do
 			end
 		end
 		filters.type = filterType
-	end
-end
-
-
-do
-	local auraList = CreateFrame("Frame", nil, UIParent)
-	auraList:SetFrameStrata("DIALOG")
-	auraList:EnableMouse(true)
-	auraList:SetSize(320, 360)
-	auraList:SetPoint("CENTER")
-	auraList:SetBackdrop({
-		bgFile = [[Interface\ChatFrame\ChatFrameBackground]],
-		edgeFile = [[Interface\Tooltips\UI-Tooltip-Border]],
-		edgeSize = 16,
-		insets = {left = 4, right = 4, top = 4, bottom = 4},
-	})
-	auraList:SetBackdropColor(0, 0, 0)
-	auraList:SetBackdropBorderColor(0.5, 0.5, 0.5)
-	auraList:Hide()
-
-	local closeButton = CreateFrame("Button", nil, auraList, "UIPanelCloseButton")
-	closeButton:SetPoint("TOPRIGHT")
-
-	Critline.SlashCmdHandlers["aura"] = function() auraList:Show() end
-
-	local currentFilter = playerAuras.session
-
-	local function auraSort(a, b)
-		return currentFilter[a].spellName < currentFilter[b].spellName
-	end
-	
-	local function sourceSort(a, b)
-		a, b = currentFilter[a], currentFilter[b]
-		if a.source == b.source then
-			return a.spellName < b.spellName
-		else
-			return a.source < b.source
-		end
-	end
-	
-	local auraFilters = {
-		BUFF = true,
-		DEBUFF = true,
-		targetAffiliation = playerAuras,
-		sourceType = "npc",
-		sort = auraSort,
-	}
-
-	local function onClick(self, text)
-		self.owner:SetSelectedValue(self.value)
-		self.owner:SetText(text)
-		currentFilter = auraFilters.targetAffiliation[self.value]
-		CritlineAuraListScrollFrame:Update()
-	end
-
-	local menuList = {
-		{
-			text = L["Current fight"],
-			value = "lastFight",
-		},
-		{
-			text = L["Current instance (%s)"],
-			value = "instance",
-		},
-		{
-			text = L["Current session"],
-			value = "session",
-		},
-	}
-	
-	local auraListFilter = templates:CreateDropDownMenu("CritlineAuraListFilter", auraList)
-	auraListFilter:SetPoint("TOP", 0, -16)
-	auraListFilter:SetFrameWidth(220)
-	auraListFilter:JustifyText("LEFT")
-	auraListFilter:SetSelectedValue("session")
-	auraListFilter:SetText(L["Current session"])
-	auraListFilter.initialize = function(self)
-		for i, v in ipairs(menuList) do
-			local info = UIDropDownMenu_CreateInfo()
-			info.text = format(v.text, currentInstance)
-			info.value = v.value
-			info.func = onClick
-			info.owner = self
-			info.arg1 = info.text
-			UIDropDownMenu_AddButton(info)
-		end
-	end
-
-	local auraListAuraType = templates:CreateDropDownMenu("CritlineAuraListAuraType", auraList)
-	auraListAuraType:SetPoint("TOPLEFT", auraListFilter, "BOTTOMLEFT")
-	auraListAuraType:SetFrameWidth(96)
-	auraListAuraType:JustifyText("LEFT")
-	auraListAuraType:SetText(L["Aura type"])
-
-	do
-		local function onClick(self)
-			auraFilters[self.value] = self.checked
-			CritlineAuraListScrollFrame:Update()
-		end
-
-		local menuList = {
-			{
-				text = L["Buffs"],
-				value = "BUFF",
-			},
-			{
-				text = L["Debuffs"],
-				value = "DEBUFF",
-			},
-		}
-		
-		auraListAuraType.initialize = function(self)
-			for i, v in ipairs(menuList) do
-				local info = UIDropDownMenu_CreateInfo()
-				info.text = v.text
-				info.value = v.value
-				info.func = onClick
-				info.checked = auraFilters[v.value]
-				info.isNotRadio = true
-				info.keepShownOnClick = true
-				UIDropDownMenu_AddButton(info)
-			end
-		end
-	end
-
-	local auraListFilters = templates:CreateDropDownMenu("CritlineAuraListFilters", auraList)
-	auraListFilters:SetPoint("TOPRIGHT", auraListFilter, "BOTTOMRIGHT")
-	auraListFilters:SetFrameWidth(96)
-	auraListFilters:JustifyText("LEFT")
-	auraListFilters:SetText(FILTERS)
-
-	do
-		local function onClick(self, key)
-			auraFilters[key] = self.value
-			self.owner:Refresh()
-			self.owner:SetText(FILTERS)
-			currentFilter = auraFilters.targetAffiliation[auraListFilter:GetSelectedValue()]
-			CritlineAuraListScrollFrame:Update()
-		end
-
-		local function checked(self)
-			return auraFilters[self.arg1] == self.value
-		end
-
-		local menuList = {
-			{
-				text = L["Show auras cast on me"],
-				value = playerAuras,
-				arg1 = "targetAffiliation",
-			},
-			{
-				text = L["Show auras cast on hostile NPCs"],
-				value = enemyAuras,
-				arg1 = "targetAffiliation",
-			},
-			{
-				text = L["Show auras cast by NPCs"],
-				value = "npc",
-				arg1 = "sourceType",
-			},
-			{
-				text = L["Show auras cast by players"],
-				value = "pvp",
-				arg1 = "sourceType",
-			},
-			{
-				text = L["Sort by aura name"],
-				value = auraSort,
-				arg1 = "sort",
-			},
-			{
-				text = L["Sort by source name"],
-				value = sourceSort,
-				arg1 = "sort",
-			},
-		}
-		
-		auraListFilters.initialize = function(self)
-			for i, v in ipairs(menuList) do
-				local info = UIDropDownMenu_CreateInfo()
-				info.text = v.text
-				info.value = v.value
-				info.func = onClick
-				info.checked = checked
-				info.owner = self
-				info.keepShownOnClick = true
-				info.arg1 = v.arg1
-				UIDropDownMenu_AddButton(info)
-			end
-		end
-	end
-
-	local search = templates:CreateEditBox(auraList)
-	search:SetPoint("TOPLEFT", auraListAuraType, "BOTTOMLEFT", 18, -8)
-	search:SetPoint("TOPRIGHT", auraListFilters, "BOTTOMRIGHT", -18, -8)
-	search:SetWidth(192)
-	search:SetScript("OnTextChanged", function() CritlineAuraListScrollFrame:Update() end)
-	search:SetScript("OnEscapePressed", search.ClearFocus)
-
-	local label = search:CreateFontString(nil, nil, "GameFontNormalSmall")
-	label:SetPoint("BOTTOMLEFT", search, "TOPLEFT")
-	label:SetText(L["Text filter"])
-
-	local NUM_BUTTONS = 6
-	local BUTTON_HEIGHT = 36
-	
-	local auraListScrollFrame = CreateFrame("ScrollFrame", "CritlineAuraListScrollFrame", auraList, "FauxScrollFrameTemplate")
-	auraListScrollFrame:SetHeight(NUM_BUTTONS * BUTTON_HEIGHT)
-	auraListScrollFrame:SetPoint("TOP", search, "BOTTOM", 0, -8)
-	auraListScrollFrame:SetPoint("LEFT", 32, 0)
-	auraListScrollFrame:SetPoint("RIGHT", -32, 0)
-	auraListScrollFrame:SetScript("OnVerticalScroll", function(self, offset) FauxScrollFrame_OnVerticalScroll(self, offset, BUTTON_HEIGHT, self.Update) end)
-	
-	local sortedAuras = {}
-	
-	function auraListScrollFrame:Update()
-		if not auraList:IsShown() then
-			self.doUpdate = true
-			return
-		end
-		
-		self.doUpdate = nil
-		
-		wipe(sortedAuras)
-		
-		local n = 0
-		local search = search:GetText():lower()
-		for spellID, v in pairs(currentFilter) do
-			if auraFilters[v.type] and v.sourceType == auraFilters.sourceType and (v.spellName:lower():find(search, nil, true) or v.sourceName:lower():find(search, nil, true)) then
-				n = n + 1
-				sortedAuras[n] = spellID
-			end
-		end
-		
-		sort(sortedAuras, auraFilters.sort)
-		
-		FauxScrollFrame_Update(self, n, NUM_BUTTONS, BUTTON_HEIGHT)
-		
-		local offset = FauxScrollFrame_GetOffset(self)
-		local buttons = self.buttons
-		for line = 1, NUM_BUTTONS do
-			local button = buttons[line]
-			local lineplusoffset = line + offset
-			if lineplusoffset <= n then
-				local spellID = sortedAuras[lineplusoffset]
-				button:SetFormattedText("%s (%d)", currentFilter[spellID].spellName, spellID)
-				button.source:SetText(currentFilter[spellID].source)
-				button.icon:SetTexture(addon:GetSpellTexture(spellID))
-				button.spellID = spellID
-				-- local disabled = filters:IsFilteredAura(spellID)
-				-- button.icon:SetDesaturated(disabled)
-				-- button.text:SetFontObject(disabled and "GameFontDisable" or "GameFontNormal")
-				button:Show()
-			else
-				button:Hide()
-			end
-		end
-	end
-	
-	auraList:SetScript("OnShow", function(self)
-		if auraListScrollFrame.doUpdate then
-			auraListScrollFrame:Update()
-		end
-	end)
-	
-	local auraListButtons = {}
-	auraListScrollFrame.buttons = auraListButtons
-	
-	-- local function onClick(self)
-		-- local disabled = filters:IsFilteredAura(self.spellID)
-		-- if disabled then
-			-- if specialAuras[self.spellID] then
-				-- addon:Message("Cannot delete integrated auras.")
-				-- return
-			-- else
-				-- local t = filters.db.global.auras
-				-- for i = 1, #t do
-					-- if t[i] == self.spellID then
-						-- tremove(t, i)
-						-- addon:Message(format("Removed aura (%s) from filter.", GetSpellInfo(self.spellID)))
-						-- break
-					-- end
-				-- end
-			-- end
-		-- else
-			-- filters:AddAura(self.spellID)
-		-- end
-		-- disabled = not disabled
-		-- self.icon:SetDesaturated(disabled)
-		-- self.text:SetFontObject(disabled and "GameFontDisable" or "GameFontNormal")
-	-- end
-	
-	local function onEnter(self)
-		GameTooltip:SetOwner(self, "ANCHOR_LEFT")
-		GameTooltip:SetSpellByID(self.spellID)
-		GameTooltip:AddLine(" ")
-		GameTooltip:AddLine(format(L["Spell ID: |cffffffff%d|r"], self.spellID))
-		GameTooltip:Show()
-	end
-
-	for i = 1, NUM_BUTTONS do
-		local btn = CreateFrame("Button", nil, auraList)
-		btn:SetHeight(BUTTON_HEIGHT)
-		if i == 1 then
-			btn:SetPoint("TOP", auraListScrollFrame)
-		else
-			btn:SetPoint("TOP", auraListButtons[i - 1], "BOTTOM")
-		end
-		btn:SetPoint("LEFT", auraListScrollFrame)
-		btn:SetPoint("RIGHT", auraListScrollFrame)
-		btn:SetPushedTextOffset(0, 0)
-		-- btn:SetScript("OnClick", onClick)
-		btn:SetScript("OnEnter", onEnter)
-		btn:SetScript("OnLeave", GameTooltip_Hide)
-		
-		if i % 2 == 0 then
-			local bg = btn:CreateTexture(nil, "BACKGROUND")
-			bg:SetAllPoints()
-			bg:SetTexture(1, 1, 1, 0.1)
-		end
-		
-		local icon = btn:CreateTexture()
-		icon:SetSize(32, 32)
-		icon:SetPoint("LEFT")
-		btn.icon = icon
-		
-		local text = btn:CreateFontString(nil, nil, "GameFontNormal")
-		text:SetPoint("TOPLEFT", icon, "TOPRIGHT", 4, -4)
-		text:SetPoint("RIGHT")
-		text:SetJustifyH("LEFT")
-		btn:SetFontString(text)
-		btn.text = text
-		
-		local source = btn:CreateFontString(nil, nil, "GameFontHighlightSmall")
-		source:SetPoint("BOTTOMLEFT", icon, "BOTTOMRIGHT", 4, 4)
-		source:SetPoint("RIGHT")
-		source:SetJustifyH("LEFT")
-		btn.source = source
-		
-		auraListButtons[i] = btn
 	end
 end
 
@@ -1037,8 +698,6 @@ function filters:AddonLoaded()
 	addon.RegisterCallback(self, "SpellsChanged", "UpdateSpellFilter")
 	
 	self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
-	self:RegisterEvent("PLAYER_REGEN_DISABLED")
-	self:RegisterEvent("PLAYER_ENTERING_WORLD")
 	self:RegisterEvent("PLAYER_LOGIN")
 	self:RegisterEvent("UNIT_NAME_UPDATE")
 	self:RegisterEvent("PLAYER_CONTROL_LOST")
@@ -1053,32 +712,29 @@ end
 addon.RegisterCallback(filters, "AddonLoaded")
 
 
-function filters:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, sourceGUID, sourceName, sourceFlags, destGUID, destName, destFlags, spellID, spellName, spellSchool, auraType)
+function filters:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, sourceGUID, sourceName, sourceFlags, destGUID, destName, destFlags, spellID, spellName)
 	if eventType == "SPELL_AURA_APPLIED" or eventType == "SPELL_AURA_REFRESH" then
+		-- if this is one of the damage-taken-increased auras, we flag this target - along with the aura in question - as rotten
 		if targetAuras[spellID] then
 			corruptTargets[destGUID] = corruptTargets[destGUID] or {}
 			corruptTargets[destGUID][spellID] = true
-			addon:Debug(format("Target (%s) gained filtered aura. (%s) Ignore received damage.", destName, spellID))
+			addon:Debug(format("Target (%s) gained filtered aura. (%s) Ignore received damage.", destName, spellName))
 		end
-		if CombatLog_Object_IsA(destFlags, COMBATLOG_FILTER_ME) then
-			self:RegisterAura(playerAuras, sourceName, sourceGUID, spellID, spellName, auraType)
-			if self:IsFilteredAura(spellID) then
-				-- if we gain any aura in the filter we can just stop tracking records
-				if not (self:IsEmpowered() or self.profile.ignoreAuraFilter) then
-					addon:Debug(format("Filtered aura gained. (%s) Disabling combat log tracking.", spellName))
-				end
-				activeAuras[spellID] = true
+		
+		local destUnit = self:GetUnit(destFlags, destGUID)
+		if destUnit and self:IsFilteredAura(spellID) then
+			-- if we gain any aura in the filter we can just stop tracking records
+			if not (self:IsEmpowered(destUnit) or self.profile.ignoreAuraFilter) then
+				addon:Debug(format("%s gained filtered aura. (%s) Disabling combat log tracking.", destUnit:gsub(".", string.upper, 1), spellName))
 			end
-		else
-			if CombatLog_Object_IsA(sourceFlags, COMBATLOG_FILTER_ME) then
-				corruptSpells[spellID] = corruptSpells[spellID] or {}
-				corruptSpells[spellID][destGUID] = self:IsEmpowered() or self:IsVulnerableTarget(destGUID)
-			end
-			-- only non friendly NPC units
-			local unitType = band(destGUID:sub(1, 5), 0x007)
-			if (unitType ~= 0 and unitType ~= 4) and (band(destFlags, COMBATLOG_OBJECT_REACTION_FRIENDLY) == 0) then
-				self:RegisterAura(enemyAuras, sourceName, sourceGUID, spellID, spellName, auraType)
-			end
+			activeAuras[destUnit][spellID] = true
+		end
+		
+		local sourceUnit = self:GetUnit(sourceFlags, sourceGUID)
+		if sourceUnit then
+			local corruptSpell = corruptSpells[sourceUnit][spellID] or {}
+			corruptSpell[destGUID] = self:IsEmpowered(sourceUnit) or self:IsVulnerableTarget(destGUID)
+			corruptSpells[sourceUnit][spellID] = corruptSpell
 		end
 	elseif (eventType == "SPELL_AURA_REMOVED" or eventType == "SPELL_AURA_BROKEN" or eventType == "SPELL_AURA_BROKEN_SPELL" or eventType == "SPELL_AURA_STOLEN") then
 		if targetAuras[spellID] then
@@ -1086,43 +742,18 @@ function filters:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, s
 			corruptTargets[destGUID][spellID] = nil
 			addon:Debug(format("Filtered aura (%s) faded from %s.", spellName, destName))
 		end
-		if CombatLog_Object_IsA(destFlags, COMBATLOG_FILTER_ME) then
-			if self:IsFilteredAura(spellID) then
-				addon:Debug(format("Filtered aura (%s) faded from player.", spellName))
+		
+		if self:IsFilteredAura(spellID) then
+			local unit = self:GetUnit(destFlags, destGUID)
+			if unit then
+				addon:Debug(format("Filtered aura (%s) faded from %s.", spellName, unit))
 				-- if we lost a special aura we have to check if any other filtered auras remain
-				activeAuras[spellID] = nil
-				if not filters:IsEmpowered() then
-					addon:Debug("No filtered aura detected. Resuming record tracking.")
+				activeAuras[unit][spellID] = nil
+				if not filters:IsEmpowered(unit) then
+					addon:Debug(format("No filtered aura detected on %s. Resuming record tracking.", unit))
 				end
-			-- elseif CombatLog_Object_IsA(sourceFlags, COMBATLOG_FILTER_ME) then
-				-- corruptSpells[spellID] = corruptSpells[spellID] or {}
-				-- corruptSpells[spellID][destGUID] = nil
 			end
-		-- else
 		end
-	end
-end
-
-
--- reset current fight auras upon entering combat
-function filters:PLAYER_REGEN_DISABLED()
-	wipe(playerAuras.lastFight)
-	wipe(enemyAuras.lastFight)
-	CritlineAuraListScrollFrame:Update()
-end
-
-
-function filters:PLAYER_ENTERING_WORLD()
-	-- wipe instance buff data when entering a new instance
-	local instanceName = GetInstanceInfo()
-	if IsInInstance() and instanceName ~= currentInstance then
-		wipe(playerAuras.instance)
-		wipe(enemyAuras.instance)
-		currentInstance = instanceName
-		if CritlineAuraListFilter:GetSelectedValue() == "instance" then
-			CritlineAuraListFilter:SetText(format(L["Current instance (%s)"], currentInstance))
-		end
-		CritlineAuraListScrollFrame:Update()
 	end
 end
 
@@ -1176,10 +807,8 @@ function filters:ScanAuras()
 			if specialAuras[spellID] then
 				activeAuras[spellID] = true
 			end
-			self:RegisterAura(playerAuras, source and UnitName(source), source and UnitGUID(source), spellID, spellName, auraType)
 		end
 	end
-	CritlineAuraListScrollFrame:Update()
 	if next(auras) then
 		self:UnregisterEvent("UNIT_NAME_UPDATE")
 	end
@@ -1216,7 +845,7 @@ end
 
 -- adds a mob to the mob filter
 function filters:AddMob(name)
-	if self:IsFilteredMob(name) then
+	if self:IsFilteredTarget(name) then
 		addon:Message(L["%s is already in mob filter."]:format(name))
 	else
 		tinsert(self.db.global.mobs, name)
@@ -1259,17 +888,19 @@ end
 
 -- check if a spell passes the filter settings
 function filters:SpellPassesFilters(tree, spellName, spellID, isPeriodic, destGUID, destName, school, targetLevel)
-	if spellID and not IsSpellKnown(spellID, tree == "pet") and self.profile.onlyKnown then
-		addon:Debug(format("%s is not in your%s spell book. Return.", spellName, tree == "pet" and " pet's" or ""))
+	local isPet = tree == "pet"
+	if spellID and not IsSpellKnown(spellID, isPet) and self.profile.onlyKnown then
+		addon:Debug(format("%s is not in your%s spell book. Return.", spellName, isPet and " pet's" or ""))
 		return
 	end
 	
-	if ((corruptSpells[spellID] and corruptSpells[spellID][destGUID]) or (self:IsEmpowered() and (not isPeriodic or directHoTs[spellID]))) and not self.profile.ignoreAuraFilter then
+	local unit = isPet and "pet" or "player"
+	if ((corruptSpells[unit][spellID] and corruptSpells[unit][spellID][destGUID]) or (self:IsEmpowered(unit) and (not isPeriodic or directHoTs[spellID]))) and not self.profile.ignoreAuraFilter then
 		addon:Debug(format("Spell (%s) was cast under the influence of a filtered aura. Return.", spellName))
 		return
 	end
 	
-	if self:IsVulnerableTarget(destGUID) and not self.profile.ignoreAuraFilter then
+	if self:IsVulnerableTarget(destGUID) and not isPeriodic and not self.profile.ignoreAuraFilter then
 		addon:Debug("Target is vulnerable. Return.")
 		return
 	end
@@ -1286,9 +917,9 @@ function filters:SpellPassesFilters(tree, spellName, spellID, isPeriodic, destGU
 		return
 	end
 	
-	local filteredMob = self:IsFilteredMob(destName, destGUID)
-	if filteredMob then
-		addon:Debug(format("Target (%s) is in %s target filter.", mobName, filteredMob))
+	local filteredTarget = self:IsFilteredTarget(destName, destGUID)
+	if filteredTarget then
+		addon:Debug(format("Target (%s) is in %s target filter.", destName, filteredTarget))
 		return
 	end
 	
@@ -1304,8 +935,8 @@ end
 
 
 -- scan for filtered auras from the specialAuras table
-function filters:IsEmpowered()
-	if next(activeAuras) or not self.inControl then
+function filters:IsEmpowered(unit)
+	if next(activeAuras[unit]) or not self.inControl then
 		return true
 	end
 end
@@ -1320,13 +951,13 @@ function filters:IsVulnerableTarget(guid)
 end
 
 
-function filters:IsFilteredMob(mobName, guid)
+function filters:IsFilteredTarget(targetName, guid)
 	-- GUID is provided if the function was called from the combat event handler
 	if guid and not self.profile.ignoreMobFilter and specialMobs[tonumber(guid:sub(7, 10), 16)] then
 		return "default"
 	end
 	for _, v in ipairs(self.db.global.mobs) do
-		if v:lower() == mobName:lower() then
+		if v:lower() == targetName:lower() then
 			return "custom"
 		end
 	end
@@ -1345,36 +976,10 @@ function filters:IsFilteredAura(spellID)
 end
 
 
-function filters:RegisterAura(auraTable, sourceName, sourceGUID, spellID, spellName, auraType)
-	local session = auraTable.session
-	if session[spellID] or IsSpellKnown(spellID) or not sourceName then
-		return 
+function filters:GetUnit(unitFlags, unitGUID)
+	if CombatLog_Object_IsA(unitFlags, COMBATLOG_FILTER_ME) then
+		return "player"
+	elseif addon:IsMyPet(unitFlags, unitGUID) then
+		return "pet"
 	end
-
-	local source = L["n/a"]
-	local sourceType
-	
-	local unitType = bit.band(sourceGUID:sub(1, 5), 0x007)
-	if unitType == 0 or unitType == 4 then
-		-- this is a player or a player's permanent pet
-		source = PVP
-		sourceType = "pvp"
-	else
-		source = tonumber(sourceGUID:sub(7, 10), 16)
-		sourceType = "npc"
-	end
-	
-	local aura = {
-		source = format("%s (%s)", sourceName, source),
-		sourceName = sourceName,
-		spellName = spellName,
-		sourceType = sourceType,
-		type = auraType,
-	}
-	auraTable.lastFight[spellID] = aura
-	if IsInInstance() then
-		auraTable.instance[spellID] = aura
-	end
-	session[spellID] = aura
-	CritlineAuraListScrollFrame:Update()
 end

@@ -51,13 +51,16 @@ end
 
 
 local function updateRecords(event, tree)
-	if tree then
-		local normal, crit = addon:GetHighest(tree)
-		feeds[tree].text = format("%s/%s", addon:ShortenNumber(normal), addon:ShortenNumber(crit))
-	else
+	if not tree then
 		for k in pairs(feeds) do
 			updateRecords(event, k)
 		end
+		return
+	end
+	
+	if addon.percharDB.profile[tree] then
+		local normal, crit = addon:GetHighest(tree)
+		feeds[tree].text = format("%s/%s", addon:ShortenNumber(normal), addon:ShortenNumber(crit))
 	end
 end
 
