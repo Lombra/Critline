@@ -431,6 +431,10 @@ do	-- used in Reset and Announce
 				local normal = data.normal and data.normal.amount
 				local crit = data.crit and data.crit.amount
 				item.icon:SetTexture(addon:GetSpellTexture(data.spellID))
+				if addon.filters then
+					item.icon:SetDesaturated(data.filtered)
+					item.spell:SetFontObject(data.filtered and "GameFontDisable" or "GameFontNormal")
+				end
 				item.spell:SetText(addon:GetFullSpellName(data.spellID, data.periodic))
 				item.target:SetFormattedText("%s / %s", data.normal and data.normal.target or "n/a", data.crit and data.crit.target or "n/a")
 				item.record:SetFormattedText("%s\n%s", addon:ShortenNumber(normal or 0), addon:ShortenNumber(crit or 0))

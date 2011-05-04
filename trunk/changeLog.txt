@@ -1,3 +1,18 @@
+4.1.0
+- Remove water elemental from class pets as it's now treated as a permanent pet.
+- Add Kill Command tooltip exception.
+- Move aura tracker out of the filter module and into its own module.
+- Aura tracker should now pick up auras even when no source was provided.
+- Pet damage will now obey aura filtering.
+- Fix error occuring upon attacking filtered targets.
+- Add Berserking (battlegrounds), Spirit's Vengeance (Bloodord Mandokir) and Sunder Rift (Jin'do) to aura filters.
+- Add new spell IDs for some Cataclysm raid auras.
+- Add Ragezone (normal mode Deadmines), and remove it from target aura, since it no longer increases damage taken.
+- Periodic healing done to yourself while under the effects of a filtered (healing-received-increased) aura should now be properly filtered.
+- Periodic effects can now be registered if it ticks on a vulnerable target, as long as the effect was applied before the vulnerability aura. (somewhat experimental)
+- Spells in the reset and announce lists will now be grayed out if they're filtered.
+- Toggling short number format should no longer affect the Broker objects whose tree is disabled.
+
 4.0.3
 - Updated for WoW 4.1.
 - Added Sweeping Strikes and Aimed Shot! exceptions.
@@ -47,7 +62,7 @@
 - The frame's alpha can now be changed.
 - It should no longer be possible to force show the frame when no trees are enabled, resulting in a weird appearance.
 
-- Reset and announce spell lists had their appearance redesigned. Click to directly to your thing, instead of checking and then clicking.
+- Reset and announce spell lists had their appearance redesigned. Click to directly do your thing, instead of checking and then clicking.
 - New records achieved in the last fight can now be undone in the reset module. Eligible spells will have a different button.
 - Spell profiles should now display the correct used profiles at all times.
 - Updated libraries.
