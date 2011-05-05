@@ -383,12 +383,9 @@ function auraTracker:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaste
 		if CombatLog_Object_IsA(destFlags, COMBATLOG_FILTER_ME) or addon:IsMyPet(destFlags, destGUID) then
 			-- register our own and our pet's auras
 			auraTable = playerAuras
-		else
+		elseif not self:IsPvPTarget(destGUID) and band(destFlags, COMBATLOG_OBJECT_REACTION_FRIENDLY) == 0 then
 			-- and also those of non friendly NPCs
-			local unitType = band(destGUID:sub(1, 5), 0x007)
-			if (unitType ~= 0 and unitType ~= 4) and (band(destFlags, COMBATLOG_OBJECT_REACTION_FRIENDLY) == 0) then
-				auraTable = enemyAuras
-			end
+			auraTable = enemyAuras
 		end
 		
 		if auraTable then
@@ -460,8 +457,7 @@ function auraTracker:RegisterAura(auraTable, sourceName, sourceGUID, spellID, sp
 	local sourceType
 	
 	if sourceGUID then
-		local unitType = bit.band(sourceGUID:sub(1, 5), 0x007)
-		if unitType == 0 or unitType == 4 then
+		if self:IsPvPTarget(sourceGUID) then
 			-- this is a player or a player's permanent pet
 			source = PVP
 			sourceType = "pvp"
@@ -484,4 +480,10 @@ function auraTracker:RegisterAura(auraTable, sourceName, sourceGUID, spellID, sp
 	end
 	session[spellID] = aura
 	scrollFrame:Update()
+end
+
+
+function auraTracker:IsPvPTarget(guid)
+	local unitType = band(guid:sub(1, 5), 0x007)
+	return unitType == 0 or unitType == 4
 end
