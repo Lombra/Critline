@@ -936,7 +936,7 @@ end
 
 -- scan for filtered auras from the specialAuras table
 function filters:IsEmpowered(unit)
-	if next(activeAuras[unit]) or not self.inControl then
+	if next(activeAuras[unit]) or (unit == "player" and not self.inControl) then
 		return true
 	end
 end
