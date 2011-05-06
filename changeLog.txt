@@ -6,12 +6,14 @@
 - Pet damage will now obey aura filtering.
 - Fix error occuring upon attacking filtered targets.
 - Add Berserking (battlegrounds), Spirit's Vengeance (Bloodord Mandokir) and Sunder Rift (Jin'do) to aura filters.
+- Add High Priest Venoxis to mob filter.
 - Add new spell IDs for some Cataclysm raid auras.
 - Add Ragezone (normal mode Deadmines), and remove it from target aura, since it no longer increases damage taken.
 - Periodic healing done to yourself while under the effects of a filtered (healing-received-increased) aura should now be properly filtered.
 - Periodic effects can now be registered if it ticks on a vulnerable target, as long as the effect was applied before the vulnerability aura. (somewhat experimental)
 - Spells in the reset and announce lists will now be grayed out if they're filtered.
 - Toggling short number format should no longer affect the Broker objects whose tree is disabled.
+- Do not ignore pet damage when player is mind controlled.
 
 4.0.3
 - Updated for WoW 4.1.
