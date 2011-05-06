@@ -29,6 +29,7 @@ local specialMobs = {
 	[46083] = true, -- Drakeadon Mongrel
 	[46273] = true, -- Debilitated Apexar
 	[48270] = true, -- Exposed Head of Magmaw
+	[52155] = true, -- High Priest Venoxis
 }
 
 -- auras that when gained will suppress record tracking
