@@ -1,5 +1,8 @@
 package-as: CritLine
 
+manual-changelog:
+  filename: changeLog.txt
+
 license-output: LICENSE.txt
 
 ignore:
