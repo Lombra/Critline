@@ -1,21 +1,19 @@
 ## Interface: 40100
 ## Title: Critline
-## Version: 4.1.0
+## Version: 4.1.1
 ## Notes: Saves your normal and critical records and flashes a message if you break the record.
 ## Author: L'ombra
 ## SavedVariables: CritlineDB
 ## SavedVariablesPerCharacter: CritlinePerCharDB
-## OptionalDeps: Ace3, LibSharedMedia-3.0
+## OptionalDeps: LibSharedMedia-3.0
 
-#@no-lib-strip@
-libs\LibStub\LibStub.lua
-libs\CallbackHandler-1.0\CallbackHandler-1.0.xml
-libs\AceDB-3.0\AceDB-3.0.xml
-libs\AceLocale-3.0\AceLocale-3.0.xml
+libs\LibStub.lua
+libs\CallbackHandler-1.0.lua
+libs\AceDB-3.0.lua
+libs\AceLocale-3.0.lua
 libs\LibDataBroker-1.1.lua
 libs\LibDualSpec-1.0.lua
 libs\LibSharedMedia-3.0.lua
-#@end-no-lib-strip@
 
 locales\enUS.lua
 locales\deDE.lua
