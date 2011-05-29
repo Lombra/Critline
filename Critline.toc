@@ -5,7 +5,6 @@
 ## Author: L'ombra
 ## SavedVariables: CritlineDB
 ## SavedVariablesPerCharacter: CritlinePerCharDB
-## OptionalDeps: LibSharedMedia-3.0
 
 libs\LibStub.lua
 libs\CallbackHandler-1.0.lua
