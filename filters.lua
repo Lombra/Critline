@@ -84,6 +84,7 @@ local specialAuras = {
 	[91871] = true, -- Lightning Charge (Siamat)
 	[91555] = true, -- Power Generator (Arcanotron 25)
 	[93777] = true, -- Invocation of Flame (Skullcrusher the Mountain)
+	[93778] = true, -- Invocation of Flame (Elemental Bonds: Fury)
 	[95639] = true, -- Engulfing Magic (Theralion) ?
 	[95640] = true, -- Engulfing Magic (Theralion) ?
 	[95641] = true, -- Engulfing Magic (Theralion) ?
@@ -111,7 +112,9 @@ local targetAuras = {
 	[92910] = true, -- Debilitating Slime (Maloriak) ?
 	[93567] = true, -- Superheated Quicksilver Armor (Karsh Steelbender) ?
 	[95723] = true, -- Storm's Fury (Ragnaros - Mount Hyjal) ?
+	[96960] = true, -- Antlers of Malorne (Galenges)
 	[97320] = true, -- Sunder Rift (Jin'do the Godbreaker)
+	[98596] = true, -- Infernal Rage (Spark of Rhyolith)
 }
 
 -- these heals are treated as periodic, but has no aura associated with them, or is associated to an aura with a different name, need to add exceptions for them to filter properly
