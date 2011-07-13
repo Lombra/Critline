@@ -206,7 +206,7 @@ do	-- create the options frame
 			splash:SetFont(LSM:Fetch("font", font.name), font.size, font.flags)
 		end,
 	})
-	fontSize:SetPoint("TOP", fontFlags, "BOTTOM", 0, -24)
+	fontSize:SetPoint("TOPLEFT", fontFlags, "BOTTOMLEFT", 16, -24)
 	options.fontSize = fontSize
 end
 

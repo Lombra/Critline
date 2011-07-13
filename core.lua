@@ -644,10 +644,6 @@ function Critline:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, 
 		-- self:Debug(format("This is me or my trap (%s)", sourceName))
 	end
 	
-	if not combatEvents[eventType] then
-		return
-	end
-	
 	local isPeriodic
 	local periodic = 1
 	local isHeal = eventType == "SPELL_HEAL" or eventType == "SPELL_PERIODIC_HEAL" or eventType == "SPELL_AURA_APPLIED" or eventType == "SPELL_AURA_REFRESH"
@@ -661,8 +657,13 @@ function Critline:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, 
 		periodic = 2
 	end
 	
+	local combatEvent = combatEvents[eventType]
+	if not combatEvent then
+		return
+	end
+	
 	-- get the relevants arguments
-	local spellID, spellName, amount, resisted, critical, school = combatEvents[eventType](...)
+	local spellID, spellName, amount, resisted, critical, school = combatEvent(...)
 	
 	local similarSpell = similarSpells[spellID]
 	if similarSpell then

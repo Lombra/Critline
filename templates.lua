@@ -407,7 +407,7 @@ end
 
 
 do	-- used in Reset and Announce
-	local MAXSPELLBUTTONS = 8
+	local MAXSPELLBUTTONS = 12
 	local ITEMHEIGHT = 36
 	
 	local function update(self)
@@ -436,7 +436,7 @@ do	-- used in Reset and Announce
 					item.spell:SetFontObject(data.filtered and "GameFontDisable" or "GameFontNormal")
 				end
 				item.spell:SetText(addon:GetFullSpellName(data.spellID, data.periodic))
-				item.target:SetFormattedText("%s / %s", data.normal and data.normal.target or "n/a", data.crit and data.crit.target or "n/a")
+				item.target:SetFormattedText("%s\n%s", data.normal and data.normal.target or "n/a", data.crit and data.crit.target or "n/a")
 				item.record:SetFormattedText("%s\n%s", addon:ShortenNumber(normal or 0), addon:ShortenNumber(crit or 0))
 				if self.history then
 					local prevRecord = self.history[selectedTree][data.spellID]
@@ -530,10 +530,11 @@ do	-- used in Reset and Announce
 			spell:SetJustifyH("LEFT")
 			item.spell = spell
 
-			local target = item:CreateFontString(nil, nil, "GameFontHighlightSmall")
-			target:SetPoint("BOTTOMLEFT", icon, "BOTTOMRIGHT", 4, 4)
-			target:SetPoint("RIGHT", -64, 0)
-			target:SetJustifyH("LEFT")
+			local target = item:CreateFontString(nil, nil, "GameFontDisableSmall")
+			target:SetPoint("TOPRIGHT", -80, 0)
+			target:SetPoint("BOTTOMRIGHT", -80, 0)
+			target:SetJustifyH("RIGHT")
+			target:SetSpacing(2)
 			item.target = target
 			
 			local button = CreateFrame("Button", nil, item)
