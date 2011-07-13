@@ -727,7 +727,7 @@ function filters:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, s
 		if targetAuras[spellID] then
 			corruptTargets[destGUID] = corruptTargets[destGUID] or {}
 			corruptTargets[destGUID][spellID] = nil
-			addon:Debug(format("Filtered aura (%s) faded from %s.", spellName, destName)),
+			addon:Debug(format("Filtered aura (%s) faded from %s.", spellName, destName))
 			-- watch this unit for suspicious future killing blows
 			corruptSuspects[destGUID] = 0
 		end
