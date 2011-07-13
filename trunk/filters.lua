@@ -74,6 +74,7 @@ local specialAuras = {
 	[76693] = true, -- Empowering Twilight (Crimsonborne Warlord)
 	[79624] = true, -- Power Generator (Arcanotron) ?
 	[79629] = true, -- Power Generator (Arcanotron 10)
+	[80718] = true, -- Burden of the Crown (Spirit of Corehammer 25) ?
 	[81096] = true, -- Red Mist (Red Mist)
 	[82170] = true, -- Corruption: Absolute (Cho'gall)
 	[86622] = true, -- Engulfing Magic (Theralion) ?
@@ -115,6 +116,9 @@ local targetAuras = {
 	[96960] = true, -- Antlers of Malorne (Galenges)
 	[97320] = true, -- Sunder Rift (Jin'do the Godbreaker)
 	[98596] = true, -- Infernal Rage (Spark of Rhyolith)
+	[99389] = true, -- Imprinted (Voracious Hatchling) ?
+	[100359] = true, -- Imprinted (Voracious Hatchling) ?
+	[101458] = true, -- Feedback (Al'Akir 25) ?
 }
 
 -- these heals are treated as periodic, but has no aura associated with them, or is associated to an aura with a different name, need to add exceptions for them to filter properly
@@ -132,11 +136,14 @@ local corruptSpells = {
 	pet = {},
 }
 local corruptTargets = {}
+-- targets suspected of being killed while under the effects of a filtered aura
+local corruptSuspects = {}
 
 -- amount of buttons in the spell, mob and aura filter scroll lists
-local NUMSPELLBUTTONS = 8
+local NUMSPELLBUTTONS = 20
 local SPELLBUTTONHEIGHT = 22
-local NUMFILTERBUTTONS = 10
+
+local NUMFILTERBUTTONS = 25
 local FILTERBUTTONHEIGHT = 16
 
 
@@ -329,7 +336,6 @@ do
 			text = L["Suppress mind control"],
 			tooltipText = L["Suppress all records while mind controlled."],
 			setting = "suppressMC",
-			newColumn = true,
 		},
 		{
 			text = L["Don't filter magic"],
@@ -370,15 +376,14 @@ do
 			filters.profile.levelFilter = value
 		end,
 	})
-	slider:SetPoint("TOPLEFT", checkButtons[#checkButtons], "BOTTOMLEFT", 4, -24)
+	slider:SetPoint("TOPLEFT", checkButtons[#checkButtons], "BOTTOMLEFT", 9, -19)
 	options.slider = slider
 	
 	local filterTypes = {}
 
 	-- spell filter frame
 	local spellFilter = createFilterFrame("spell", filters, NUMSPELLBUTTONS, SPELLBUTTONHEIGHT)
-	spellFilter:SetPoint("TOP", checkButtons[columnEnd], "BOTTOM", 0, -48)
-	spellFilter:SetPoint("LEFT", 48, 0)
+	spellFilter:SetPoint("TOPLEFT", filters.title, "BOTTOM", -32, -48)
 	spellFilter:SetPoint("RIGHT", -48, 0)
 	filterTypes.spell = spellFilter
 	
@@ -717,7 +722,39 @@ end
 addon.RegisterCallback(filters, "AddonLoaded")
 
 
-function filters:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, sourceGUID, sourceName, sourceFlags, sourceFlags2, destGUID, destName, destFlags, destFlags2, spellID, spellName)
+function filters:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, sourceGUID, sourceName, sourceFlags, sourceFlags2, destGUID, destName, destFlags, destFlags2, spellID, spellName, spellSchool, amount, overkill)
+	if (eventType == "SPELL_AURA_REMOVED" or eventType == "SPELL_AURA_BROKEN" or eventType == "SPELL_AURA_BROKEN_SPELL" or eventType == "SPELL_AURA_STOLEN") then
+		if targetAuras[spellID] then
+			corruptTargets[destGUID] = corruptTargets[destGUID] or {}
+			corruptTargets[destGUID][spellID] = nil
+			addon:Debug(format("Filtered aura (%s) faded from %s.", spellName, destName)),
+			-- watch this unit for suspicious future killing blows
+			corruptSuspects[destGUID] = 0
+		end
+		
+		if self:IsFilteredAura(spellID) then
+			local unit = self:GetUnit(destFlags, destGUID)
+			if unit then
+				addon:Debug(format("Filtered aura (%s) faded from %s.", spellName, unit))
+				-- if we lost a special aura we have to check if any other filtered auras remain
+				activeAuras[unit][spellID] = nil
+				if not filters:IsEmpowered(unit) then
+					addon:Debug(format("No filtered aura detected on %s. Resuming record tracking.", unit))
+				end
+			end
+		end
+	elseif eventType == "PARTY_KILL" then
+		-- previous event was SPELL_AURA_REMOVED or any variation thereof, so this unit gets flagged as corrupt
+		if corruptSuspects[destGUID] == 0 then
+			corruptSuspects[destGUID] = 1
+		end
+	else
+		-- a different event has fired, this unit is clean
+		if corruptSuspects[destGUID] == 0 then
+			corruptSuspects[destGUID] = nil
+		end
+	end
+	
 	if eventType == "SPELL_AURA_APPLIED" or eventType == "SPELL_AURA_REFRESH" then
 		-- if this is one of the damage-taken-increased auras, we flag this target - along with the aura in question - as rotten
 		if targetAuras[spellID] then
@@ -741,23 +778,11 @@ function filters:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, s
 			corruptSpell[destGUID] = self:IsEmpowered(sourceUnit) or self:IsVulnerableTarget(destGUID)
 			corruptSpells[sourceUnit][spellID] = corruptSpell
 		end
-	elseif (eventType == "SPELL_AURA_REMOVED" or eventType == "SPELL_AURA_BROKEN" or eventType == "SPELL_AURA_BROKEN_SPELL" or eventType == "SPELL_AURA_STOLEN") then
-		if targetAuras[spellID] then
-			corruptTargets[destGUID] = corruptTargets[destGUID] or {}
-			corruptTargets[destGUID][spellID] = nil
-			addon:Debug(format("Filtered aura (%s) faded from %s.", spellName, destName))
-		end
-		
-		if self:IsFilteredAura(spellID) then
-			local unit = self:GetUnit(destFlags, destGUID)
-			if unit then
-				addon:Debug(format("Filtered aura (%s) faded from %s.", spellName, unit))
-				-- if we lost a special aura we have to check if any other filtered auras remain
-				activeAuras[unit][spellID] = nil
-				if not filters:IsEmpowered(unit) then
-					addon:Debug(format("No filtered aura detected on %s. Resuming record tracking.", unit))
-				end
-			end
+	end
+	
+	if eventType == "SPELL_DAMAGE" or eventType == "SPELL_PERIODIC_DAMAGE" then
+		if overkill >= 0 then
+			corruptSuspects[destGUID] = nil
 		end
 	end
 end
@@ -950,7 +975,7 @@ end
 -- checks if a target is affected by any vulnerability auras
 function filters:IsVulnerableTarget(guid)
 	local corruptTarget = corruptTargets[guid]
-	if corruptTarget and next(corruptTarget) then
+	if (corruptTarget and next(corruptTarget)) or corruptSuspects[guid] == 1 then
 		return true
 	end
 end

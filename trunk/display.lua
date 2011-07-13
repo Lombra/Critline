@@ -158,6 +158,27 @@ for i, v in ipairs(options) do
 end
 
 
+local function swatchFunc(self, r, g, b)
+	display.trees[self.setting]:SetBackdropColor(r, g, b)
+end
+
+local colorButtons = {}
+
+for i, v in ipairs({"dmg", "heal", "pet"}) do
+	local btn = templates:CreateColorButton(config)
+	if i == 1 then
+		btn:SetPoint("TOP", options[#options], "BOTTOM", 0, -13)
+	else
+		btn:SetPoint("TOP", colorButtons[i - 1], "BOTTOM", 0, -18)
+	end
+	btn:SetText(trees[v])
+	btn.setting = v
+	btn.func = swatchFunc
+	btn.opacityFunc = opacityFunc
+	colorButtons[i] = btn
+end
+
+
 local sliders = {}
 
 sliders[1] = templates:CreateSlider(config, {
@@ -178,7 +199,7 @@ sliders[1] = templates:CreateSlider(config, {
 		display.profile.scale = value
 	end,
 })
-sliders[1]:SetPoint("TOPLEFT", options[#options], "BOTTOMLEFT", 4, -24)
+sliders[1]:SetPoint("TOPLEFT", colorButtons[#colorButtons], "BOTTOMLEFT", 4, -24)
 
 sliders[2] = templates:CreateSlider(config, {
 	text = L["Alpha"],
@@ -197,26 +218,6 @@ sliders[2] = templates:CreateSlider(config, {
 })
 sliders[2]:SetPoint("TOP", sliders[1], "BOTTOM", 0, -32)
 
-
-local function swatchFunc(self, r, g, b)
-	display.trees[self.setting]:SetBackdropColor(r, g, b)
-end
-
-local colorButtons = {}
-
-for i, v in ipairs({"dmg", "heal", "pet"}) do
-	local btn = templates:CreateColorButton(config)
-	if i == 1 then
-		btn:SetPoint("TOPLEFT", config.title, "BOTTOM", 0, -21)
-	else
-		btn:SetPoint("TOP", colorButtons[i - 1], "BOTTOM", 0, -18)
-	end
-	btn:SetText(trees[v])
-	btn.setting = v
-	btn.func = swatchFunc
-	btn.opacityFunc = opacityFunc
-	colorButtons[i] = btn
-end
 
 local defaults = {
 	profile = {
