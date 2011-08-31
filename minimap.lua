@@ -16,7 +16,7 @@ local function onUpdate(self)
 end
 
 
-local minimap = CreateFrame("Button", nil, Minimap)
+local minimap = CreateFrame("Button", "CritlineMinimapButton", Minimap)
 minimap:SetToplevel(true)
 minimap:SetMovable(true)
 minimap:RegisterForClicks("LeftButtonUp", "RightButtonUp")

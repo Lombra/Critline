@@ -59,79 +59,80 @@ local classPets = {
 -- spells that are essentially the same, but has different IDs, we'll register them under the same ID
 local similarSpells = {
 --	[spellID] = registerAsID,
-	[26654] = 12723, -- Sweeping Strikes (Whirlwind)
+	[379] = 974,    -- Earth Shield
+	[1539] = 6991,  -- Feed Pet
+	[5374] = 1329,  -- Mutilate
+	[5857] = 1949,  -- Hellfire
+	[5940] = 5938,  -- Shiv
+	[7001] = 724,   -- Lightwell
+	[7268] = 5143,  -- Arcane Missiles
+	[8034] = 8033,  -- Frostbrand Weapon
+	[8349] = 1535,  -- Fire Nova
+	[10444] = 8024, -- Flametongue Weapon
+	[12723] = 12328, -- Sweeping Strikes
+	[13797] = 13795, -- Immolation Trap
+	[13812] = 13813, -- Explosive Trap
+	[20167] = 20165, -- Seal of Insight
+	[20170] = 20164, -- Seal of Justice
+	[20253] = 20252, -- Intercept
+	[22845] = 22842, -- Frenzied Regeneration
+	[23455] = 15237, -- Holy Nova
+	[23880] = 23881, -- Bloodthirst
+	[24131] = 19386, -- Wyvern Sting
+	[25504] = 8232, -- Windfury Weapon
+	[25742] = 20154, -- Seal of Righteousness
+	[25912] = 20473, -- Holy Shock
+	[25914] = 20473, -- Holy Shock (heal)
+	[26364] = 324,  -- Lightning Shield
+	[26654] = 12328, -- Sweeping Strikes (???)
 	[27285] = 27243, -- Seed of Corruption (direct)
+	[32175] = 17364, -- Stormstrike
+	[33110] = 33076, -- Prayer of Mending
 	[33778] = 33763, -- Lifebloom (direct)
+	[42231] = 16914, -- Hurricane
+	[42463] = 31801, -- Seal of Truth
+	[44203] = 740,  -- Tranquility
 	[44461] = 44457, -- Living Bomb (direct)
+	[45470] = 49998, -- Death Strike
+	[47632] = 47541, -- Death Coil (death knight)
+	[47633] = 47541, -- Death Coil heal (death knight)
+	[47666] = 47540, -- Penance
+	[47750] = 47540, -- Penance heal
 	[47960] = 47897, -- Shadowflame (tick)
+	[48153] = 47788, -- Guardian Spirit
+	[49821] = 48045, -- Mind Sear
+	[50622] = 46924, -- Bladestorm (Whirlwind)
+	[50782] = 1464, -- Slam
+	[50783] = 1464, -- Slam (Bloodsurge)
+	[51945] = 51730, -- Earthliving
+	[52212] = 43265, -- Death and Decay
+	[53353] = 53209, -- Chimera Shot
+	[54172] = 53385, -- Divine Storm
+	[60089] = 16857, -- Faerie Fire (Feral)
+	[64844] = 64843, -- Divine Hymn
+	[66235] = 31850, -- Ardent Defender
+	[73921] = 73920, -- Healing Rain
+	[77478] = 61882, -- Earthquake
 	[81170] = 6785,  -- Ravage (Stampede)
+	[81297] = 26573, -- Consecration
 	[82928] = 19434, -- Aimed Shot (Master Marksman)
+	[83381] = 34026, -- Kill Command
 	[83853] = 11129, -- Combustion (tick)
+	[86452] = 82327, -- Holy Radiance
 	[88148] = 2120,  -- Flamestrike (Improved Flamestrike)
+	[88466] = 1978, -- Serpent Sting (Serpent Spread)
+	[88686] = 88685, -- Holy Word: Sanctuary
 	[92315] = 11366, -- Pyroblast (Hot Streak)
+	[94009] = 772,  -- Rend
+	[96103] = 85288, -- Raging Blow
+	[101423] = 20154, -- Seal of Righteousness
 }
 
--- spells whose actual effect is the result of a different spell, eg seals, damage shields, used for displaying relevant records in spell tooltips
-local indirectSpells = {
---	[tooltipID] = spellEffectID,
-	[324] = 26364,  -- Lightning Shield
-	[724] = 7001,   -- Lightwell
-	[740] = 44203,  -- Tranquility
-	[772] = 94009,  -- Rend
-	[974] = 379,    -- Earth Shield
-	[1329] = 5374,  -- Mutilate
-	[1464] = 50782, -- Slam
-	[1535] = 8349,  -- Fire Nova
-	[1949] = 5857,  -- Hellfire
-	[5143] = 7268,  -- Arcane Missiles
-	[5938] = 5940,  -- Shiv
-	[6991] = 1539,  -- Feed Pet
-	[8024] = 10444, -- Flametongue Weapon
-	[8033] = 8034,  -- Frostbrand Weapon
-	[8232] = 25504, -- Windfury Weapon
-	[12328] = 12723, -- Sweeping Strikes
-	[13795] = 13797, -- Immolation Trap
-	[13813] = 13812, -- Explosive Trap
-	[16857] = 60089, -- Faerie Fire (Feral)
-	[16914] = 42231, -- Hurricane
-	[17364] = 32175, -- Stormstrike
-	[19386] = 24131, -- Wyvern Sting
-	[20154] = 25742, -- Seal of Righteousness
-	[20164] = 20170, -- Seal of Justice
-	[20165] = 20167, -- Seal of Insight
-	[20252] = 20253, -- Intercept
-	[20473] = 25912, -- Holy Shock
-	[22842] = 22845, -- Frenzied Regeneration
-	[26573] = 81297, -- Consecration
-	[31801] = 42463, -- Seal of Truth
-	[31850] = 66235, -- Ardent Defender
-	[33076] = 33110, -- Prayer of Mending
-	[34026] = 83381, -- Kill Command
-	[43265] = 52212, -- Death and Decay
-	[47540] = 47666, -- Penance
-	[47541] = 47632, -- Death Coil (death knight)
-	[47788] = 48153, -- Guardian Spirit
-	[48045] = 49821, -- Mind Sear
-	[51730] = 51945, -- Earthliving
-	[61882] = 77478, -- Earthquake
-	[64843] = 64844, -- Divine Hymn
-	[73920] = 73921, -- Healing Rain
-	[82327] = 86452, -- Holy Radiance
-	[82939] = 13812, -- Explosive Trap (trap launcher)
-	[82945] = 13797, -- Immolation Trap (trap launcher)
-	[88685] = 88686, -- Holy Word: Sanctuary
-}
-
--- those that has both a damage and a healing component has their healing spell listed here
-local indirectHeals = {
-	[15237] = 23455, -- Holy Nova
-	[20473] = 25914, -- Holy Shock
-	[23881] = 23880, -- Bloodthirst
-	[47540] = 47750, -- Penance
-	[47541] = 47633, -- Death Coil (death knight)
-	[49998] = 45470, -- Death Strike
-	[53209] = 53353, -- Chimera Shot
-	[53385] = 54172, -- Divine Storm
+-- tooltip IDs referring to a different spell ID
+local tooltipExceptions = {
+--	[tooltipID] = spellID,
+	[82945] = 13795, -- Immolation Trap (trap launcher)
+	[82939] = 13813, -- Explosive Trap (trap launcher)
 }
 
 -- cache of spell ID -> spell name
@@ -526,6 +527,26 @@ function Critline:ADDON_LOADED(addon)
 		
 		self:UnregisterEvent("ADDON_LOADED")
 		callbacks:Fire("AddonLoaded")
+	
+		for k, profile in pairs(self.percharDB.profiles) do
+			if profile.spells then
+				for k, tree in pairs(profile.spells) do
+					local spells = {}
+					for i, spell in pairs(tree) do
+						if spell.spellName then
+							break
+						end
+						local similarSpell = similarSpells[i]
+						if similarSpell then
+							tree[i] = nil
+							i = similarSpell
+						end
+						spells[i] = spell
+					end
+					profile.spells[k] = spells
+				end
+			end
+		end
 		
 		self:LoadSettings()
 		self:LoadPerCharSettings()
@@ -576,7 +597,6 @@ function Critline:PLAYER_TALENT_UPDATE()
 						return
 					end
 					local id = getID(spell.spellName)
-					id = (tree == heal and indirectHeals[id]) or indirectSpells[id] or id
 					if id and (spell.normal or spell.crit) then
 						spells[id] = spells[id] or {}
 						spells[id][spell.isPeriodic and 2 or 1] = spell
@@ -777,6 +797,10 @@ function Critline:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, 
 end
 
 
+function Critline:UNIT_LEVEL(unit)
+end
+
+
 function Critline:IsMyPet(flags, guid)
 	local isMyPet = CombatLog_Object_IsA(flags, COMBATLOG_FILTER_MY_PET)
 	local isGuardian = band(flags, COMBATLOG_OBJECT_TYPE_GUARDIAN) ~= 0
@@ -784,7 +808,22 @@ function Critline:IsMyPet(flags, guid)
 end
 
 
+local levelCache = {}
+
+local levelStrings = {
+	TOOLTIP_UNIT_LEVEL:format("(%d+)"),
+	TOOLTIP_UNIT_LEVEL_CLASS:format("(%d+)", ".+"),
+	TOOLTIP_UNIT_LEVEL_CLASS_TYPE:format("(%d+)", ".+", ".+"),
+	TOOLTIP_UNIT_LEVEL_RACE_CLASS:format("(%d+)", ".+", ".+"),
+	TOOLTIP_UNIT_LEVEL_RACE_CLASS_TYPE:format("(%d+)", ".+", ".+", ".+"),
+	TOOLTIP_UNIT_LEVEL_TYPE:format("(%d+)", ".+"),
+}
+
 function Critline:GetLevelFromGUID(destGUID)
+	if levelCache[destGUID] then
+		return levelCache[destGUID]
+	end
+	
 	tooltip:SetOwner(UIParent, "ANCHOR_NONE")
 	tooltip:SetHyperlink("unit:"..destGUID)
 	
@@ -792,19 +831,15 @@ function Critline:GetLevelFromGUID(destGUID)
 	
 	for i = 1, tooltip:NumLines() do
 		local text = _G["CritlineTooltipTextLeft"..i]:GetText()
-		if text then
-			if text:match(LEVEL) then -- our destGUID has the word Level in it.
-				level = text:match("(%d+)")  -- find the level
-				if level then  -- if we found the level, break from the for loop
-					level = tonumber(level)
-				else
-					-- well, the word Level is in this tooltip, but we could not find the level
-					-- either the destGUID is at least 10 levels higher than us, or we just couldn't find it.
-					level = -1
-				end
+		for i, v in ipairs(levelStrings) do
+			local level = text and text:match(v)
+			if level then
+				level = tonumber(level) or -1
+				levelCache[destGUID] = level
+				return level
 			end
 		end
-	end	
+	end
 	return level
 end
 
@@ -1250,18 +1285,16 @@ GameTooltip:HookScript("OnTooltipSetSpell", function(self)
 	end
 	
 	local spellName, rank, spellID = self:GetSpell()
+	spellID = tooltipExceptions[spellID] or spellID
 	
-	local indirectSpell = indirectSpells[spellID]
-	local indirectHeal = indirectHeals[spellID]
-	
-	local dmg1, dmg2 = funcset.dmg(indirectSpell or spellID)
+	local dmg1, dmg2 = funcset.dmg(spellID)
 	local dmg = dmg1 or dmg2
 	
-	local heal1, heal2 = funcset.heal(indirectHeal or indirectSpell or spellID)
+	local heal1, heal2 = funcset.heal(spellID)
 	local heal = heal1 or heal2
 	
 	-- ignore pet auto attack records here, since that's handled by another function
-	local pet1, pet2 = spellID ~= AUTOATK_ID and funcset.pet(indirectSpell or spellID)
+	local pet1, pet2 = spellID ~= AUTOATK_ID and funcset.pet(spellID)
 	local pet = pet1 or pet2
 	
 	if dmg or heal or pet then
