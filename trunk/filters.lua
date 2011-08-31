@@ -24,6 +24,7 @@ local specialMobs = {
 	[34496] = true, -- Eydis Darkbane
 	[34497] = true, -- Fjola Lightbane
 	[38567] = true, -- Phantom Hallucination
+	[40484] = true, -- Erudax
 	[42347] = true, -- Exposed Head of Magmaw ?
 	[42803] = true, -- Drakeadon Mongrel
 	[46083] = true, -- Drakeadon Mongrel
@@ -62,6 +63,7 @@ local specialAuras = {
 	[64321] = true, -- Potent Pheromones (Freya)
 	[64637] = true, -- Overwhelming Power (Assembly of Iron 10)
 	[65134] = true, -- Storm Power (Hodir 25)
+	[70227] = true, -- Empowered Blood (Empowered Orb)
 	[70867] = true, -- Essence of the Blood Queen (Blood Queen Lana'thel)
 	[70879] = true, -- Essence of the Blood Queen (Blood Queen Lana'thel, bitten by a player)
 	[72219] = true, -- Gastric Bloat (Festergut)
@@ -80,6 +82,7 @@ local specialAuras = {
 	[86622] = true, -- Engulfing Magic (Theralion) ?
 	[86872] = true, -- Frothing Rage (Thundermar Ale)
 	[89879] = true, -- Blessing of the Sun (Rajh heroic)
+	[90707] = true, -- Empowering Twilight 
 	[90932] = true, -- Ragezone (Defias Blood Wizard)
 	[90933] = true, -- Ragezone (Defias Blood Wizard heroic)
 	[91871] = true, -- Lightning Charge (Siamat)
@@ -90,6 +93,9 @@ local specialAuras = {
 	[95640] = true, -- Engulfing Magic (Theralion) ?
 	[95641] = true, -- Engulfing Magic (Theralion) ?
 	[96493] = true, -- Spirit's Vengeance (Bloodlord Mandokir)
+	[99389] = true, -- Imprinted (Voracious Hatchling)
+	[99762] = true, -- Flames of the Firehawk (Inferno Firehawk)
+	[100359] = true, -- Imprinted (Voracious Hatchling)
 }
 
 -- these are auras that increases the target's damage or healing received
@@ -104,9 +110,10 @@ local targetAuras = {
 	[77615] = true, -- Debilitating Slime (Maloriak)
 	[77717] = true, -- Vertigo (Atramedes 10)
 	[80164] = true, -- Chemical Cloud (Toxitron)
+	[82840] = true, -- Vulnerable (Deepstone Elemental)
 	[87683] = true, -- Dragon's Vengeance (Halfus Wyrmbreaker)
 	[87904] = true, -- Feedback (Al'Akir)
-	[91086] = true, -- Shadow Gale (Erudax heroic)
+	-- [91086] = true, -- Shadow Gale (Erudax heroic) -- UNTRACKABLE!!!
 	[91478] = true, -- Chemical Cloud (Toxitron 25) ?
 	[92389] = true, -- Vertigo (Atramedes 25) ?
 	[92390] = true, -- Vertigo (Atramedes) ?
@@ -116,9 +123,19 @@ local targetAuras = {
 	[96960] = true, -- Antlers of Malorne (Galenges)
 	[97320] = true, -- Sunder Rift (Jin'do the Godbreaker)
 	[98596] = true, -- Infernal Rage (Spark of Rhyolith)
-	[99389] = true, -- Imprinted (Voracious Hatchling) ?
-	[100359] = true, -- Imprinted (Voracious Hatchling) ?
+	[99432] = true, -- Burnout (Alysrazor)
 	[101458] = true, -- Feedback (Al'Akir 25) ?
+}
+
+-- used for the "player spells only" option, due to only the main spell ID being recognised
+local secondaryEffects = {
+	-- [2818] = true, -- Deadly Poison
+	-- [8680] = true, -- Instant Poison
+	-- [13218] = true, -- Wound Poison
+	[27576] = true, -- Mutilate Off-hand
+	[32176] = true, -- Stormstrike Off-hand
+	[44949] = true, -- Whirlwind Off-hand
+	[85384] = true, -- Raging Blow Off-hand
 }
 
 -- these heals are treated as periodic, but has no aura associated with them, or is associated to an aura with a different name, need to add exceptions for them to filter properly
@@ -722,6 +739,13 @@ end
 addon.RegisterCallback(filters, "AddonLoaded")
 
 
+local damageEvents = {
+	SWING_DAMAGE = true,
+	RANGE_DAMAGE = true,
+	SPELL_DAMAGE = true,
+	SPELL_DAMAGE_PERIODIC = true,
+}
+
 function filters:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, sourceGUID, sourceName, sourceFlags, sourceFlags2, destGUID, destName, destFlags, destFlags2, spellID, spellName, spellSchool, amount, overkill)
 	if (eventType == "SPELL_AURA_REMOVED" or eventType == "SPELL_AURA_BROKEN" or eventType == "SPELL_AURA_BROKEN_SPELL" or eventType == "SPELL_AURA_STOLEN") then
 		if targetAuras[spellID] then
@@ -755,7 +779,7 @@ function filters:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, s
 		end
 	end
 	
-	if eventType == "SPELL_AURA_APPLIED" or eventType == "SPELL_AURA_REFRESH" then
+	if eventType == "SPELL_AURA_APPLIED" or eventType == "SPELL_AURA_APPLIED_DOSE" or eventType == "SPELL_AURA_REFRESH" then
 		-- if this is one of the damage-taken-increased auras, we flag this target - along with the aura in question - as rotten
 		if targetAuras[spellID] then
 			corruptTargets[destGUID] = corruptTargets[destGUID] or {}
@@ -919,7 +943,7 @@ end
 -- check if a spell passes the filter settings
 function filters:SpellPassesFilters(tree, spellName, spellID, isPeriodic, destGUID, destName, school, targetLevel)
 	local isPet = tree == "pet"
-	if spellID and not IsSpellKnown(spellID, isPet) and self.profile.onlyKnown then
+	if spellID and not (secondaryEffects[spellID] or IsSpellKnown(spellID, isPet)) and self.profile.onlyKnown then
 		addon:Debug(format("%s is not in your%s spell book. Return.", spellName, isPet and " pet's" or ""))
 		return
 	end

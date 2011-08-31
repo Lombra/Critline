@@ -159,7 +159,7 @@ end
 
 
 local function swatchFunc(self, r, g, b)
-	display.trees[self.setting]:SetBackdropColor(r, g, b)
+	display.trees[self.setting]:SetBackdropColor(r, g, b, display.profile.bgAlpha)
 end
 
 local colorButtons = {}
@@ -202,7 +202,7 @@ sliders[1] = templates:CreateSlider(config, {
 sliders[1]:SetPoint("TOPLEFT", colorButtons[#colorButtons], "BOTTOMLEFT", 4, -24)
 
 sliders[2] = templates:CreateSlider(config, {
-	text = L["Alpha"],
+	text = L["Opacity"],
 	tooltipText = L["Sets the opacity of the display."],
 	minValue = 0,
 	maxValue = 1,
@@ -218,6 +218,27 @@ sliders[2] = templates:CreateSlider(config, {
 })
 sliders[2]:SetPoint("TOP", sliders[1], "BOTTOM", 0, -32)
 
+sliders[3] = templates:CreateSlider(config, {
+	text = L["Backdrop opacity"],
+	tooltipText = L["Sets the opacity of the display backdrop."],
+	minValue = 0,
+	maxValue = 1,
+	valueStep = 0.05,
+	minText = "0%",
+	maxText = "100%",
+	func = function(self)
+		local value = self:GetValue()
+		self.value:SetFormattedText("%.0f%%", value * 100)
+		local colors = display.profile.colors
+		for k, v in pairs(display.trees) do
+			local color = colors[k]
+			v:SetBackdropColor(color.r, color.g, color.b, value)
+		end
+		display.profile.bgAlpha = value
+	end,
+})
+sliders[3]:SetPoint("TOP", sliders[2], "BOTTOM", 0, -32)
+
 
 local defaults = {
 	profile = {
@@ -226,6 +247,7 @@ local defaults = {
 		icons = true,
 		scale = 1,
 		alpha = 1,
+		bgAlpha = 1,
 		colors = {
 			dmg  = {r = 0, g = 0, b = 0},
 			heal = {r = 0, g = 0, b = 0},
@@ -271,8 +293,8 @@ function display:SettingsLoaded()
 	-- need to set scale separately first to ensure proper behaviour in scale-friendly repositioning
 	self:SetScale(scale)
 	sliders[1]:SetValue(scale)
-	
 	sliders[2]:SetValue(self.profile.alpha)
+	sliders[3]:SetValue(self.profile.bgAlpha)
 end
 
 
