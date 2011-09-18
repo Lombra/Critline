@@ -476,6 +476,7 @@ do	-- used in Reset and Announce
 		
 		addon.RegisterCallback(frame, "PerCharSettingsLoaded", "Update")
 		addon.RegisterCallback(frame, "RecordsChanged", "Update")
+		addon.RegisterCallback(frame, "SpellsChanged", "Update")
 		
 		local scrollFrame = CreateFrame("ScrollFrame", name.."ScrollFrame", frame, "FauxScrollFrameTemplate")
 		scrollFrame:SetHeight(MAXSPELLBUTTONS * ITEMHEIGHT + 4)
@@ -594,7 +595,7 @@ do	-- used in Reset and Announce
 			self.owner:SetSelectedValue(self.value)
 			StaticPopup_Hide("CRITLINE_RESET_ALL")
 			FauxScrollFrame_SetOffset(scrollFrame, 0)
-			_G[scrollFrame:GetName().."ScrollBar"]:SetValue(0)
+			scrollFrame.ScrollBar:SetValue(0)
 			frame:Update()
 		end
 		frame.tree = tree

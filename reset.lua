@@ -43,7 +43,7 @@ StaticPopupDialogs["CRITLINE_RESET_ALL"] = {
 function module:Reset(data)
 	local tree = self.tree.selectedValue
 	addon:DeleteSpell(tree, data.spellID, data.periodic)
-	addon:UpdateRecords(tree)
+	addon:UpdateSpells(tree)
 end
 
 
