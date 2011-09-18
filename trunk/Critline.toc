@@ -23,7 +23,8 @@ locales\zhTW.lua
 templates.lua
 core.lua
 
-filters.lua
+filtersGUI.lua
+filtersCore.lua
 splash.lua
 display.lua
 minimap.lua
