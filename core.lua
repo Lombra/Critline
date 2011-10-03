@@ -115,6 +115,7 @@ local similarSpells = {
 	[77478] = 61882, -- Earthquake
 	[81170] = 6785,  -- Ravage (Stampede)
 	[81297] = 26573, -- Consecration
+	[82739] = 82731, -- Flame Orb
 	[82928] = 19434, -- Aimed Shot (Master Marksman)
 	[83381] = 34026, -- Kill Command
 	[83853] = 11129, -- Combustion (tick)

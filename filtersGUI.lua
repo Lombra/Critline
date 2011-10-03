@@ -365,6 +365,7 @@ local function updateFilter(self)
 end
 
 do	-- mob filter frame
+	local spellFilter = filterTypes.spell
 	local mobFilter = createFilterFrame("mobs", filters, NUMFILTERBUTTONS, FILTERBUTTONHEIGHT)
 	mobFilter:SetPoint("TOPLEFT", spellFilter)
 	mobFilter:SetPoint("TOPRIGHT", spellFilter)
@@ -407,10 +408,10 @@ do	-- mob filter frame
 end
 
 do	-- aura filter frame
+	local spellFilter = filterTypes.spell
 	local auraFilter = createFilterFrame("auras", filters, NUMFILTERBUTTONS, FILTERBUTTONHEIGHT)
-	auraFilter:SetPoint("TOP", spellFilter)
-	auraFilter:SetPoint("LEFT", spellFilter)
-	auraFilter:SetPoint("RIGHT", spellFilter)
+	auraFilter:SetPoint("TOPLEFT", spellFilter)
+	auraFilter:SetPoint("TOPRIGHT", spellFilter)
 	auraFilter:Hide()
 	filterTypes.auras = auraFilter
 	
@@ -461,7 +462,7 @@ do	-- filter tree dropdown
 	}
 	
 	local filterType = templates:CreateDropDownMenu("CritlineFilterType", filters, menu)
-	filterType:SetPoint("BOTTOMLEFT", spellFilter, "TOPLEFT", -16, 0)
+	filterType:SetPoint("BOTTOMLEFT", filterTypes.spell, "TOPLEFT", -16, 0)
 	filterType:SetFrameWidth(120)
 	filterType:SetSelectedValue("spell")
 	filterType.onClick = function(self)
