@@ -16,6 +16,7 @@ libs\LibSharedMedia-3.0.lua
 
 locales\enUS.lua
 locales\deDE.lua
+locales\frFR.lua
 locales\esES.lua
 locales\ruRU.lua
 locales\zhTW.lua
