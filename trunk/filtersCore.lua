@@ -93,6 +93,11 @@ local specialAuras = {
 	[95640] = true, -- Engulfing Magic (Theralion) ?
 	[95641] = true, -- Engulfing Magic (Theralion) ?
 	[96493] = true, -- Spirit's Vengeance (Bloodlord Mandokir)
+	[96802] = true, -- Bethekk's Blessing (Lesser Priest of Bethekk)
+	[98245] = true, -- Legendary Concentration (Majordomo Staghelm)
+	[98252] = true, -- Epic Concentration (Majordomo Staghelm)
+	[98253] = true, -- Rare Concentration (Majordomo Staghelm)
+	[98254] = true, -- Uncommon Concentration (Majordomo Staghelm)
 	[99389] = true, -- Imprinted (Voracious Hatchling)
 	[99762] = true, -- Flames of the Firehawk (Inferno Firehawk)
 	[100359] = true, -- Imprinted (Voracious Hatchling)
@@ -396,7 +401,7 @@ function filters:SpellPassesFilters(tree, spellName, spellID, isPeriodic, destGU
 		return
 	end
 	
-	if self:IsVulnerableTarget(destGUID) and not isPeriodic and not self.profile.ignoreAuraFilter then
+	if self:IsVulnerableTarget(destGUID) and not self.profile.ignoreAuraFilter then
 		addon:Debug("Target is vulnerable. Return.")
 		return
 	end
