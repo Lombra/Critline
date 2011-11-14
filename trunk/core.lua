@@ -15,8 +15,8 @@ local _, playerClass = UnitClass("player")
 local debugging
 
 -- auto attack spell
-local AUTOATK_ID = 6603
-local AUTOATK = GetSpellInfo(AUTOATK_ID)
+local AUTO_ATTACK_ID = 6603
+local AUTO_ATTACK = GetSpellInfo(AUTO_ATTACK_ID)
 
 -- local references to commonly used functions and variables for faster access
 local HasPetUI = HasPetUI
@@ -48,8 +48,9 @@ Critline.icons = {
 }
 
 
--- non hunter pets whose damage we may want to register
+-- guardian type pets whose damage we may want to register
 local classPets = {
+	[89] = true, -- Infernal
 	[11859] = true,	-- Doomguard
 	[15438] = true,	-- Greater Fire Elemental
 	[27829] = true, -- Ebon Gargoyle
@@ -57,76 +58,100 @@ local classPets = {
 }
 
 -- spells that are essentially the same, but has different IDs, we'll register them under the same ID
+-- also spells that uses a different ID than the one in the spell book
 local similarSpells = {
 --	[spellID] = registerAsID,
-	[379] = 974,    -- Earth Shield
-	[1539] = 6991,  -- Feed Pet
-	[5374] = 1329,  -- Mutilate
-	[5857] = 1949,  -- Hellfire
-	[5940] = 5938,  -- Shiv
-	[7001] = 724,   -- Lightwell
-	[7268] = 5143,  -- Arcane Missiles
-	[8034] = 8033,  -- Frostbrand Weapon
-	[8349] = 1535,  -- Fire Nova
-	[10444] = 8024, -- Flametongue Weapon
+	-- Warrior
 	[12723] = 12328, -- Sweeping Strikes
-	[13797] = 13795, -- Immolation Trap
-	[13812] = 13813, -- Explosive Trap
-	[20167] = 20165, -- Seal of Insight
-	[20170] = 20164, -- Seal of Justice
 	[20253] = 20252, -- Intercept
-	[22845] = 22842, -- Frenzied Regeneration
-	[23455] = 15237, -- Holy Nova
 	[23880] = 23881, -- Bloodthirst
-	[24131] = 19386, -- Wyvern Sting
-	[25504] = 8232, -- Windfury Weapon
-	[25742] = 20154, -- Seal of Righteousness
-	[25912] = 20473, -- Holy Shock
-	[25914] = 20473, -- Holy Shock (heal)
-	[26364] = 324,  -- Lightning Shield
 	[26654] = 12328, -- Sweeping Strikes (???)
-	[27285] = 27243, -- Seed of Corruption (direct)
-	[32175] = 17364, -- Stormstrike
-	[33110] = 33076, -- Prayer of Mending
-	[33778] = 33763, -- Lifebloom (direct)
-	[42231] = 16914, -- Hurricane
-	[42463] = 31801, -- Seal of Truth
-	[44203] = 740,  -- Tranquility
-	[44461] = 44457, -- Living Bomb (direct)
-	[45470] = 49998, -- Death Strike
-	[47632] = 47541, -- Death Coil (death knight)
-	[47633] = 47541, -- Death Coil heal (death knight)
-	[47666] = 47540, -- Penance
-	[47750] = 47540, -- Penance heal
-	[47960] = 47897, -- Shadowflame (tick)
-	[48153] = 47788, -- Guardian Spirit
-	[49821] = 48045, -- Mind Sear
 	[50622] = 46924, -- Bladestorm (Whirlwind)
 	[50782] = 1464, -- Slam
 	[50783] = 1464, -- Slam (Bloodsurge)
-	[51945] = 51730, -- Earthliving
-	[52212] = 43265, -- Death and Decay
-	[53353] = 53209, -- Chimera Shot
-	[54172] = 53385, -- Divine Storm
-	[60089] = 16857, -- Faerie Fire (Feral)
-	[64844] = 64843, -- Divine Hymn
-	[66235] = 31850, -- Ardent Defender
-	[73921] = 73920, -- Healing Rain
-	[77478] = 61882, -- Earthquake
-	[81170] = 6785,  -- Ravage (Stampede)
-	[81297] = 26573, -- Consecration
-	[82739] = 82731, -- Flame Orb
-	[82928] = 19434, -- Aimed Shot (Master Marksman)
-	[83381] = 34026, -- Kill Command
-	[83853] = 11129, -- Combustion (tick)
-	[86452] = 82327, -- Holy Radiance
-	[88148] = 2120,  -- Flamestrike (Improved Flamestrike)
-	[88466] = 1978, -- Serpent Sting (Serpent Spread)
-	[88686] = 88685, -- Holy Word: Sanctuary
-	[92315] = 11366, -- Pyroblast (Hot Streak)
+	[52174] = 6544, -- Heroic Leap
 	[94009] = 772,  -- Rend
 	[96103] = 85288, -- Raging Blow
+	-- Death knight
+	[45470] = 49998, -- Death Strike
+	[47632] = 47541, -- Death Coil (death knight)
+	[47633] = 47541, -- Death Coil heal (death knight)
+	[52212] = 43265, -- Death and Decay
+	[55078] = 59879, -- Blood Plague
+	[55095] = 59921, -- Frost Fever
+	-- [70890] = 55090, -- Scourge Strike (shadow damage)
+		-- Ghoul
+		[91776] = 47468, -- Claw
+		[91800] = 47481, -- Gnaw
+	-- Paladin
+	[20167] = 20165, -- Seal of Insight
+	[20170] = 20164, -- Seal of Justice
+	[25742] = 20154, -- Seal of Righteousness
+	[25912] = 20473, -- Holy Shock
+	[25914] = 20473, -- Holy Shock (heal)
+	[42463] = 31801, -- Seal of Truth
+	[54172] = 53385, -- Divine Storm
+	[66235] = 31850, -- Ardent Defender
+	[81297] = 26573, -- Consecration
+	[86452] = 82327, -- Holy Radiance
 	[101423] = 20154, -- Seal of Righteousness
+	-- Hunter
+	[1539] = 6991,  -- Feed Pet
+	[13797] = 13795, -- Immolation Trap
+	[13812] = 13813, -- Explosive Trap
+	[24131] = 19386, -- Wyvern Sting
+	[53353] = 53209, -- Chimera Shot
+	[82928] = 19434, -- Aimed Shot (Master Marksman)
+	[83381] = 34026, -- Kill Command
+	[88466] = 1978, -- Serpent Sting (Serpent Spread)
+	-- Shaman
+	[379] = 974,    -- Earth Shield
+	[8034] = 8033,  -- Frostbrand Weapon
+	[8349] = 1535,  -- Fire Nova
+	[10444] = 8024, -- Flametongue Weapon
+	[25504] = 8232, -- Windfury Weapon
+	[26364] = 324,  -- Lightning Shield
+	[32175] = 17364, -- Stormstrike
+	[51945] = 51730, -- Earthliving
+	[73921] = 73920, -- Healing Rain
+	[77478] = 61882, -- Earthquake
+	-- Rogue
+	[5374] = 1329,  -- Mutilate
+	[5940] = 5938,  -- Shiv
+	-- Druid
+	[22845] = 22842, -- Frenzied Regeneration
+	[33778] = 33763, -- Lifebloom (direct)
+	[42231] = 16914, -- Hurricane
+	[44203] = 740,  -- Tranquility
+	[60089] = 16857, -- Faerie Fire (Feral)
+	[81170] = 6785,  -- Ravage (Stampede)
+	-- Mage
+	[7268] = 5143,  -- Arcane Missiles
+	[44461] = 44457, -- Living Bomb (direct)
+	[71757] = 44572, -- Deep Freeze
+	[82739] = 82731, -- Flame Orb
+	[83853] = 11129, -- Combustion (tick)
+	[88148] = 2120,  -- Flamestrike (Improved Flamestrike)
+	[92315] = 11366, -- Pyroblast (Hot Streak)
+	-- Warlock
+	[5857] = 1949,  -- Hellfire
+	[27285] = 27243, -- Seed of Corruption (direct)
+	[42223] = 5740, -- Rain of Fire
+	[47960] = 47897, -- Shadowflame (tick)
+	[54786] = 54785, -- Demon Leap
+	[50590] = 50589, -- Immolation
+		-- Felguard
+		[89753] = 89751, -- Felstorm
+	-- Priest
+	[7001] = 724,   -- Lightwell
+	[23455] = 15237, -- Holy Nova
+	[33110] = 33076, -- Prayer of Mending
+	[47666] = 47540, -- Penance
+	[47750] = 47540, -- Penance heal
+	[48153] = 47788, -- Guardian Spirit
+	[49821] = 48045, -- Mind Sear
+	[64844] = 64843, -- Divine Hymn
+	[88686] = 88685, -- Holy Word: Sanctuary
 }
 
 -- tooltip IDs referring to a different spell ID
@@ -138,7 +163,7 @@ local tooltipExceptions = {
 
 -- cache of spell ID -> spell name
 local spellNameCache = {
-	-- add form name to hybrid druid abilities, so the user can tell which is cat and which is bear
+	-- pre-add form name to hybrid druid abilities, so the user can tell which is cat and which is bear
 	[33878] = format("%s (%s)", GetSpellInfo(33878)), -- Mangle (Bear Form)
 	[33876] = format("%s (%s)", GetSpellInfo(33876)), -- Mangle (Cat Form)
 	[779] = format("%s (%s)", GetSpellInfo(779)), -- Swipe (Bear Form)
@@ -148,16 +173,18 @@ local spellNameCache = {
 -- cache of spell textures
 local spellTextureCache = {
 	-- use a static icon for auto attack (otherwise uses your weapon's icon)
-	[AUTOATK_ID] = [[Interface\Icons\INV_Sword_04]],
-	-- "fix" some other misleading icons
-	[20253] = GetSpellTexture(20252), -- Intercept
-	[26364] = GetSpellTexture(324), -- use Lightning Shield icon for Lightning Shield damage
-	[66235] = GetSpellTexture(31850), -- Ardent Defender icon for Ardent Defender heal
+	[AUTO_ATTACK_ID] = [[Interface\Icons\INV_Sword_04]],
 }
+
+GameTooltip:HookScript("OnTooltipSetSpell", function(self)
+	if debugging then
+		self:AddLine(format("Spell ID: |cffffffff%d|r", (select(3, self:GetSpell()))))
+	end
+end)
 
 
 local swingDamage = function(amount, _, school, resisted, _, _, critical)
-	return AUTOATK_ID, AUTOATK, amount, resisted, critical, school
+	return AUTO_ATTACK_ID, AUTO_ATTACK, amount, resisted, critical, school
 end
 
 local spellDamage = function(spellID, spellName, _, amount, _, school, resisted, _, _, critical)
@@ -710,6 +737,12 @@ function Critline:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, 
 		tree = "heal"
 	end
 	
+	-- exit if not recording tree dmg
+	if not self.percharDB.profile[tree] then
+		self:Debug(format("Not recording this tree (%s). Return.", tree))
+		return
+	end
+	
 	local targetLevel = self:GetLevelFromGUID(destGUID)
 	local passed, isFiltered
 	if self.filters then
@@ -742,12 +775,6 @@ function Critline:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, 
 	-- ignore healing done to hostile targets
 	if hostileTarget and isHeal then
 		self:Debug(format("Healing hostile target (%s, %s).", spellName, destName))
-		return
-	end
-	
-	-- exit if not recording tree dmg
-	if not self.percharDB.profile[tree] then
-		self:Debug(format("Not recording this tree (%s). Return.", tree))
 		return
 	end
 	
@@ -1295,7 +1322,7 @@ GameTooltip:HookScript("OnTooltipSetSpell", function(self)
 	local heal = heal1 or heal2
 	
 	-- ignore pet auto attack records here, since that's handled by another function
-	local pet1, pet2 = spellID ~= AUTOATK_ID and funcset.pet(spellID)
+	local pet1, pet2 = spellID ~= AUTO_ATTACK_ID and funcset.pet(spellID)
 	local pet = pet1 or pet2
 	
 	if dmg or heal or pet then
@@ -1332,7 +1359,7 @@ hooksecurefunc(GameTooltip, "SetPetAction", function(self, action)
 	end
 	
 	if GetPetActionInfo(action) == "PET_ACTION_ATTACK" then
-		addLine(" ", (funcset.pet(AUTOATK_ID)))
+		addLine(" ", (funcset.pet(AUTO_ATTACK_ID)))
 		self:Show()
 	end
 end)

@@ -1,7 +1,6 @@
 local L = LibStub("AceLocale-3.0"):NewLocale("Critline", "enUS", true)
 if not L then return end
 
-
 L["Add by name"] = true
 L["Add by spell ID"] = true
 L["Add from spell book"] = true
