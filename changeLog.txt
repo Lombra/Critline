@@ -1,3 +1,23 @@
+4.2.0
+- Give the minimap button a name to work better with certain third party addons.
+- Tweak the config frames to adapt to the increased size of the interface options frame.
+- Add option to set the opacity of the display backdrop.
+- Implemented (somewhat experimental) system to properly filter killing blows delivered to targets affected by filtered auras.
+- Add exceptions for a bunch of spells to be recognised as player spells.
+- Merge spell ID mapping into a single table where all spell effect IDs are mapped to its corresponding tooltip ID. All spells are now registered using their tooltip ID.
+- Stacking periodic effects can now properly be filtered by filtered auras and mobs.
+- Use more appropriate global strings to find the target's level. Should now work on all locales.
+- Warlocks' infernal damage can now be registered.
+- Add spell ID to tooltips when debugging is enabled.
+- Pet auto attacks will now work with the player spells only-option.
+- Revert change that enabled periodic effects on vulnerable targets that were applied before the vulnerability to be registered. (too unreliable)
+- Split filter engine and GUI into two different files. They remain dependent of each other.
+- Resetting spells should now be reflected in the filter list.
+- Add Erudax back into the mob filter. Shadow Gale cannot be tracked.
+- Added more tooltip exceptions.
+- Added a bunch more spells to filters. (see filtersCore.lua for more info)
+- Add frFR localisation.
+
 4.1.1
 - Add tooltip exceptions for Arcane Missiles, Slam, Feed Pet, Wyvern Sting, Intercept, Bloodthirst and Chimera Shot.
 - All custom fonts should now work properly for the splash messages.
