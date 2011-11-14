@@ -35,6 +35,7 @@ local specialMobs = {
 -- auras that when gained will suppress record tracking
 local specialAuras = {
 	[18173] = true,	-- Burning Adrenaline (Vaelastrasz the Corrupt)
+	[23768] = true, -- Sayge's Dark Fortune of Damage
 	[24378] = true, -- Berserking (battlegrounds)
 	[41337] = true,	-- Aura of Anger (Reliquary of Souls)
 	[41350] = true,	-- Aura of Desire (Reliquary of Souls)
@@ -56,6 +57,7 @@ local specialAuras = {
 	[62670] = true, -- Resilience of Nature (Yogg-Saron)
 	[62671] = true, -- Speed of Invention (Yogg-Saron)
 	[62702] = true, -- Fury of the Storm (Yogg-Saron)
+	[63138] = true, -- Sara's Fervor (Yogg-Saron)
 	[63277] = true, -- Shadow Crash (General Vezax)
 	[63711] = true, -- Storm Power (Hodir 10)
 	[64320] = true, -- Rune of Power (Assembly of Iron)
@@ -93,6 +95,7 @@ local specialAuras = {
 	[95640] = true, -- Engulfing Magic (Theralion) ?
 	[95641] = true, -- Engulfing Magic (Theralion) ?
 	[96493] = true, -- Spirit's Vengeance (Bloodlord Mandokir)
+	[96494] = true, -- Spirit's Vengeance (Bloodlord Mandokir)
 	[96802] = true, -- Bethekk's Blessing (Lesser Priest of Bethekk)
 	[98245] = true, -- Legendary Concentration (Majordomo Staghelm)
 	[98252] = true, -- Epic Concentration (Majordomo Staghelm)
@@ -133,14 +136,40 @@ local targetAuras = {
 }
 
 -- used for the "player spells only" option, due to only the main spell ID being recognised
-local secondaryEffects = {
-	-- [2818] = true, -- Deadly Poison
-	-- [8680] = true, -- Instant Poison
-	-- [13218] = true, -- Wound Poison
-	[27576] = true, -- Mutilate Off-hand
-	[32176] = true, -- Stormstrike Off-hand
+-- these will not be displayed on any tooltip, why they don't go in the main exceptions table
+local playerSpells = {
+	-- Warrior
+	[12721] = true, -- Deep Wounds
 	[44949] = true, -- Whirlwind Off-hand
+	[76858] = true, -- Opportunity Strike
 	[85384] = true, -- Raging Blow Off-hand
+	-- Death knight
+	[50536] = true, -- Unholy Blight
+		-- Gargoyle
+		[51963] = true, -- Gargoyle Strike
+		-- Ghoul
+		[91778] = true, -- Sweeping Claws
+		[91797] = true, -- Monstrous Blow
+	-- Paladin
+	[20187] = true, -- Judgement of Righteousness
+	[20424] = true, -- Seals of Command
+	[31803] = true, -- Censure
+	[31804] = true, -- Judgement of Truth
+	[86704] = true, -- Ancient Fury
+	[96172] = true, -- Hand of Light
+	-- Shaman
+	[32176] = true, -- Stormstrike Off-hand
+	-- Rogue
+	[2818] = true, -- Deadly Poison
+	[8680] = true, -- Instant Poison
+	[13218] = true, -- Wound Poison
+	[27576] = true, -- Mutilate Off-hand
+	[79136] = true, -- Venomous Wound
+	-- Warlock
+		-- Infernal
+		[22703] = true, -- Infernal Awakening
+		-- Doomguard
+		[85692] = true, -- Doom Bolt
 }
 
 -- these heals are treated as periodic, but has no aura associated with them, or is associated to an aura with a different name, need to add exceptions for them to filter properly
@@ -390,8 +419,8 @@ end
 -- check if a spell passes the filter settings
 function filters:SpellPassesFilters(tree, spellName, spellID, isPeriodic, destGUID, destName, school, targetLevel)
 	local isPet = tree == "pet"
-	if spellID and not (secondaryEffects[spellID] or IsSpellKnown(spellID, isPet)) and self.profile.onlyKnown then
-		addon:Debug(format("%s is not in your%s spell book. Return.", spellName, isPet and " pet's" or ""))
+	if spellID and not (playerSpells[spellID] or IsSpellKnown(spellID, isPet) or (isPet and spellID == 6603)) and self.profile.onlyKnown then
+		addon:Debug(format("%s (%d) is not in your%s spell book. Return.", spellName, spellID, isPet and " pet's" or ""))
 		return
 	end
 	
