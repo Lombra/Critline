@@ -30,6 +30,7 @@ local specialMobs = {
 	[46273] = true, -- Debilitated Apexar
 	[48270] = true, -- Exposed Head of Magmaw
 	[52155] = true, -- High Priest Venoxis
+	[54191] = true, -- Risen Ghoul (End Time)
 }
 
 -- auras that when gained will suppress record tracking
@@ -37,6 +38,7 @@ local specialAuras = {
 	[18173] = true,	-- Burning Adrenaline (Vaelastrasz the Corrupt)
 	[23768] = true, -- Sayge's Dark Fortune of Damage
 	[24378] = true, -- Berserking (battlegrounds)
+	[30402] = true, -- Nether Beam - Dominance (Netherspite)
 	[41337] = true,	-- Aura of Anger (Reliquary of Souls)
 	[41350] = true,	-- Aura of Desire (Reliquary of Souls)
 	[44335] = true,	-- Energy Feedback (Vexallus)
@@ -104,6 +106,10 @@ local specialAuras = {
 	[99389] = true, -- Imprinted (Voracious Hatchling)
 	[99762] = true, -- Flames of the Firehawk (Inferno Firehawk)
 	[100359] = true, -- Imprinted (Voracious Hatchling)
+	[102994] = true, -- Shadow Walk (Illidan Stormrage)
+	[103018] = true, -- Shadow Ambusher (Illidan Stormrage)
+	[103744] = true, -- Water Shell (Thrall)
+	[103817] = true, -- Rising Fire
 }
 
 -- these are auras that increases the target's damage or healing received
@@ -133,6 +139,9 @@ local targetAuras = {
 	[98596] = true, -- Infernal Rage (Spark of Rhyolith)
 	[99432] = true, -- Burnout (Alysrazor)
 	[101458] = true, -- Feedback (Al'Akir 25) ?
+	[101602] = true, -- Throw Totem (Echo of Baine)
+	[104031] = true, -- Void Diffusion (Warlord Zon'ozz)
+	[108934] = true, -- Feedback (Hagara the Stormbinder)
 }
 
 -- used for the "player spells only" option, due to only the main spell ID being recognised
@@ -157,8 +166,11 @@ local playerSpells = {
 	[31804] = true, -- Judgement of Truth
 	[86704] = true, -- Ancient Fury
 	[96172] = true, -- Hand of Light
+	-- Hunter
+	[83077] = true, -- Improved Serpent Sting
 	-- Shaman
 	[32176] = true, -- Stormstrike Off-hand
+	[88767] = true, -- Fulmination
 	-- Rogue
 	[2818] = true, -- Deadly Poison
 	[8680] = true, -- Instant Poison
@@ -189,8 +201,6 @@ local corruptSpells = {
 	pet = {},
 }
 local corruptTargets = {}
--- targets suspected of being killed while under the effects of a filtered aura
-local corruptSuspects = {}
 
 
 local defaults = {
@@ -243,14 +253,12 @@ local damageEvents = {
 	SPELL_DAMAGE_PERIODIC = true,
 }
 
-function filters:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, sourceGUID, sourceName, sourceFlags, sourceFlags2, destGUID, destName, destFlags, destFlags2, spellID, spellName, spellSchool, amount, overkill)
+function filters:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, sourceGUID, sourceName, sourceFlags, sourceFlags2, destGUID, destName, destFlags, destFlags2, spellID, spellName)
 	if (eventType == "SPELL_AURA_REMOVED" or eventType == "SPELL_AURA_BROKEN" or eventType == "SPELL_AURA_BROKEN_SPELL" or eventType == "SPELL_AURA_STOLEN") then
 		if targetAuras[spellID] then
 			corruptTargets[destGUID] = corruptTargets[destGUID] or {}
 			corruptTargets[destGUID][spellID] = nil
 			addon:Debug(format("Filtered aura (%s) faded from %s.", spellName, destName))
-			-- watch this unit for suspicious future killing blows
-			corruptSuspects[destGUID] = 0
 		end
 		
 		if self:IsFilteredAura(spellID) then
@@ -263,16 +271,6 @@ function filters:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, s
 					addon:Debug(format("No filtered aura detected on %s. Resuming record tracking.", unit))
 				end
 			end
-		end
-	elseif eventType == "PARTY_KILL" then
-		-- previous event was SPELL_AURA_REMOVED or any variation thereof, so this unit gets flagged as corrupt
-		if corruptSuspects[destGUID] == 0 then
-			corruptSuspects[destGUID] = 1
-		end
-	else
-		-- a different event has fired, this unit is clean
-		if corruptSuspects[destGUID] == 0 then
-			corruptSuspects[destGUID] = nil
 		end
 	end
 	
@@ -298,12 +296,6 @@ function filters:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, s
 			local corruptSpell = corruptSpells[sourceUnit][spellID] or {}
 			corruptSpell[destGUID] = self:IsEmpowered(sourceUnit) or self:IsVulnerableTarget(destGUID)
 			corruptSpells[sourceUnit][spellID] = corruptSpell
-		end
-	end
-	
-	if eventType == "SPELL_DAMAGE" or eventType == "SPELL_PERIODIC_DAMAGE" then
-		if overkill >= 0 then
-			corruptSuspects[destGUID] = nil
 		end
 	end
 end
@@ -475,7 +467,7 @@ end
 -- checks if a target is affected by any vulnerability auras
 function filters:IsVulnerableTarget(guid)
 	local corruptTarget = corruptTargets[guid]
-	if (corruptTarget and next(corruptTarget)) or corruptSuspects[guid] == 1 then
+	if (corruptTarget and next(corruptTarget)) then
 		return true
 	end
 end
