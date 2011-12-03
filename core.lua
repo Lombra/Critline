@@ -122,8 +122,11 @@ local similarSpells = {
 	[22845] = 22842, -- Frenzied Regeneration
 	[33778] = 33763, -- Lifebloom (direct)
 	[42231] = 16914, -- Hurricane
-	[44203] = 740,  -- Tranquility
+	[44203] = 740,   -- Tranquility
+	[50288] = 48505, -- Starfall
 	[60089] = 16857, -- Faerie Fire (Feral)
+	[61391] = 50516, -- Typhoon
+	[78777] = 88751, -- Wild Mushroom: Detonate
 	[81170] = 6785,  -- Ravage (Stampede)
 	-- Mage
 	[7268] = 5143,  -- Arcane Missiles
@@ -134,16 +137,16 @@ local similarSpells = {
 	[88148] = 2120,  -- Flamestrike (Improved Flamestrike)
 	[92315] = 11366, -- Pyroblast (Hot Streak)
 	-- Warlock
-	[5857] = 1949,  -- Hellfire
+	[5857] = 1949,   -- Hellfire
 	[27285] = 27243, -- Seed of Corruption (direct)
-	[42223] = 5740, -- Rain of Fire
+	[42223] = 5740,  -- Rain of Fire
 	[47960] = 47897, -- Shadowflame (tick)
 	[54786] = 54785, -- Demon Leap
 	[50590] = 50589, -- Immolation
 		-- Felguard
 		[89753] = 89751, -- Felstorm
 	-- Priest
-	[7001] = 724,   -- Lightwell
+	[7001] = 724,    -- Lightwell
 	[23455] = 15237, -- Holy Nova
 	[33110] = 33076, -- Prayer of Mending
 	[47666] = 47540, -- Penance
@@ -174,6 +177,7 @@ local spellNameCache = {
 local spellTextureCache = {
 	-- use a static icon for auto attack (otherwise uses your weapon's icon)
 	[AUTO_ATTACK_ID] = [[Interface\Icons\INV_Sword_04]],
+	[5019] = [[Interface\Icons\Ability_ShootWand]], -- Shoot (wand)
 }
 
 GameTooltip:HookScript("OnTooltipSetSpell", function(self)
