@@ -39,10 +39,17 @@ local specialAuras = {
 	[23768] = true, -- Sayge's Dark Fortune of Damage
 	[24378] = true, -- Berserking (battlegrounds)
 	[30402] = true, -- Nether Beam - Dominance (Netherspite)
+	[40604] = true, -- Fel Rage (Gurtogg Bloodboil)
 	[41337] = true,	-- Aura of Anger (Reliquary of Souls)
 	[41350] = true,	-- Aura of Desire (Reliquary of Souls)
 	[44335] = true,	-- Energy Feedback (Vexallus)
 	[44406] = true,	-- Energy Infusion (Vexallus)
+	[40880] = true, -- Prismatic Aura: Shadow (Mother Shahraz)
+	[40882] = true, -- Prismatic Aura: Fire (Mother Shahraz)
+	[40883] = true, -- Prismatic Aura: Nature (Mother Shahraz)
+	[40891] = true, -- Prismatic Aura: Arcane (Mother Shahraz)
+	[40896] = true, -- Prismatic Aura: Frost (Mother Shahraz)
+	[40897] = true, -- Prismatic Aura: Holy (Mother Shahraz)
 	[53642] = true,	-- Might of Mograine (Light's Hope Chapel)
 	[55849] = true,	-- Power Spark (Malygos)
 	[56330] = true,	-- Iron's Bane (Storm Peaks quest)
@@ -108,8 +115,13 @@ local specialAuras = {
 	[100359] = true, -- Imprinted (Voracious Hatchling)
 	[102994] = true, -- Shadow Walk (Illidan Stormrage)
 	[103018] = true, -- Shadow Ambusher (Illidan Stormrage)
+	[103020] = true, -- Shadow Walk (Illidan Stormrage)
 	[103744] = true, -- Water Shell (Thrall)
 	[103817] = true, -- Rising Fire
+	[106029] = true, -- Kalecgos' Presence (no event)
+	[109457] = true, -- Ysera's Presence (no event) ?
+	[109606] = true, -- Kalecgos' Presence (LFR - no event)
+	[109640] = true, -- Ysera's Presence (LFR - no event)
 }
 
 -- these are auras that increases the target's damage or healing received
@@ -141,7 +153,15 @@ local targetAuras = {
 	[101458] = true, -- Feedback (Al'Akir 25) ?
 	[101602] = true, -- Throw Totem (Echo of Baine)
 	[104031] = true, -- Void Diffusion (Warlord Zon'ozz)
+	[106588] = true, -- Expose Weakness (Deathwing)
+	[106600] = true, -- Expose Weakness (Deathwing)
+	[106613] = true, -- Expose Weakness (Deathwing)
+	[106624] = true, -- Expose Weakness (Deathwing)
 	[108934] = true, -- Feedback (Hagara the Stormbinder)
+	[109582] = true, -- Expose Weakness (Deathwing, Alexstrasza - LFR)
+	[109619] = true, -- Expose Weakness (Deathwing, Nozdormu - LFR)
+	[109637] = true, -- Expose Weakness (Deathwing, Ysera - LFR)
+	[109728] = true, -- Expose Weakness (Deathwing, Kalecgos - LFR)
 }
 
 -- used for the "player spells only" option, due to only the main spell ID being recognised
@@ -170,6 +190,8 @@ local playerSpells = {
 	[83077] = true, -- Improved Serpent Sting
 	-- Shaman
 	[32176] = true, -- Stormstrike Off-hand
+	[52752] = true, -- Ancestral Awakening
+	[86958] = true, -- Cleansing Waters
 	[88767] = true, -- Fulmination
 	-- Rogue
 	[2818] = true, -- Deadly Poison
@@ -177,6 +199,10 @@ local playerSpells = {
 	[13218] = true, -- Wound Poison
 	[27576] = true, -- Mutilate Off-hand
 	[79136] = true, -- Venomous Wound
+	-- Priest
+	[77489] = true, -- Echo of Light
+	[88684] = true, -- Holy Word: Serenity
+	[88685] = true, -- Holy Word: Sanctuary
 	-- Warlock
 		-- Infernal
 		[22703] = true, -- Infernal Awakening
@@ -192,6 +218,7 @@ local directHoTs = {
 
 local filters = addon.filters
 
+local ignoreEncounter
 local activeAuras = filters.activeAuras or {
 	player = {},
 	pet = {},
@@ -201,6 +228,7 @@ local corruptSpells = {
 	pet = {},
 }
 local corruptTargets = {}
+local ignoredTargets = {}
 
 
 local defaults = {
@@ -228,12 +256,12 @@ function filters:AddonLoaded()
 	self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
 	self:RegisterEvent("PLAYER_LOGIN")
 	self:RegisterEvent("UNIT_NAME_UPDATE")
+	self:RegisterEvent("PLAYER_REGEN_DISABLED")
 	self:RegisterEvent("PLAYER_CONTROL_LOST")
 	self:RegisterEvent("PLAYER_CONTROL_GAINED")
 end
 
 addon.RegisterCallback(filters, "AddonLoaded")
-
 
 function filters:LoadSettings()
 	self.profile = self.db.profile
@@ -245,14 +273,6 @@ function filters:LoadSettings()
 	self.options.slider:SetValue(self.profile.levelFilter)
 end
 
-
-local damageEvents = {
-	SWING_DAMAGE = true,
-	RANGE_DAMAGE = true,
-	SPELL_DAMAGE = true,
-	SPELL_DAMAGE_PERIODIC = true,
-}
-
 function filters:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, sourceGUID, sourceName, sourceFlags, sourceFlags2, destGUID, destName, destFlags, destFlags2, spellID, spellName)
 	if (eventType == "SPELL_AURA_REMOVED" or eventType == "SPELL_AURA_BROKEN" or eventType == "SPELL_AURA_BROKEN_SPELL" or eventType == "SPELL_AURA_STOLEN") then
 		if targetAuras[spellID] then
@@ -261,24 +281,26 @@ function filters:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, s
 			addon:Debug(format("Filtered aura (%s) faded from %s.", spellName, destName))
 		end
 		
+		-- self buffs
 		if self:IsFilteredAura(spellID) then
 			local unit = self:GetUnit(destFlags, destGUID)
 			if unit then
 				addon:Debug(format("Filtered aura (%s) faded from %s.", spellName, unit))
 				-- if we lost a special aura we have to check if any other filtered auras remain
 				activeAuras[unit][spellID] = nil
-				if not filters:IsEmpowered(unit) then
-					addon:Debug(format("No filtered aura detected on %s. Resuming record tracking.", unit))
-				end
+				-- if not self:IsEmpowered(unit) then
+					-- addon:Debug(format("No filtered aura detected on %s. Resuming record tracking.", unit))
+				-- end
 			end
 		end
 	end
 	
 	if eventType == "SPELL_AURA_APPLIED" or eventType == "SPELL_AURA_APPLIED_DOSE" or eventType == "SPELL_AURA_REFRESH" then
-		-- if this is one of the damage-taken-increased auras, we flag this target - along with the aura in question - as rotten
+		-- if this is one of the damage-taken-increased auras, we flag this target - along with the aura in question - as corrupt
 		if targetAuras[spellID] then
 			corruptTargets[destGUID] = corruptTargets[destGUID] or {}
 			corruptTargets[destGUID][spellID] = true
+			ignoredTargets[destGUID] = true
 			addon:Debug(format("Target (%s) gained filtered aura. (%s) Ignore received damage.", destName, spellName))
 		end
 		
@@ -286,11 +308,13 @@ function filters:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, s
 		if destUnit and self:IsFilteredAura(spellID) then
 			-- if we gain any aura in the filter we can just stop tracking records
 			if not (self:IsEmpowered(destUnit) or self.profile.ignoreAuraFilter) then
-				addon:Debug(format("%s gained filtered aura. (%s) Disabling combat log tracking.", destUnit:gsub(".", string.upper, 1), spellName))
+				addon:Debug(format("%s gained filtered aura. (%s) Suppressing new records for this encounter.", destUnit:gsub(".", string.upper, 1), spellName))
 			end
+			ignoreEncounter = true
 			activeAuras[destUnit][spellID] = true
 		end
 		
+		-- auras applied by self
 		local sourceUnit = self:GetUnit(sourceFlags, sourceGUID)
 		if sourceUnit then
 			local corruptSpell = corruptSpells[sourceUnit][spellID] or {}
@@ -300,29 +324,39 @@ function filters:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, s
 	end
 end
 
-
 function filters:PLAYER_LOGIN()
 	self:ScanAuras()
+	self:CheckPlayerControl()
 end
-
 
 function filters:UNIT_NAME_UPDATE()
 	self:ScanAuras()
+	self:CheckPlayerControl()
 	self:UnregisterEvent("UNIT_NAME_UPDATE")
 end
 
+function filters:PLAYER_REGEN_DISABLED()
+	self:ScanAuras()
+	ignoreEncounter = self:IsEmpowered("player")
+	if ignoreEncounter then
+		addon:Debug("Filtered aura(s) detected. Suppressing new records for this encounter.")
+	end
+	for unit, v in pairs(ignoredTargets) do
+		if not self:IsVulnerableTarget(unit) then
+			ignoredTargets[unit] = nil
+		end
+	end
+end
 
 function filters:PLAYER_CONTROL_LOST()
 	self.inControl = false
 	addon:Debug("Lost control. Disabling combat log tracking.")
 end
 
-
 function filters:PLAYER_CONTROL_GAINED()
 	self.inControl = true
 	addon:Debug("Regained control. Resuming combat log tracking.")
 end
-
 
 local auraTypes = {
 	BUFF = "HELPFUL",
@@ -330,32 +364,30 @@ local auraTypes = {
 }
 
 function filters:ScanAuras()
-	local auras = {}
+	wipe(activeAuras["player"])
+	local filterAuras = self.db.global.auras
 	for auraType, filter in pairs(auraTypes) do
 		for i = 1, 40 do
 			local spellName, _, _, _, _, _, _, source, _, _, spellID = UnitAura("player", i, filter)
 			if not spellID then break end
-			auras[spellID] = true
-			if specialAuras[spellID] then
-				activeAuras[spellID] = true
+			self:UnregisterEvent("UNIT_NAME_UPDATE")
+			if specialAuras[spellID] or filterAuras[spellID] then
+				activeAuras["player"][spellID] = true
 			end
 		end
 	end
-	if next(auras) then
-		self:UnregisterEvent("UNIT_NAME_UPDATE")
-	end
-	for i, v in ipairs(self.db.global.auras) do
-		activeAuras[v] = auras[v]
-	end
-	if next(activeAuras) then
+	if next(activeAuras["player"]) then
+		-- ignoreEncounter = false
 		addon:Debug("Filtered aura detected. Disabling combat log tracking.")
 	end
+end
+
+function filters:CheckPlayerControl()
 	self.inControl = HasFullControl()
 	if not self.inControl then
 		addon:Debug("Lost control. Disabling combat log tracking.")
 	end
 end
-
 
 function filters:FilterSpell(filter, tree, data)
 	data.filtered = filter
@@ -363,7 +395,6 @@ function filters:FilterSpell(filter, tree, data)
 	addon:UpdateTopRecords(tree)
 	addon:UpdateRecords(tree)
 end
-
 
 -- adds a mob to the mob filter
 function filters:AddMob(name)
@@ -376,7 +407,6 @@ function filters:AddMob(name)
 	end
 end
 
-
 -- adds an aura to the aura filter
 function filters:AddAura(spellID)
 	local spellName = GetSpellInfo(spellID)
@@ -385,18 +415,13 @@ function filters:AddAura(spellID)
 	else
 		tinsert(self.db.global.auras, spellID)
 		-- after we add an aura to the filter; check if we have it
-		for i = 1, 40 do
-			local buffID = select(11, UnitBuff("player", i))
-			local debuffID = select(11, UnitDebuff("player", i))
-			if not (buffID or debuffID) then
-				break
-			else
-				for _, v in ipairs(self.db.global.auras) do
-					if v == buffID then
-						activeAuras[buffID] = true
-						break
-					elseif v == debuffID then
-						activeAuras[debuffID] = true
+		for auraType, filter in pairs(auraTypes) do
+			for i = 1, 40 do
+				local spellID = select(11, UnitAura("player", i, filter))
+				if not spellID then break end
+				for i, v in ipairs(self.db.global.auras) do
+					if v == spellID then
+						activeAuras[v] = true
 						break
 					end
 				end
@@ -407,7 +432,6 @@ function filters:AddAura(spellID)
 	end
 end
 
-
 -- check if a spell passes the filter settings
 function filters:SpellPassesFilters(tree, spellName, spellID, isPeriodic, destGUID, destName, school, targetLevel)
 	local isPet = tree == "pet"
@@ -417,12 +441,12 @@ function filters:SpellPassesFilters(tree, spellName, spellID, isPeriodic, destGU
 	end
 	
 	local unit = isPet and "pet" or "player"
-	if ((corruptSpells[unit][spellID] and corruptSpells[unit][spellID][destGUID]) or (self:IsEmpowered(unit) and (not isPeriodic or directHoTs[spellID]))) and not self.profile.ignoreAuraFilter then
+	if ((corruptSpells[unit][spellID] and corruptSpells[unit][spellID][destGUID]) or self:IsEncounterIgnored(unit)) and not self.profile.ignoreAuraFilter then
 		addon:Debug(format("Spell (%s) was cast under the influence of a filtered aura. Return.", spellName))
 		return
 	end
 	
-	if self:IsVulnerableTarget(destGUID) and not self.profile.ignoreAuraFilter then
+	if self:IsIgnoredTarget(destGUID) and not self.profile.ignoreAuraFilter then
 		addon:Debug("Target is vulnerable. Return.")
 		return
 	end
@@ -448,13 +472,16 @@ function filters:SpellPassesFilters(tree, spellName, spellID, isPeriodic, destGU
 	return true, self:IsFilteredSpell(tree, spellID, isPeriodic and 2 or 1), targetLevel
 end
 
-
 -- check if a spell will be filtered out
 function filters:IsFilteredSpell(tree, spellID, periodic)
 	local spell = addon:GetSpellInfo(tree, spellID, periodic)
 	return (not spell and self.db.profile.filterNew) or (spell and spell.filtered)
 end
 
+
+function filters:IsEncounterIgnored()
+	return ignoreEncounter
+end
 
 -- scan for filtered auras from the specialAuras table
 function filters:IsEmpowered(unit)
@@ -463,6 +490,10 @@ function filters:IsEmpowered(unit)
 	end
 end
 
+-- checks if a target will be ignored based on current or recent vulnerability
+function filters:IsIgnoredTarget(guid)
+	return ignoredTargets[guid]
+end
 
 -- checks if a target is affected by any vulnerability auras
 function filters:IsVulnerableTarget(guid)
@@ -471,7 +502,6 @@ function filters:IsVulnerableTarget(guid)
 		return true
 	end
 end
-
 
 function filters:IsFilteredTarget(targetName, guid)
 	-- GUID is provided if the function was called from the combat event handler
@@ -485,7 +515,6 @@ function filters:IsFilteredTarget(targetName, guid)
 	end
 end
 
-
 function filters:IsFilteredAura(spellID)
 	if specialAuras[spellID] then
 		return true
@@ -497,7 +526,6 @@ function filters:IsFilteredAura(spellID)
 	end
 end
 
-
 function filters:GetUnit(unitFlags, unitGUID)
 	if CombatLog_Object_IsA(unitFlags, COMBATLOG_FILTER_ME) then
 		return "player"
@@ -505,7 +533,6 @@ function filters:GetUnit(unitFlags, unitGUID)
 		return "pet"
 	end
 end
-
 
 function filters:UpdateFilter()
 	self[self.type:GetSelectedValue()].scrollFrame:Update()
