@@ -36,6 +36,7 @@ auraTracker:SetSize(320, 360)
 auraTracker:SetPoint("CENTER")
 
 auraTracker:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+auraTracker:RegisterEvent("UNIT_AURA")
 auraTracker:RegisterEvent("PLAYER_LOGIN")
 auraTracker:RegisterEvent("UNIT_NAME_UPDATE")
 auraTracker:RegisterEvent("PLAYER_REGEN_DISABLED")
@@ -376,7 +377,6 @@ for i = 1, NUM_BUTTONS do
 	auraTrackerButtons[i] = btn
 end
 
-
 function auraTracker:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, sourceGUID, sourceName, sourceFlags, sourceFlags2, destGUID, destName, destFlags, destFlags2, spellID, spellName, spellSchool, auraType)
 	if eventType == "SPELL_AURA_APPLIED" or eventType == "SPELL_AURA_REFRESH" then
 		local auraTable
@@ -394,17 +394,20 @@ function auraTracker:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaste
 	end
 end
 
+function auraTracker:UNIT_AURA(unit)
+	if unit == "player" then
+		self:ScanAuras()
+	end
+end
 
 function auraTracker:PLAYER_LOGIN()
 	self:ScanAuras()
 end
 
-
 function auraTracker:UNIT_NAME_UPDATE()
 	self:ScanAuras()
 	self:UnregisterEvent("UNIT_NAME_UPDATE")
 end
-
 
 -- reset current fight auras upon entering combat
 function auraTracker:PLAYER_REGEN_DISABLED()
@@ -412,7 +415,6 @@ function auraTracker:PLAYER_REGEN_DISABLED()
 	wipe(enemyAuras.lastFight)
 	scrollFrame:Update()
 end
-
 
 function auraTracker:PLAYER_ENTERING_WORLD()
 	-- wipe instance buff data when entering a new instance
@@ -427,7 +429,6 @@ function auraTracker:PLAYER_ENTERING_WORLD()
 		scrollFrame:Update()
 	end
 end
-
 
 local auraTypes = {
 	BUFF = "HELPFUL",
@@ -445,7 +446,6 @@ function auraTracker:ScanAuras()
 	end
 	scrollFrame:Update()
 end
-
 
 function auraTracker:RegisterAura(auraTable, sourceName, sourceGUID, spellID, spellName, auraType)
 	local session = auraTable.session
@@ -481,7 +481,6 @@ function auraTracker:RegisterAura(auraTable, sourceName, sourceGUID, spellID, sp
 	session[spellID] = aura
 	scrollFrame:Update()
 end
-
 
 function auraTracker:IsPvPTarget(guid)
 	local unitType = band(guid:sub(1, 5), 0x007)
