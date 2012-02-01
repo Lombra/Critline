@@ -126,6 +126,8 @@ local specialAuras = {
 
 -- these are auras that increases the target's damage or healing received
 local targetAuras = {
+	[46287] = true, -- Infernal Defense (Apocalypse Guard)
+	[46474] = true, -- Sacrifice of Anveena (Kil'jaeden)
 	[64436] = true, -- Magnetic Core (Aerial Command Unit) ?
 	[65280] = true, -- Singed (Hodir)
 	[66758] = true, -- Staggered Daze (Icehowl) ?
