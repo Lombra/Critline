@@ -119,6 +119,7 @@ local specialAuras = {
 	[103744] = true, -- Water Shell (Thrall)
 	[103817] = true, -- Rising Fire
 	[106029] = true, -- Kalecgos' Presence (no event)
+	[107770] = true, -- Pure Water
 	[109457] = true, -- Ysera's Presence (no event) ?
 	[109606] = true, -- Kalecgos' Presence (LFR - no event)
 	[109640] = true, -- Ysera's Presence (LFR - no event)
@@ -135,12 +136,14 @@ local targetAuras = {
 	[75846] = true, -- Superheated Quicksilver Armor (Karsh Steelbender) ?
 	[76015] = true, -- Superheated Quicksilver Armor (Karsh Steelbender) ?
 	[76232] = true, -- Storm's Fury (Ragnaros - Mount Hyjal) ?
+	[76415] = true, -- Dizzy (Twilight Enforcer) ?
 	[77615] = true, -- Debilitating Slime (Maloriak)
 	[77717] = true, -- Vertigo (Atramedes 10)
 	[80164] = true, -- Chemical Cloud (Toxitron)
 	[82840] = true, -- Vulnerable (Deepstone Elemental)
 	[87683] = true, -- Dragon's Vengeance (Halfus Wyrmbreaker)
 	[87904] = true, -- Feedback (Al'Akir)
+	[90666] = true, -- Dizzy (Twilight Enforcer) ?
 	-- [91086] = true, -- Shadow Gale (Erudax heroic) -- UNTRACKABLE!!!
 	[91478] = true, -- Chemical Cloud (Toxitron 25) ?
 	[92389] = true, -- Vertigo (Atramedes 25) ?
@@ -288,8 +291,8 @@ function filters:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, s
 			local unit = self:GetUnit(destFlags, destGUID)
 			if unit then
 				addon:Debug(format("Filtered aura (%s) faded from %s.", spellName, unit))
-				-- if we lost a special aura we have to check if any other filtered auras remain
 				activeAuras[unit][spellID] = nil
+				-- if we lost a special aura we have to check if any other filtered auras remain
 				-- if not self:IsEmpowered(unit) then
 					-- addon:Debug(format("No filtered aura detected on %s. Resuming record tracking.", unit))
 				-- end
