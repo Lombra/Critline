@@ -317,9 +317,9 @@ do
 	local options = {}
 	Critline.options = options
 	
-	local function toggleTree(self)
+	local function toggleTree(self, module)
 		callbacks:Fire("OnTreeStateChanged", self.setting, self:GetChecked())
-		local display = Critline.display
+		local display = module.display
 		if display then
 			display:UpdateTree(self.setting)
 		end
@@ -392,7 +392,7 @@ do
 			text = L["Shorten records"],
 			tooltipText = L["Use shorter format for records numbers."],
 			setting = "shortFormat",
-			func = function(self) callbacks:Fire("OnNewTopRecord") Critline:UpdateTooltips() end,
+			func = function(self, module) callbacks:Fire("OnNewTopRecord") module:UpdateTooltips() end,
 			gap = 16,
 		},
 		{
@@ -404,7 +404,7 @@ do
 			text = L["Detailed tooltip"],
 			tooltipText = L["Use detailed format in the summary tooltip."],
 			setting = "detailedTooltip",
-			func = function(self) Critline:UpdateTooltips() end,
+			func = function(self, module) module:UpdateTooltips() end,
 		},
 	}
 	

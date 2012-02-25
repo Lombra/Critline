@@ -40,13 +40,13 @@ do	-- create the options frame
 			text = L["Enabled"],
 			tooltipText = L["Shows the new record on the middle of the screen."],
 			setting = "enabled",
-			func = function(self)
+			func = function(self, module)
 				if self:GetChecked() then
-					if not splash:IsMouseEnabled() then
-						addon.RegisterCallback(splash, "NewRecord")
+					if not module:IsMouseEnabled() then
+						addon.RegisterCallback(module, "NewRecord")
 					end
 				else
-					addon.UnregisterCallback(splash, "NewRecord")
+					addon.UnregisterCallback(module, "NewRecord")
 				end
 			end,
 		},

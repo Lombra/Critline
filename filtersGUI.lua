@@ -17,12 +17,6 @@ filters:SetScript("OnEvent", function(self, event, ...)
 end)
 addon.filters = filters
 
-local activeAuras = {
-	player = {},
-	pet = {},
-}
-filters.activeAuras = activeAuras
-
 
 local function resetScroll(self)
 	FauxScrollFrame_SetOffset(self, 0)
@@ -123,6 +117,13 @@ do
 			text = L["Ignore aura filter"],
 			tooltipText = L["Enable to ignore integrated aura filter."],
 			setting = "ignoreAuraFilter",
+			func = function(self, module)
+				if self:GetChecked() then
+					module:ScanAuras()
+				else
+					module:ResetEmpowered()
+				end
+			end,
 		},
 		{
 			text = L["Only known spells"],
@@ -419,7 +420,7 @@ do	-- aura filter frame
 
 	createFilterButtons(auraFilter, function(self)
 		GameTooltip:SetOwner(self, "ANCHOR_TOPLEFT")
-		GameTooltip:SetHyperlink("spell:"..self.spellID)
+		GameTooltip:SetSpellByID(self.spellID)
 	end)
 	
 	local add = auraFilter.add
@@ -434,12 +435,10 @@ do	-- aura filter frame
 	delete:SetText(L["Delete aura"])
 	delete.msg = L["%s removed from aura filter."]
 	delete.func = function(spellID)
-		activeAuras.player[spellID] = nil
-		activeAuras.pet[spellID] = nil
-		if not filters:IsEmpowered("player") then
+		if not filters:ScanAuras("player") then
 			addon:Debug("No filtered aura detected on player. Resuming record tracking.")
 		end
-		if not filters:IsEmpowered("pet") then
+		if not filters:ScanAuras("pet") then
 			addon:Debug("No filtered aura detected on pet. Resuming record tracking.")
 		end
 	end
@@ -478,57 +477,41 @@ do	-- filter tree dropdown
 	filters.type = filterType
 end
 
-
-StaticPopupDialogs["CRITLINE_ADD_MOB_BY_NAME"] = {
-	text = L["Enter mob name:"],
-	button1 = OKAY,
-	button2 = CANCEL,
-	hasEditBox = true,
-	OnAccept = function(self)
+do
+	local function onAccept(self)
 		local name = self.editBox:GetText():trim()
 		if not name:match("%S+") then
 			addon:Message(L["Invalid mob name."])
 			return
 		end
 		filters:AddMob(name)
-	end,
-	EditBoxOnEnterPressed = function(self)
-		local name = self:GetText():trim()
-		if not name:match("%S+") then
-			addon:Message(L["Invalid mob name."])
-			return
-		end
-		filters:AddMob(name)
-		self:GetParent():Hide()
-	end,
-	EditBoxOnEscapePressed = function(self)
-		self:GetParent():Hide()
-	end,
-	OnShow = function(self)
-		self.editBox:SetFocus()
-	end,
-	whileDead = true,
-	timeout = 0,
-}
+	end
 
-StaticPopupDialogs["CRITLINE_ADD_AURA_BY_ID"] = {
-	text = L["Enter spell ID:"],
-	button1 = OKAY,
-	button2 = CANCEL,
-	hasEditBox = true,
-	OnAccept = function(self)
+	StaticPopupDialogs["CRITLINE_ADD_MOB_BY_NAME"] = {
+		text = L["Enter mob name:"],
+		button1 = OKAY,
+		button2 = CANCEL,
+		hasEditBox = true,
+		OnAccept = onAccept,
+		EditBoxOnEnterPressed = function(self)
+			local parent = self:GetParent()
+			onAccept(parent)
+			parent:Hide()
+		end,
+		EditBoxOnEscapePressed = function(self)
+			self:GetParent():Hide()
+		end,
+		OnShow = function(self)
+			self.editBox:SetFocus()
+		end,
+		whileDead = true,
+		timeout = 0,
+	}
+end
+
+do
+	local function onAccept(self)
 		local id = tonumber(self.editBox:GetText())
-		if not id then
-			addon:Message(L["Invalid input. Please enter a spell ID."])
-			return
-		elseif not GetSpellInfo(id) then
-			addon:Message(L["Invalid spell ID. No such spell."])
-			return
-		end
-		filters:AddAura(id)
-	end,
-	EditBoxOnEnterPressed = function(self)
-		local id = tonumber(self:GetText())
 		if not id then
 			addon:Message(L["Invalid input. Please enter a spell ID."])
 			return
@@ -537,14 +520,26 @@ StaticPopupDialogs["CRITLINE_ADD_AURA_BY_ID"] = {
 			return
 		end
 		filters:AddAura(id)
-		self:GetParent():Hide()
-	end,
-	EditBoxOnEscapePressed = function(self)
-		self:GetParent():Hide()
-	end,
-	OnShow = function(self)
-		self.editBox:SetFocus()
-	end,
-	whileDead = true,
-	timeout = 0,
-}
+	end
+
+	StaticPopupDialogs["CRITLINE_ADD_AURA_BY_ID"] = {
+		text = L["Enter spell ID:"],
+		button1 = OKAY,
+		button2 = CANCEL,
+		hasEditBox = true,
+		OnAccept = onAccept,
+		EditBoxOnEnterPressed = function(self)
+			local parent = self:GetParent()
+			onAccept(parent)
+			parent:Hide()
+		end,
+		EditBoxOnEscapePressed = function(self)
+			self:GetParent():Hide()
+		end,
+		OnShow = function(self)
+			self.editBox:SetFocus()
+		end,
+		whileDead = true,
+		timeout = 0,
+	}
+end

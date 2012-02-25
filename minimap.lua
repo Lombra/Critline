@@ -68,11 +68,11 @@ local options = {
 		text = L["Show"],
 		tooltipText = L["Show minimap button."],
 		setting = "show",
-		func = function(self)
+		func = function(self, module)
 			if self:GetChecked() then
-				minimap:Show()
+				module:Show()
 			else
-				minimap:Hide()
+				module:Hide()
 			end
 		end,
 	},
@@ -80,8 +80,8 @@ local options = {
 		text = L["Locked"],
 		tooltipText = L["Lock minimap button."],
 		setting = "locked",
-		func = function(self)
-			minimap:RegisterForDrag(not self:GetChecked() and "LeftButton")
+		func = function(self, module)
+			module:RegisterForDrag(not self:GetChecked() and "LeftButton")
 		end,
 	},
 }

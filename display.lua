@@ -106,17 +106,17 @@ local options = {
 		text = L["Show"],
 		tooltipText = L["Show summary frame."],
 		setting = "show",
-		func = function(self)
-			display:UpdateLayout()
+		func = function(self, module)
+			module:UpdateLayout()
 		end,
 	},
 	{
 		text = L["Locked"],
 		tooltipText = L["Lock summary frame."],
 		setting = "locked",
-		func = function(self)
+		func = function(self, module)
 			local btn = not self:GetChecked() and "LeftButton"
-			for _, tree in pairs(display.trees) do
+			for _, tree in pairs(module.trees) do
 				tree:RegisterForDrag(btn)
 			end
 		end,
@@ -125,11 +125,11 @@ local options = {
 		text = L["Show icons"],
 		tooltipText = L["Enable to show icon indicators instead of text."],
 		setting = "icons",
-		func = function(self)
+		func = function(self, module)
 			local checked = self:GetChecked()
 			width = checked and 128 or 152
 			height = checked and 22 or 16
-			for _, tree in pairs(display.trees) do
+			for _, tree in pairs(module.trees) do
 				if checked then
 					tree.icon:Show()
 					tree.label:Hide()
@@ -139,7 +139,7 @@ local options = {
 				end
 				tree:SetHeight(height)
 			end
-			display:UpdateLayout()
+			module:UpdateLayout()
 		end,
 	},
 }
