@@ -90,6 +90,8 @@ local specialAuras = {
 	[80718] = true, -- Burden of the Crown (Spirit of Corehammer 25) ?
 	[81096] = true, -- Red Mist (Red Mist)
 	[82170] = true, -- Corruption: Absolute (Cho'gall)
+	[84719] = true, -- Beach Head Control (Twilight Shore - Alliance)
+	[84720] = true, -- Beach Head Control (Twilight Shore - Horde)
 	[86622] = true, -- Engulfing Magic (Theralion) ?
 	[86872] = true, -- Frothing Rage (Thundermar Ale)
 	[89879] = true, -- Blessing of the Sun (Rajh heroic)
@@ -205,6 +207,9 @@ local playerSpells = {
 	[27576] = true, -- Mutilate Off-hand
 	[79136] = true, -- Venomous Wound
 	-- Priest
+	[15290] = true, -- Vampiric Embrace
+	[63675] = true, -- Improved Devouring Plague
+	[75999] = true, -- Improved Devouring Plague (heal)
 	[77489] = true, -- Echo of Light
 	[88684] = true, -- Holy Word: Serenity
 	[88685] = true, -- Holy Word: Sanctuary
@@ -224,9 +229,9 @@ local directHoTs = {
 local filters = addon.filters
 
 local ignoreEncounter
-local activeAuras = filters.activeAuras or {
-	player = {},
-	pet = {},
+local isEmpowered = {
+	player = false,
+	pet = false,
 }
 local corruptSpells = {
 	player = {},
@@ -259,6 +264,7 @@ function filters:AddonLoaded()
 	addon.RegisterCallback(self.spell.scrollFrame, "SpellsChanged", "Update")
 	
 	self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+	self:RegisterEvent("UNIT_AURA")
 	self:RegisterEvent("PLAYER_LOGIN")
 	self:RegisterEvent("UNIT_NAME_UPDATE")
 	self:RegisterEvent("PLAYER_REGEN_DISABLED")
@@ -285,19 +291,6 @@ function filters:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, s
 			corruptTargets[destGUID][spellID] = nil
 			addon:Debug(format("Filtered aura (%s) faded from %s.", spellName, destName))
 		end
-		
-		-- self buffs
-		if self:IsFilteredAura(spellID) then
-			local unit = self:GetUnit(destFlags, destGUID)
-			if unit then
-				addon:Debug(format("Filtered aura (%s) faded from %s.", spellName, unit))
-				activeAuras[unit][spellID] = nil
-				-- if we lost a special aura we have to check if any other filtered auras remain
-				-- if not self:IsEmpowered(unit) then
-					-- addon:Debug(format("No filtered aura detected on %s. Resuming record tracking.", unit))
-				-- end
-			end
-		end
 	end
 	
 	if eventType == "SPELL_AURA_APPLIED" or eventType == "SPELL_AURA_APPLIED_DOSE" or eventType == "SPELL_AURA_REFRESH" then
@@ -307,16 +300,6 @@ function filters:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, s
 			corruptTargets[destGUID][spellID] = true
 			ignoredTargets[destGUID] = true
 			addon:Debug(format("Target (%s) gained filtered aura. (%s) Ignore received damage.", destName, spellName))
-		end
-		
-		local destUnit = self:GetUnit(destFlags, destGUID)
-		if destUnit and self:IsFilteredAura(spellID) then
-			-- if we gain any aura in the filter we can just stop tracking records
-			if not (self:IsEmpowered(destUnit) or self.profile.ignoreAuraFilter) then
-				addon:Debug(format("%s gained filtered aura. (%s) Suppressing new records for this encounter.", destUnit:gsub(".", string.upper, 1), spellName))
-			end
-			ignoreEncounter = true
-			activeAuras[destUnit][spellID] = true
 		end
 		
 		-- auras applied by self
@@ -329,26 +312,40 @@ function filters:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, s
 	end
 end
 
+function filters:UNIT_AURA(unit)
+	if (unit == "player" or unit == "pet") and not (isEmpowered[unit] and UnitAffectingCombat(unit)) then
+		if self:ScanAuras(unit) then
+			addon:Debug("Filtered aura detected. Disabling combat log tracking.")
+		end
+	end
+end
+
 function filters:PLAYER_LOGIN()
 	self:ScanAuras()
 	self:CheckPlayerControl()
 end
 
+-- first reliable event where unit aura API works on login
 function filters:UNIT_NAME_UPDATE()
 	self:ScanAuras()
 	self:CheckPlayerControl()
 	self:UnregisterEvent("UNIT_NAME_UPDATE")
 end
 
+function filters:PLAYER_REGEN_ENABLED()
+	if self:ScanAuras() then
+		addon:Debug("Filtered aura(s) detected. Suppressing new records for this encounter.")
+	end
+end
+
 function filters:PLAYER_REGEN_DISABLED()
-	self:ScanAuras()
-	ignoreEncounter = self:IsEmpowered("player")
-	if ignoreEncounter then
+	if self:ScanAuras() then
 		addon:Debug("Filtered aura(s) detected. Suppressing new records for this encounter.")
 	end
 	for unit, v in pairs(ignoredTargets) do
 		if not self:IsVulnerableTarget(unit) then
 			ignoredTargets[unit] = nil
+			corruptTargets[unit] = nil
 		end
 	end
 end
@@ -368,23 +365,31 @@ local auraTypes = {
 	DEBUFF = "HARMFUL",
 }
 
-function filters:ScanAuras()
-	wipe(activeAuras["player"])
+function filters:ScanAuras(unit)
+	if not unit then
+		self:ScanAuras("player")
+		self:ScanAuras("pet")
+		return
+	end
+	
+	if self.profile.ignoreAuraFilter then
+		return
+	end
+	
 	local filterAuras = self.db.global.auras
 	for auraType, filter in pairs(auraTypes) do
 		for i = 1, 40 do
-			local spellName, _, _, _, _, _, _, source, _, _, spellID = UnitAura("player", i, filter)
+			local spellName, _, _, _, _, _, _, source, _, _, spellID = UnitAura(unit, i, filter)
 			if not spellID then break end
 			self:UnregisterEvent("UNIT_NAME_UPDATE")
 			if specialAuras[spellID] or filterAuras[spellID] then
-				activeAuras["player"][spellID] = true
+				isEmpowered[unit] = true
+				return true
 			end
 		end
 	end
-	if next(activeAuras["player"]) then
-		-- ignoreEncounter = false
-		addon:Debug("Filtered aura detected. Disabling combat log tracking.")
-	end
+	
+	isEmpowered[unit] = false
 end
 
 function filters:CheckPlayerControl()
@@ -419,21 +424,10 @@ function filters:AddAura(spellID)
 		addon:Message(L["%s is already in aura filter."]:format(spellName))
 	else
 		tinsert(self.db.global.auras, spellID)
-		-- after we add an aura to the filter; check if we have it
-		for auraType, filter in pairs(auraTypes) do
-			for i = 1, 40 do
-				local spellID = select(11, UnitAura("player", i, filter))
-				if not spellID then break end
-				for i, v in ipairs(self.db.global.auras) do
-					if v == spellID then
-						activeAuras[v] = true
-						break
-					end
-				end
-			end
-		end
 		self:UpdateFilter()
 		addon:Message(L["%s added to aura filter."]:format(spellName))
+		-- after we add an aura to the filter; check if we have it
+		self:ScanAuras()
 	end
 end
 
@@ -446,7 +440,7 @@ function filters:SpellPassesFilters(tree, spellName, spellID, isPeriodic, destGU
 	end
 	
 	local unit = isPet and "pet" or "player"
-	if ((corruptSpells[unit][spellID] and corruptSpells[unit][spellID][destGUID]) or self:IsEncounterIgnored(unit)) and not self.profile.ignoreAuraFilter then
+	if ((corruptSpells[unit][spellID] and corruptSpells[unit][spellID][destGUID]) or self:IsEmpowered(unit)) and not self.profile.ignoreAuraFilter then
 		addon:Debug(format("Spell (%s) was cast under the influence of a filtered aura. Return.", spellName))
 		return
 	end
@@ -483,14 +477,14 @@ function filters:IsFilteredSpell(tree, spellID, periodic)
 	return (not spell and self.db.profile.filterNew) or (spell and spell.filtered)
 end
 
-
-function filters:IsEncounterIgnored()
-	return ignoreEncounter
+function filters:ResetEmpowered()
+	isEmpowered.player = false
+	isEmpowered.pet = false
 end
 
 -- scan for filtered auras from the specialAuras table
 function filters:IsEmpowered(unit)
-	if next(activeAuras[unit]) or (unit == "player" and not self.inControl) then
+	if isEmpowered[unit] or (unit == "player" and not self.inControl) then
 		return true
 	end
 end

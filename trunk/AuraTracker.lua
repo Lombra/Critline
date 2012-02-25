@@ -449,7 +449,7 @@ end
 
 function auraTracker:RegisterAura(auraTable, sourceName, sourceGUID, spellID, spellName, auraType)
 	local session = auraTable.session
-	if session[spellID] or IsSpellKnown(spellID) then
+	if session[spellID] and (session[spellID].source or not sourceName) or IsSpellKnown(spellID) then
 		return 
 	end
 

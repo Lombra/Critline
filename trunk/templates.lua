@@ -127,7 +127,7 @@ do	-- check button
 		self.module[self.db].profile[self.setting] = checked and true or false
 		
 		if self.func then
-			self:func()
+			self:func(self.module)
 		end
 		
 		addon:Debug(self.setting..(checked and " on" or " off"))
@@ -136,7 +136,7 @@ do	-- check button
 	local function loadSetting(self)
 		self:SetChecked(self.module[self.db].profile[self.setting])
 		if self.func then
-			self:func()
+			self:func(self.module)
 		end
 	end
 
