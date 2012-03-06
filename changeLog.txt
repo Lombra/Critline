@@ -1,3 +1,10 @@
+4.3.0
+- Now using more aggressive aura filtering; once a filtered aura is applied, no more records will be registered for the remainder of the encounter. (both player and target auras)
+- ToC bump.
+- Use static icon for wand shoot spell.
+- Added a bunch of filtered auras from Hour of Twilight dungeons and Dragon Soul as well as some older instances.
+- Recognise a bunch of druid, priest and shaman spells as player spells.
+
 4.2.0
 - Give the minimap button a name to work better with certain third party addons.
 - Tweak the config frames to adapt to the increased size of the interface options frame.
