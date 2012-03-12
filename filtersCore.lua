@@ -137,8 +137,9 @@ local specialAuras = {
 	-- Blackwing Descent
 	[79624] = true, -- Power Generator (Arcanotron) ?
 	[79629] = true, -- Power Generator (Arcanotron 10)
-	[80718] = true, -- Burden of the Crown (Spirit of Corehammer 25) ?
+	[80718] = true, -- Burden of the Crown (Spirit of Corehammer)
 	[91555] = true, -- Power Generator (Arcanotron 25)
+	[91556] = true, -- Power Generator (Arcanotron 10 heroic)
 	-- Firelands
 	[98245] = true, -- Legendary Concentration (Majordomo Staghelm)
 	[98252] = true, -- Epic Concentration (Majordomo Staghelm)
@@ -192,8 +193,9 @@ local targetAuras = {
 	[77717] = true, -- Vertigo (Atramedes 10)
 	[80164] = true, -- Chemical Cloud (Toxitron)
 	[91478] = true, -- Chemical Cloud (Toxitron 25) ?
+	[91479] = true, -- Chemical Cloud (Toxitron 10 heroic)
 	[92389] = true, -- Vertigo (Atramedes 25) ?
-	[92390] = true, -- Vertigo (Atramedes) ?
+	[92390] = true, -- Vertigo (Atramedes 10 heroic)
 	[92910] = true, -- Debilitating Slime (Maloriak) ?
 	-- Throne of the Four Winds
 	[87904] = true, -- Feedback (Al'Akir)
