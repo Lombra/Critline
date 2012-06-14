@@ -200,6 +200,7 @@ local targetAuras = {
 	-- Throne of the Four Winds
 	[87904] = true, -- Feedback (Al'Akir)
 	[101458] = true, -- Feedback (Al'Akir 25) ?
+	[101460] = true, -- Feedback (Al'Akir 25 heroic)
 	-- Firelands
 	[98596] = true, -- Infernal Rage (Spark of Rhyolith)
 	[99432] = true, -- Burnout (Alysrazor)
