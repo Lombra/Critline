@@ -1,8 +1,6 @@
 local addonName, addon = ...
-
 local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 local templates = addon.templates
-
 
 local function onUpdate(self)
 	local xpos, ypos = GetCursorPosition()
@@ -14,7 +12,6 @@ local function onUpdate(self)
 	self.profile.pos = atan2(ypos, xpos)
 	self:Move()
 end
-
 
 local minimap = CreateFrame("Button", "CritlineMinimapButton", Minimap)
 minimap:SetToplevel(true)
@@ -51,7 +48,7 @@ minimap:SetScript("OnDragStop", function(self) self:SetScript("OnUpdate", nil) e
 minimap:SetScript("OnHide", function(self) self:SetScript("OnUpdate", nil) end)
 
 local icon = minimap:CreateTexture(nil, "BORDER")
-icon:SetTexture(addon.icons.dmg)
+icon:SetTexture(addon.trees.dmg.icon)
 icon:SetSize(20, 20)
 icon:SetPoint("TOPLEFT", 6, -6)
 
@@ -60,8 +57,7 @@ border:SetTexture([[Interface\Minimap\MiniMap-TrackingBorder]])
 border:SetSize(54, 54)
 border:SetPoint("TOPLEFT")
 
-
-local config = templates:CreateConfigFrame(L["Minimap button"], addonName, true)
+local config = templates:CreateConfigFrame(L["Minimap button"], true)
 
 local options = {
 	{
@@ -97,7 +93,6 @@ for i, v in ipairs(options) do
 	options[i] = btn
 end
 
-
 local defaults = {
 	profile = {
 		show = true,
@@ -113,7 +108,6 @@ end
 
 addon.RegisterCallback(minimap, "AddonLoaded")
 
-
 function minimap:LoadSettings()
 	self.profile = self.db.profile
 	
@@ -123,7 +117,6 @@ function minimap:LoadSettings()
 	
 	self:Move()
 end
-
 
 function minimap:Move()
 	local angle = self.profile.pos

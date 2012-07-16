@@ -1,3 +1,16 @@
+4.4.0
+* Introducing the spell list module. This is a centralised spell database manager which implements the features of the spell filter, reset module and announce module via a single menu. The latter are still modular, their functionality only added to said menu if loaded. spellList.lua is required for filter, reset and announce modules.
+- Add Korean and traditional Chinese localisation.
+- Removed pre-4.0 upgrade code. If upgrading from a version < 4.0, either remove your per char saved variables, or first upgrade to a version < 4.4.
+- Spell tooltip info is now enabled by default.
+- Added monk tree defaults.
+- Slightly increased the width of the display when using tree text labels.
+- Add option to change the opacity of the display border.
+- Fix custom aura filter.
+- Now using tabbed navigation rather than dropdown in a few places.
+- Resetting a record now also clears any previous record it had.
+- Aura tracker is no longer localised as it's considered merely a development tool.
+
 4.3.0
 - Now using more aggressive aura filtering; once a filtered aura is applied, no more records will be registered for the remainder of the encounter. (both player and target auras)
 - ToC bump.

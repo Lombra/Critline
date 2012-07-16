@@ -1,9 +1,7 @@
 local addonName, addon = ...
-
 local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 local LSM = LibStub("LibSharedMedia-3.0")
 local templates = addon.templates
-
 
 local splash = CreateFrame("MessageFrame", nil, UIParent)
 splash:SetMovable(true)
@@ -28,9 +26,8 @@ splash:SetScript("OnDragStop", function(self)
 	pos.point, pos.x, pos.y = select(3, self:GetPoint())
 end)
 
-
 do	-- create the options frame
-	local config = templates:CreateConfigFrame(L["Splash frame"], addonName, true)
+	local config = templates:CreateConfigFrame(L["Splash frame"], true)
 
 	local options = {}
 	splash.options = options
@@ -134,7 +131,7 @@ do	-- create the options frame
 		sliders[i] = slider
 	end
 
-	local moveSplash = templates:CreateButton(config)
+	local moveSplash = CreateFrame("Button", nil, config, "UIPanelButtonTemplate")
 	moveSplash:SetPoint("TOP", sliders[2], "BOTTOM", 0, -24)
 	moveSplash:SetSize(148, 22)
 	moveSplash:SetText(L["Move splash screen"])
@@ -210,7 +207,6 @@ do	-- create the options frame
 	options.fontSize = fontSize
 end
 
-
 local defaults = {
 	profile = {
 		enabled = true,
@@ -238,7 +234,6 @@ function splash:AddonLoaded()
 end
 
 addon.RegisterCallback(splash, "AddonLoaded")
-
 
 function splash:LoadSettings()
 	self.profile = self.db.profile
@@ -272,13 +267,11 @@ function splash:LoadSettings()
 	sliders[2]:SetValue(self.profile.duration)
 end
 
-
 local addMessage = splash.AddMessage
 
 function splash:AddMessage(msg, color, ...)
 	addMessage(self, msg, color.r, color.g, color.b, ...)
 end
-
 
 local red1 = {r = 1, g = 0, b = 0}
 local red255 = {r = 255, g = 0, b = 0}
@@ -335,7 +328,6 @@ function splash:NewRecord(event, tree, spellID, periodic, amount, crit, prevReco
 		self:AddMessage(amount, amountColor)
 	end
 end
-
 
 function splash:UpdateFont()
 	local font = self.profile.font

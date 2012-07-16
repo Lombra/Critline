@@ -1,5 +1,4 @@
 ﻿local addonName, addon = ...
-
 local templates = addon.templates
 
 local L = {
@@ -196,9 +195,7 @@ elseif LOCALE == "ruRU" then
 	L["enabled_desc"] = "Включите эту опцию для автоматического переключения между профилями при переключении раскладки талантов."
 end
 
-
 local defaultProfiles = {}
-
 
 local function profileSort(a, b)
 	return a.value < b.value
@@ -237,7 +234,6 @@ local function getProfiles(db, common, nocurrent)
 	return sortProfiles
 end
 
-
 local function createFontString(parent)
 	local text = parent:CreateFontString(nil, "BACKGROUND", "GameFontHighlightSmall")
 	-- text:SetHeight(32)
@@ -247,7 +243,6 @@ local function createFontString(parent)
 	text:SetJustifyV("TOP")
 	return text
 end
-
 
 local function profilesLoaded(self)
 	local db = addon[self.db]
@@ -306,7 +301,6 @@ local function hasNoProfiles(self)
 	return next(getProfiles(self.db, nil, true)) == nil
 end
 
-
 local function initializeDropdown(self)
 	for _, v in ipairs(getProfiles(self.db, self.common, self.nocurrent)) do
 		local info = UIDropDownMenu_CreateInfo()
@@ -348,9 +342,8 @@ local function deleteProfileOnClick(self)
 	StaticPopup_Show("CRITLINE_DELETE_PROFILE", nil, nil, {db = self.owner.db, obj = self.owner})
 end
 
-
 local function createProfileUI(name, db)
-	local frame = templates:CreateConfigFrame(name, addonName, true, true)
+	local frame = templates:CreateConfigFrame(name, true, true)
 	frame.db = db
 	
 	frame.ProfilesLoaded = profilesLoaded
@@ -366,7 +359,7 @@ local function createProfileUI(name, db)
 	local objects = {}
 	frame.objects = objects
 	
-	local reset = addon.templates:CreateButton(frame)
+	local reset = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
 	reset:SetSize(160, 22)
 	reset:SetPoint("TOPLEFT", frame.desc, "BOTTOMLEFT")
 	reset:SetScript("OnClick", function(self) self.db:ResetProfile() end)
@@ -471,11 +464,10 @@ local function createProfileUI(name, db)
 	return frame
 end
 
-
 StaticPopupDialogs["CRITLINE_DELETE_PROFILE"] = {
 	text = L.delete_confirm,
-	button1 = ACCEPT,
-	button2 = CANCEL,
+	button1 = YES,
+	button2 = NO,
 	OnAccept = function(self, data)
 		local delete = data.obj
 		self.data.db:DeleteProfile(delete:GetSelectedValue())
@@ -487,7 +479,6 @@ StaticPopupDialogs["CRITLINE_DELETE_PROFILE"] = {
 	whileDead = true,
 	timeout = 0,
 }
-
 
 local profiles = createProfileUI("Profiles", "db")
 profiles.desc:SetText("This profile controls all settings that are not related to individual trees or their records.")

@@ -1,22 +1,16 @@
 local addonName, addon = ...
-
-local LDB = LibStub("LibDataBroker-1.1")
 local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
+local LDB = LibStub("LibDataBroker-1.1")
 
-
-local feeds = {
-	dmg  = L["Damage"],
-	heal = L["Healing"],
-	pet  = L["Pet"],
-}
+local feeds = {}
 
 local msgFormat = format("%s: %%s - %s: %%s", L["Normal"], L["Crit"])
 
-for k, v in pairs(feeds) do
-	feeds[k] = LDB:NewDataObject("Critline "..addon.treeNames[k], {
+for k, v in pairs(addon.trees) do
+	feeds[k] = LDB:NewDataObject("Critline "..v.label, {
 		type = "data source",
-		label = v,
-		icon = addon.icons[k],
+		label = v.title,
+		icon = addon.trees[k].icon,
 		OnClick = function()
 			if IsShiftKeyDown() then
 				local normalRecord, critRecord = addon:GetHighest(k)
@@ -36,8 +30,8 @@ for k, v in pairs(feeds) do
 						break
 					end
 				end
-				local normal = normalSpell and format("%s (%s)", addon:ShortenNumber(normalRecord), normalSpell) or L["n/a"]
-				local crit   = critSpell   and format("%s (%s)", addon:ShortenNumber(critRecord),   critSpell)   or L["n/a"]
+				local normal = normalSpell and format("%s (%s)", addon:ShortenNumber(normalRecord), normalSpell) or "-"
+				local crit   = critSpell   and format("%s (%s)", addon:ShortenNumber(critRecord),   critSpell)   or "-"
 				ChatFrame_OpenChat(format(msgFormat, normal, crit))
 			else
 				addon:OpenConfig()
@@ -48,7 +42,6 @@ for k, v in pairs(feeds) do
 		end
 	})
 end
-
 
 local function updateRecords(event, tree)
 	if not tree then
@@ -64,7 +57,6 @@ local function updateRecords(event, tree)
 	end
 end
 
-
 local function onTreeStateChanged(event, tree, enabled)
 	if enabled then
 		updateRecords(event, tree)
@@ -73,9 +65,9 @@ local function onTreeStateChanged(event, tree, enabled)
 	end
 end
 
-
 local function addonLoaded()
 	addon.RegisterCallback(feeds, "OnNewTopRecord", updateRecords)
+	addon.RegisterCallback(feeds, "FormatChanged", updateRecords)
 	addon.RegisterCallback(feeds, "OnTreeStateChanged", onTreeStateChanged)
 end
 
