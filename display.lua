@@ -1,16 +1,13 @@
 ﻿local addonName, addon = ...
-
 local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 local templates = addon.templates
 
-local width, height = 128, 22
+local FRAME_WIDTH = 128
+local FRAME_WIDTH_WIDE = 160
+local FRAME_HEIGHT = 24
+local FRAME_HEIGHT_WIDE = 16
 
-local trees = {
-	dmg  = L["Damage"],
-	heal = L["Healing"],
-	pet  = L["Pet"],
-}
-
+local height = FRAME_HEIGHT
 
 local function onDragStart(self)
 	self.owner:StartMoving()
@@ -54,7 +51,7 @@ local function createDisplay(parent)
 	frame.owner = parent
 	
 	local text = frame:CreateFontString(nil, nil, "GameFontHighlightSmall")
-	text:SetPoint("CENTER", frame, "RIGHT", -50, 0)
+	text:SetPoint("CENTER", frame, "RIGHT", -48, 0)
 	frame.text = text
 	
 	local icon = frame:CreateTexture(nil, "OVERLAY")
@@ -69,7 +66,6 @@ local function createDisplay(parent)
 	return frame
 end
 
-
 local display = CreateFrame("Frame", nil, UIParent)
 addon.display = display
 display:SetMovable(true)
@@ -78,27 +74,25 @@ display:SetBackdrop({
 	edgeSize = 12,
 })
 display:SetBackdropBorderColor(0.5, 0.5, 0.5, 1)
-display.trees = {}
 
+local trees = {}
+
+for k, tree in pairs(addon.trees) do
+	local frame = createDisplay(display)
+	frame.icon:SetTexture(tree.icon)
+	frame.label:SetText(tree.title..":")
+	frame.tree = k
+	trees[k] = frame
+end
+
+trees.dmg:SetPoint("TOP", 0, -4)
 
 Critline.SlashCmdHandlers["reset"] = function()
 	display:ClearAllPoints()
 	display:SetPoint("CENTER")
 end
 
-
-for k, treeName in pairs(trees) do
-	local frame = createDisplay(display)
-	frame.icon:SetTexture(addon.icons[k])
-	frame.label:SetText(treeName..":")
-	frame.tree = k
-	display.trees[k] = frame
-end
-
-display.trees.dmg:SetPoint("TOP", 0, -4)
-
-
-local config = templates:CreateConfigFrame("Display", addonName, true)
+local config = templates:CreateConfigFrame("Display", true)
 
 local options = {
 	db = {},
@@ -116,7 +110,7 @@ local options = {
 		setting = "locked",
 		func = function(self, module)
 			local btn = not self:GetChecked() and "LeftButton"
-			for _, tree in pairs(module.trees) do
+			for _, tree in pairs(trees) do
 				tree:RegisterForDrag(btn)
 			end
 		end,
@@ -127,9 +121,9 @@ local options = {
 		setting = "icons",
 		func = function(self, module)
 			local checked = self:GetChecked()
-			width = checked and 128 or 152
-			height = checked and 22 or 16
-			for _, tree in pairs(module.trees) do
+			module:SetWidth(checked and FRAME_WIDTH or FRAME_WIDTH_WIDE)
+			height = checked and FRAME_HEIGHT or FRAME_HEIGHT_WIDE
+			for _, tree in pairs(trees) do
 				if checked then
 					tree.icon:Show()
 					tree.label:Hide()
@@ -157,27 +151,25 @@ for i, v in ipairs(options) do
 	options[i] = btn
 end
 
-
 local function swatchFunc(self, r, g, b)
-	display.trees[self.setting]:SetBackdropColor(r, g, b, display.profile.bgAlpha)
+	trees[self.setting]:SetBackdropColor(r, g, b, display.profile.bgAlpha)
 end
 
 local colorButtons = {}
 
-for i, v in ipairs({"dmg", "heal", "pet"}) do
+for i, v in ipairs(addon.treeIndex) do
 	local btn = templates:CreateColorButton(config)
 	if i == 1 then
 		btn:SetPoint("TOP", options[#options], "BOTTOM", 0, -13)
 	else
 		btn:SetPoint("TOP", colorButtons[i - 1], "BOTTOM", 0, -18)
 	end
-	btn:SetText(trees[v])
+	btn:SetText(addon.trees[v].title)
 	btn.setting = v
 	btn.func = swatchFunc
 	btn.opacityFunc = opacityFunc
 	colorButtons[i] = btn
 end
-
 
 local sliders = {}
 
@@ -230,7 +222,7 @@ sliders[3] = templates:CreateSlider(config, {
 		local value = self:GetValue()
 		self.value:SetFormattedText("%.0f%%", value * 100)
 		local colors = display.profile.colors
-		for k, v in pairs(display.trees) do
+		for k, v in pairs(trees) do
 			local color = colors[k]
 			v:SetBackdropColor(color.r, color.g, color.b, value)
 		end
@@ -239,6 +231,22 @@ sliders[3] = templates:CreateSlider(config, {
 })
 sliders[3]:SetPoint("TOP", sliders[2], "BOTTOM", 0, -32)
 
+sliders[4] = templates:CreateSlider(config, {
+	text = L["Border opacity"],
+	tooltipText = L["Sets the opacity of the display border."],
+	minValue = 0,
+	maxValue = 1,
+	valueStep = 0.05,
+	minText = "0%",
+	maxText = "100%",
+	func = function(self)
+		local value = self:GetValue()
+		self.value:SetFormattedText("%.0f%%", value * 100)
+		display:SetBackdropBorderColor(0.5, 0.5, 0.5, value)
+		display.profile.borderAlpha = value
+	end,
+})
+sliders[4]:SetPoint("TOP", sliders[3], "BOTTOM", 0, -32)
 
 local defaults = {
 	profile = {
@@ -248,6 +256,7 @@ local defaults = {
 		scale = 1,
 		alpha = 1,
 		bgAlpha = 1,
+		borderAlpha = 1,
 		colors = {
 			dmg  = {r = 0, g = 0, b = 0},
 			heal = {r = 0, g = 0, b = 0},
@@ -263,10 +272,11 @@ function display:AddonLoaded()
 	self.db = addon.db:RegisterNamespace("display", defaults)
 	addon.RegisterCallback(self, "SettingsLoaded")
 	addon.RegisterCallback(self, "OnNewTopRecord", "UpdateRecords")
+	addon.RegisterCallback(self, "FormatChanged", "UpdateRecords")
+	addon.RegisterCallback(self, "OnTreeStateChanged", "UpdateTree")
 end
 
 addon.RegisterCallback(display, "AddonLoaded")
-
 
 function display:SettingsLoaded()
 	self.profile = self.db.profile
@@ -295,30 +305,28 @@ function display:SettingsLoaded()
 	sliders[1]:SetValue(scale)
 	sliders[2]:SetValue(self.profile.alpha)
 	sliders[3]:SetValue(self.profile.bgAlpha)
+	sliders[4]:SetValue(self.profile.borderAlpha)
 end
-
 
 function display:UpdateRecords(event, tree)
 	if tree then
 		local normal, crit = addon:GetHighest(tree)
-		self.trees[tree].text:SetFormattedText("%8s / %-8s", addon:ShortenNumber(normal), addon:ShortenNumber(crit))
+		trees[tree].text:SetFormattedText("%8s / %-8s", addon:ShortenNumber(normal), addon:ShortenNumber(crit))
 	else
-		for k in pairs(trees) do
+		for k in pairs(addon.trees) do
 			self:UpdateRecords(nil, k)
 		end
 	end
 end
 
-
-function display:UpdateTree(tree)
-	if addon.percharDB.profile[tree] then
-		self.trees[tree]:Show()
+function display:UpdateTree(event, tree, enabled)
+	if enabled then
+		trees[tree]:Show()
 	else
-		self.trees[tree]:Hide()
+		trees[tree]:Hide()
 	end
 	self:UpdateLayout()
 end
-
 
 function display:Toggle()
 	local show = not self.profile.show
@@ -327,47 +335,26 @@ function display:Toggle()
 	self:UpdateLayout()
 end
 
-
 -- rearrange display buttons when any of them is shown or hidden
 function display:UpdateLayout()
-	local trees = self.trees
-	local dmg = trees.dmg
-	local heal = trees.heal
-	local pet = trees.pet
-	
-	if heal:IsShown() then
-		if dmg:IsShown() then
-			heal:SetPoint("TOP", dmg, "BOTTOM", 0, -2)
-		else
-			heal:SetPoint("TOP", 0, -4)
-		end
-	end
-	if pet:IsShown() then
-		if heal:IsShown() then
-			pet:SetPoint("TOP", heal, "BOTTOM", 0, -2)
-		elseif dmg:IsShown() then
-			pet:SetPoint("TOP", dmg, "BOTTOM", 0, -2)
-		else
-			pet:SetPoint("TOP", 0, -4)
+	local shown = {}
+	for k, v in ipairs(addon.treeIndex) do
+		local frame = trees[v]
+		if frame:IsShown() then
+			local prevShown = shown[#shown]
+			if prevShown then
+				frame:SetPoint("TOP", prevShown, "BOTTOM", 0, -2)
+			else
+				frame:SetPoint("TOP", 0, -4)
+			end
+			tinsert(shown, frame)
 		end
 	end
 	
-	local n = 0
-	
-	if dmg:IsShown() then
-		n = n + 1
-	end
-	if heal:IsShown() then
-		n = n + 1
-	end
-	if pet:IsShown() then
-		n = n + 1
-	end
-	
-	self:SetSize(width, n * (height + 2) + 6)
+	self:SetHeight(#shown * (height + 2) + 6)
 	
 	-- hide the entire frame if it turns out none of the individual frames are shown
-	if n == 0 or not self.profile.show then
+	if #shown == 0 or not self.profile.show then
 		self:Hide()
 	else
 		self:Show()

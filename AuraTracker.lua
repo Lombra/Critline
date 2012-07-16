@@ -26,7 +26,7 @@ local enemyAuras = {
 }
 
 -- name of current instance
-local currentInstance = L["n/a"]
+local currentInstance = "n/a"
 
 
 local auraTracker = CreateFrame("Frame", nil, UIParent)
@@ -92,15 +92,15 @@ end
 
 local menuList = {
 	{
-		text = L["Current fight"],
+		text = "Current fight",
 		value = "lastFight",
 	},
 	{
-		text = L["Current instance (%s)"],
+		text = "Current instance (%s)",
 		value = "instance",
 	},
 	{
-		text = L["Current session"],
+		text = "Current session",
 		value = "session",
 	},
 }
@@ -110,7 +110,7 @@ auraTrackerScope:SetPoint("TOP", 0, -16)
 auraTrackerScope:SetFrameWidth(220)
 auraTrackerScope:JustifyText("LEFT")
 auraTrackerScope:SetSelectedValue("session")
-auraTrackerScope:SetText(L["Current session"])
+auraTrackerScope:SetText("Current session")
 auraTrackerScope.initialize = function(self)
 	for i, v in ipairs(menuList) do
 		local info = UIDropDownMenu_CreateInfo()
@@ -127,7 +127,7 @@ local auraTrackerAuraType = templates:CreateDropDownMenu("CritlineAuraTrackerAur
 auraTrackerAuraType:SetPoint("TOPLEFT", auraTrackerScope, "BOTTOMLEFT")
 auraTrackerAuraType:SetFrameWidth(96)
 auraTrackerAuraType:JustifyText("LEFT")
-auraTrackerAuraType:SetText(L["Aura type"])
+auraTrackerAuraType:SetText("Aura type")
 
 do
 	local function onClick(self)
@@ -137,11 +137,11 @@ do
 
 	local menuList = {
 		{
-			text = L["Buffs"],
+			text = "Buffs",
 			value = "BUFF",
 		},
 		{
-			text = L["Debuffs"],
+			text = "Debuffs",
 			value = "DEBUFF",
 		},
 	}
@@ -181,32 +181,32 @@ do
 
 	local menuList = {
 		{
-			text = L["Show auras cast on me"],
+			text = "Show auras cast on me",
 			value = playerAuras,
 			arg1 = "targetAffiliation",
 		},
 		{
-			text = L["Show auras cast on hostile NPCs"],
+			text = "Show auras cast on hostile NPCs",
 			value = enemyAuras,
 			arg1 = "targetAffiliation",
 		},
 		{
-			text = L["Show auras cast by NPCs"],
+			text = "Show auras cast by NPCs",
 			value = "npc",
 			arg1 = "sourceType",
 		},
 		{
-			text = L["Show auras cast by players"],
+			text = "Show auras cast by players",
 			value = "pvp",
 			arg1 = "sourceType",
 		},
 		{
-			text = L["Sort by aura name"],
+			text = "Sort by aura name",
 			value = auraSort,
 			arg1 = "sort",
 		},
 		{
-			text = L["Sort by source name"],
+			text = "Sort by source name",
 			value = sourceSort,
 			arg1 = "sort",
 		},
@@ -236,7 +236,7 @@ search:SetScript("OnEscapePressed", search.ClearFocus)
 
 local label = search:CreateFontString(nil, nil, "GameFontNormalSmall")
 label:SetPoint("BOTTOMLEFT", search, "TOPLEFT")
-label:SetText(L["Text filter"])
+label:SetText("Text filter")
 
 local NUM_BUTTONS = 6
 local BUTTON_HEIGHT = 36
@@ -331,7 +331,7 @@ local function onEnter(self)
 	GameTooltip:SetOwner(self, "ANCHOR_LEFT")
 	GameTooltip:SetSpellByID(self.spellID)
 	GameTooltip:AddLine(" ")
-	GameTooltip:AddLine(format(L["Spell ID: |cffffffff%d|r"], self.spellID))
+	GameTooltip:AddLine(format("Spell ID: |cffffffff%d|r", self.spellID))
 	GameTooltip:Show()
 end
 
@@ -424,7 +424,7 @@ function auraTracker:PLAYER_ENTERING_WORLD()
 		wipe(enemyAuras.instance)
 		currentInstance = instanceName
 		if auraTrackerScope:GetSelectedValue() == "instance" then
-			auraTrackerScope:SetText(format(L["Current instance (%s)"], currentInstance))
+			auraTrackerScope:SetText(format("Current instance (%s)", currentInstance))
 		end
 		scrollFrame:Update()
 	end
@@ -453,7 +453,7 @@ function auraTracker:RegisterAura(auraTable, sourceName, sourceGUID, spellID, sp
 		return 
 	end
 
-	local source = L["n/a"]
+	local source = "n/a"
 	local sourceType
 	
 	if sourceGUID then

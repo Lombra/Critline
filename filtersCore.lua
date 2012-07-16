@@ -1,8 +1,6 @@
 local addonName, addon = ...
-
 local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 
-local band = bit.band
 local CombatLog_Object_IsA = CombatLog_Object_IsA
 local IsSpellKnown = IsSpellKnown
 local UnitAura = UnitAura
@@ -272,8 +270,6 @@ local directHoTs = {
 	-- [63106] = "Corruption", -- Siphon Life
 }
 
-local filters = addon.filters
-
 local ignoreEncounter
 local isEmpowered = {
 	player = false,
@@ -285,6 +281,8 @@ local corruptSpells = {
 }
 local corruptTargets = {}
 local ignoredTargets = {}
+
+local customFilteredAuras = {}
 
 
 local defaults = {
@@ -303,11 +301,15 @@ local defaults = {
 	},
 }
 
+local filters = CreateFrame("Frame")
+filters:SetScript("OnEvent", function(self, event, ...)
+	return self[event] and self[event](self, ...)
+end)
+addon.filters = filters
+
 function filters:AddonLoaded()
 	self.db = addon.db:RegisterNamespace("filters", defaults)
 	addon.RegisterCallback(self, "SettingsLoaded", "LoadSettings")
-	addon.RegisterCallback(self.spell.scrollFrame, "PerCharSettingsLoaded", "Update")
-	addon.RegisterCallback(self.spell.scrollFrame, "SpellsChanged", "Update")
 	
 	self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
 	self:RegisterEvent("UNIT_AURA")
@@ -316,12 +318,19 @@ function filters:AddonLoaded()
 	self:RegisterEvent("PLAYER_REGEN_DISABLED")
 	self:RegisterEvent("PLAYER_CONTROL_LOST")
 	self:RegisterEvent("PLAYER_CONTROL_GAINED")
+	
+	self.AddonLoaded = nil
 end
 
 addon.RegisterCallback(filters, "AddonLoaded")
 
 function filters:LoadSettings()
 	self.profile = self.db.profile
+	
+	-- dictionary table copy for easy lookup
+	for i, spellID in ipairs(self.db.global.auras) do
+		customFilteredAuras[spellID] = true
+	end
 	
 	for i, v in ipairs(self.options.checkButtons) do
 		v:LoadSetting()
@@ -422,13 +431,12 @@ function filters:ScanAuras(unit)
 		return
 	end
 	
-	local filterAuras = self.db.global.auras
 	for auraType, filter in pairs(auraTypes) do
 		for i = 1, 40 do
 			local spellName, _, _, _, _, _, _, source, _, _, spellID = UnitAura(unit, i, filter)
 			if not spellID then break end
 			self:UnregisterEvent("UNIT_NAME_UPDATE")
-			if specialAuras[spellID] or filterAuras[spellID] then
+			if self:IsFilteredAura(spellID) then
 				isEmpowered[unit] = true
 				return true
 			end
@@ -458,7 +466,7 @@ function filters:AddMob(name)
 		addon:Message(L["%s is already in mob filter."]:format(name))
 	else
 		tinsert(self.db.global.mobs, name)
-		self:UpdateFilter()
+		self.mobs.scrollFrame:Update()
 		addon:Message(L["%s added to mob filter."]:format(name))
 	end
 end
@@ -470,10 +478,21 @@ function filters:AddAura(spellID)
 		addon:Message(L["%s is already in aura filter."]:format(spellName))
 	else
 		tinsert(self.db.global.auras, spellID)
-		self:UpdateFilter()
+		customFilteredAuras[spellID] = true
+		self.auras.scrollFrame:Update()
 		addon:Message(L["%s added to aura filter."]:format(spellName))
 		-- after we add an aura to the filter; check if we have it
 		self:ScanAuras()
+	end
+end
+
+function filters:RemoveAura(spellID)
+	customFilteredAuras[spellID] = nil
+	if not self:ScanAuras("player") then
+		addon:Debug("No filtered aura detected on player. Resuming record tracking.")
+	end
+	if not self:ScanAuras("pet") then
+		addon:Debug("No filtered aura detected on pet. Resuming record tracking.")
 	end
 end
 
@@ -561,14 +580,7 @@ function filters:IsFilteredTarget(targetName, guid)
 end
 
 function filters:IsFilteredAura(spellID)
-	if specialAuras[spellID] then
-		return true
-	end
-	for _, v in ipairs(self.db.global.auras) do
-		if v == spellID then
-			return true
-		end
-	end
+	return specialAuras[spellID] or customFilteredAuras[spellID]
 end
 
 function filters:GetUnit(unitFlags, unitGUID)
@@ -577,8 +589,4 @@ function filters:GetUnit(unitFlags, unitGUID)
 	elseif addon:IsMyPet(unitFlags, unitGUID) then
 		return "pet"
 	end
-end
-
-function filters:UpdateFilter()
-	self[self.type:GetSelectedValue()].scrollFrame:Update()
 end

@@ -1,13 +1,6 @@
 local addonName, Critline = ...
 _G.Critline = Critline
 
--- local addon = { }
--- local mt_func  = { __index = function() return function() end end }
--- local empty_tbl = { }
--- local mt = { __index = function() return setmetatable(empty_tbl, mt_func) end }
--- setmetatable(addon, mt)
--- print(addon.module.method())
-
 local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 local LSM = LibStub("LibSharedMedia-3.0")
 local templates = Critline.templates
@@ -22,7 +15,6 @@ local AUTO_ATTACK = GetSpellInfo(AUTO_ATTACK_ID)
 local HasPetUI = HasPetUI
 local tonumber = tonumber
 local CombatLog_Object_IsA = CombatLog_Object_IsA
-local bor = bit.bor
 local band = bit.band
 
 local COMBATLOG_FILTER_MINE = COMBATLOG_FILTER_MINE
@@ -32,21 +24,29 @@ local COMBATLOG_OBJECT_REACTION_HOSTILE = COMBATLOG_OBJECT_REACTION_HOSTILE
 local COMBATLOG_OBJECT_CONTROL_PLAYER = COMBATLOG_OBJECT_CONTROL_PLAYER
 local COMBATLOG_OBJECT_TYPE_GUARDIAN = COMBATLOG_OBJECT_TYPE_GUARDIAN
 
-
-local treeNames = {
-	dmg  = L["damage"],
-	heal = L["healing"],
-	pet  = L["pet"],
+local trees = {
+	dmg  = {
+		title = L["Damage"],
+		label = L["damage"],
+		icon = [[Interface\Icons\Ability_SteelMelee]],
+	},
+	heal = {
+		title = L["Healing"],
+		label = L["healing"],
+		icon = [[Interface\Icons\Spell_Holy_FlashHeal]],
+	},
+	pet  = {
+		title = L["Pet"],
+		label = L["pet"],
+		icon = [[Interface\Icons\Ability_Hunter_Pet_Bear]],
+	},
 }
-Critline.treeNames = treeNames
-
-
-Critline.icons = {
-	dmg  = [[Interface\Icons\Ability_SteelMelee]],
-	heal = [[Interface\Icons\Spell_Holy_FlashHeal]],
-	pet  = [[Interface\Icons\Ability_Hunter_Pet_Bear]],
+Critline.trees = trees
+Critline.treeIndex = {
+	"dmg",
+	"heal",
+	"pet",
 }
-
 
 -- guardian type pets whose damage we may want to register
 local classPets = {
@@ -279,9 +279,9 @@ local doTooltipUpdate = {}
 
 -- overall record for each tree
 local topRecords = {
-	dmg =  {normal = 0, crit = 0},
+	dmg  = {normal = 0, crit = 0},
 	heal = {normal = 0, crit = 0},
-	pet =  {normal = 0, crit = 0},
+	pet  = {normal = 0, crit = 0},
 }
 
 -- sortable spell tables
@@ -303,14 +303,13 @@ function Critline:UnregisterEvent(event)
 	self.eventFrame:UnregisterEvent(event)
 end
 Critline:RegisterEvent("ADDON_LOADED")
-Critline:RegisterEvent("PLAYER_TALENT_UPDATE")
 Critline:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
 Critline.eventFrame:SetScript("OnEvent", function(self, event, ...)
 	return Critline[event] and Critline[event](Critline, ...)
 end)
 
 
-local config = templates:CreateConfigFrame(addonName, nil, true)
+local config = templates:CreateConfigFrame(addonName, true, nil, true)
 
 
 do
@@ -318,11 +317,7 @@ do
 	Critline.options = options
 	
 	local function toggleTree(self, module)
-		callbacks:Fire("OnTreeStateChanged", self.setting, self:GetChecked())
-		local display = module.display
-		if display then
-			display:UpdateTree(self.setting)
-		end
+		callbacks:Fire("OnTreeStateChanged", self.setting, self:GetChecked() ~= nil)
 	end
 	
 	local checkButtons = {
@@ -390,9 +385,9 @@ do
 		},
 		{
 			text = L["Shorten records"],
-			tooltipText = L["Use shorter format for records numbers."],
+			tooltipText = L["Use shorter format for record numbers."],
 			setting = "shortFormat",
-			func = function(self, module) callbacks:Fire("OnNewTopRecord") module:UpdateTooltips() end,
+			func = function(self, module) callbacks:Fire("FormatChanged") module:UpdateTooltips() end,
 			gap = 16,
 		},
 		{
@@ -504,7 +499,7 @@ local defaults = {
 		screenshot = false,
 		oldRecord = false,
 		shortFormat = false,
-		spellTooltips = false,
+		spellTooltips = true,
 		detailedTooltip = false,
 		tooltipSort = "normal",
 	},
@@ -517,6 +512,7 @@ local treeDefaults = {
 	DRUID		= {dmg = true, heal = true,  pet = false},
 	HUNTER		= {dmg = true, heal = false, pet = true},
 	MAGE		= {dmg = true, heal = false, pet = false},
+	MONK		= {dmg = true, heal = true,  pet = false},
 	PALADIN		= {dmg = true, heal = true,  pet = false},
 	PRIEST		= {dmg = true, heal = true,  pet = false},
 	ROGUE		= {dmg = true, heal = false, pet = false},
@@ -585,85 +581,6 @@ function Critline:ADDON_LOADED(addon)
 		
 		self.ADDON_LOADED = nil
 	end
-end
-
-
--- import native spells to new database format (4.0)
-function Critline:PLAYER_TALENT_UPDATE()
-	if GetMajorTalentTreeBonuses(1) then
-		self:UnregisterEvent("PLAYER_TALENT_UPDATE")
-		self.PLAYER_TALENT_UPDATE = nil
-	else
-		return
-	end
-	
-	local tooltip = CreateFrame("GameTooltip", "CritlineImportScanTooltip", nil, "GameTooltipTemplate")
-
-	local function getID(query)
-		local link = GetSpellLink(query)
-		if link then
-			return tonumber(link:match("spell:(%d+)"))
-		end
-		for tab = 1, 3 do
-			local id = GetMajorTalentTreeBonuses(tab)
-			if GetSpellInfo(id) == query then
-				return id
-			end
-			for i = 1, GetNumTalents(tab) do
-				local name, _, _, _, _, _, _, _, _, isExceptional = GetTalentInfo(tab, i)
-				if name == query and isExceptional then
-					tooltip:SetOwner(UIParent)
-					tooltip:SetTalent(tab, i)
-					return select(3, tooltip:GetSpell())
-				end
-			end
-		end
-	end
-
-	for k, profile in pairs(self.percharDB.profiles) do
-		if profile.spells then
-			for k, tree in pairs(profile.spells) do
-				local spells = {}
-				for i, spell in pairs(tree) do
-					if not spell.spellName then
-						return
-					end
-					local id = getID(spell.spellName)
-					if id and (spell.normal or spell.crit) then
-						spells[id] = spells[id] or {}
-						spells[id][spell.isPeriodic and 2 or 1] = spell
-						spell.spellName = nil
-						spell.isPeriodic = nil
-					end
-				end
-				profile.spells[k] = spells
-			end
-		end
-	end
-	
-	tooltip:Hide()
-	
-	-- invert filter flag on all spells if inverted filter was enabled
-	if self.filters then
-		if self.filters.db.profile.invertFilter then
-			for k, profile in pairs(self.percharDB.profiles) do
-				if profile.spells then
-					for k, tree in pairs(profile.spells) do
-						for i, spell in pairs(tree) do
-							for i, spell in pairs(spell) do
-								spell.filtered = not spell.filtered
-							end
-						end
-					end
-				end
-			end
-		end
-		for k, profile in pairs(self.filters.db.profiles) do
-			profile.invertFilter = nil
-		end
-	end
-	
-	self:LoadPerCharSettings()
 end
 
 
@@ -916,12 +833,12 @@ end
 
 
 function Critline:LoadPerCharSettings()
-	for tree in pairs(treeNames) do
-		wipe(spellArrays[tree])
+	for tree in pairs(trees) do
+		local array = spellArrays[tree]
+		wipe(array)
 		for spellID, spell in pairs(self.percharDB.profile.spells[tree]) do
 			for i, v in pairs(spell) do
-				if type(v) ~= "table" or v.spellName then return end -- avoid error in pre 4.0 DB
-				spellArrays[tree][#spellArrays[tree] + 1] = {
+				array[#array + 1] = {
 					spellID = spellID,
 					spellName = self:GetSpellName(spellID),
 					filtered = v.filtered,
@@ -1063,7 +980,6 @@ function Critline:UpdateTopRecords(tree)
 	
 	for spellID, spell in pairs(self.percharDB.profile.spells[tree]) do
 		for i, v in pairs(spell) do
-			if type(v) ~= "table" then return end -- avoid error in pre 4.0 DB
 			if not (self.filters and v.filtered) then
 				local normal = v.normal
 				if normal then
@@ -1126,7 +1042,7 @@ function Critline:DeleteSpell(tree, spellID, periodic)
 	for i, v in ipairs(spellArrays[tree]) do
 		if v.spellID == spellID and v.periodic == periodic then
 			tremove(spellArrays[tree], i)
-			self:Message(format(L["Reset %s (%s) records."], self:GetFullSpellName(v.spellID, v.periodic), treeNames[tree]))
+			self:Message(format(L["Reset %s (%s) records."], self:GetFullSpellName(v.spellID, v.periodic), trees[tree].label))
 			break
 		end
 	end
@@ -1181,7 +1097,7 @@ function Critline:ShowTooltip(tree)
 	end
 	local r, g, b = r, g, b
 	local rR, gR, bR
-	GameTooltip:AddLine("Critline "..treeNames[tree], r, g, b)
+	GameTooltip:AddLine("Critline "..trees[tree].label, r, g, b)
 	if not self.db.profile.detailedTooltip then
 		-- advanced tooltip uses different text color
 		rR, gR, bR = r, g, b
@@ -1283,7 +1199,7 @@ end
 
 local funcset = {}
 
-for k in pairs(treeNames)do
+for k in pairs(trees) do
 	funcset[k] = function(spellID)
 		local spell = Critline.percharDB.profile.spells[k][spellID]
 		if not spell then
