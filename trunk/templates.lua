@@ -4,6 +4,101 @@ local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 local templates = {}
 addon.templates = templates
 
+local function onSet(self, value)
+	addon:Debug(self.setting..":", value)
+	local func = self.func
+	if func then
+		if type(func) == "string" then
+			self = self.module
+			func = self[func]
+		end
+		func(self, value)
+	end
+end
+
+do
+	local objectData = {
+		CheckButton = {
+			x = -2,
+			y = -16,
+			bottomOffset = 8,
+		},
+		ColorButton = {
+			x = 3,
+			y = -21,
+			bottomOffset = 3,
+		},
+		Slider = {
+			x = 7,
+			y = -27,
+			bottomOffset = -5,
+		},
+		DropDownMenu = {
+			x = -17,
+			y = -32,
+			bottomOffset = 8,
+		},
+	}
+	
+	local function loadOptions(self, module, perchar)
+		module = module or self
+		for i, v in ipairs(self.options) do
+			if v.perchar == perchar then
+				v.db = module[perchar and "percharDB" or "db"].profile
+				v:LoadSetting(v.db[v.setting])
+				onSet(v, v.db[v.setting])
+			end
+		end
+	end
+	
+	--[[
+	
+	standard option fields:
+	
+		type (string) - type of widget
+		label (string) - label of the option
+		tooltipText (string) - description of the option
+		setting (string) - key in the database that this option relates to
+		perchar (boolean) - if true, this option will use .percharDB instead of .db
+		func (string | functon) - function to be called when this option is changed, if a string, will look for a method in the module table
+									gets passed the option widget and its value
+	
+	]]
+	
+	function templates:Add(object)
+		local options = self.options
+		local objectType = object.type
+		local option = self["Create"..objectType](self, object)
+		option.type = objectType
+		option.tooltipText = object.tooltipText
+		option.setting = object.setting
+		option.perchar = object.perchar
+		option.func = object.func
+		local data = objectData[objectType]
+		local previousOption = options[#options]
+		if object.newColumn or not previousOption then
+			option:SetPoint("TOPLEFT", self.title, object.newColumn and "BOTTOM" or "BOTTOMLEFT", data.x, data.y)
+		else
+			local previousData = objectData[previousOption.type]
+			option:SetPoint("TOPLEFT", previousOption, "BOTTOMLEFT", data.x - previousData.x, data.y + previousData.bottomOffset - (object.gap or 0))
+		end
+		tinsert(options, option)
+		self.registry[object.setting] = option
+		return option
+	end
+	
+	-- specify a module if your config frame is not the same as your main module table
+	function templates:CreateOptions(options, module)
+		self.options = {}
+		self.registry = {}
+		self.LoadOptions = loadOptions
+		for i, v in ipairs(options) do
+			local option = templates.Add(self, v)
+			option.module = module or self
+		end
+	end
+end
+
 do	-- config frame
 	local function createTitle(frame)
 		local title = frame:CreateFontString(nil, nil, "GameFontNormalLarge")
@@ -26,10 +121,23 @@ do	-- config frame
 		frame.desc = desc
 	end
 	
-	function templates:CreateConfigFrame(name, addTitle, addDesc, isParent, frame)
+	local embed = {
+		"CreateOptions",
+		"CreateCheckButton",
+		"CreateSlider",
+		"CreateColorButton",
+		"CreateEditBox",
+		"CreateDropDownMenu",
+		"CreateTabInterface",
+	}
+	
+	local function createConfigFrame(name, addTitle, addDesc, frame)
 		frame = frame or CreateFrame("Frame")
+		for i, v in ipairs(embed) do
+			frame[v] = templates[v]
+		end
 		frame.name = name
-		if not isParent then
+		if name ~= addonName then
 			frame.parent = addonName
 		end
 		if addTitle then
@@ -41,55 +149,37 @@ do	-- config frame
 		InterfaceOptions_AddCategory(frame)
 		return frame
 	end
+	
+	local function createModuleConfigFrame(self, name, addTitle, addDesc, frame)
+		return createConfigFrame(name, addTitle, addDesc, frame)
+	end
+	
+	function addon:CreateConfigFrame()
+		local frame = createConfigFrame(addonName, true)
+		self.AddCategory = createModuleConfigFrame
+		return frame
+	end
 end
 
 do	-- check button
 	local function onClick(self)
 		local checked = self:GetChecked() ~= nil
-		
-		if checked then
-			PlaySound("igMainMenuOptionCheckBoxOn")
-		else
-			PlaySound("igMainMenuOptionCheckBoxOff")
-		end
-		
-		self.module[self.db].profile[self.setting] = checked
-		
-		if self.func then
-			self:func(self.module)
-		end
-		
-		addon:Debug(self.setting..(checked and " on" or " off"))
+		PlaySound(checked and "igMainMenuOptionCheckBoxOn" or "igMainMenuOptionCheckBoxOff")
+		self.db[self.setting] = checked
+		onSet(self, checked)
 	end
 	
-	local function loadSetting(self)
-		self:SetChecked(self.module[self.db].profile[self.setting])
-		if self.func then
-			self:func(self.module)
-		end
-	end
-
-	function templates:CreateCheckButton(parent, data)
-		local btn = CreateFrame("CheckButton", nil, parent, "OptionsBaseCheckButtonTemplate")
+	function templates:CreateCheckButton(data)
+		local btn = CreateFrame("CheckButton", nil, self, "OptionsBaseCheckButtonTemplate")
 		btn:SetPushedTextOffset(0, 0)
 		btn:SetScript("OnClick", onClick)
-		
-		btn.LoadSetting = loadSetting
+		btn.LoadSetting = btn.SetChecked
 		
 		local text = btn:CreateFontString(nil, nil, "GameFontHighlight")
 		text:SetPoint("LEFT", btn, "RIGHT", 0, 1)
 		btn:SetFontString(text)
+		btn:SetText(data.label)
 		
-		if data then
-			btn:SetText(data.text)
-			data.text = nil
-			data.db = data.perchar and "percharDB" or "db"
-			data.perchar = nil
-			for k, v in pairs(data) do
-				btn[k] = v
-			end
-		end
-
 		return btn
 	end
 end
@@ -102,6 +192,23 @@ do	-- slider template
 		insets = {left = 3, right = 3, top = 6, bottom = 6}
 	}
 	
+	local function setText(self, value, isPercent)
+		if isPercent then
+			self:SetFormattedText("%.0f%%", value * 100)
+		else
+			self:SetText(value)
+		end
+	end
+	
+	local function onValueChanged(self, value, userInput)
+		setText(self.currentValue, value, self.isPercent)
+		-- only set values if the value was set by a human; they will already have been set by LoadSettings
+		if userInput then
+			self.db[self.setting] = value
+			onSet(self, value)
+		end
+	end
+	
 	local function onEnter(self)
 		if self:IsEnabled() then
 			if self.tooltipText then
@@ -111,8 +218,8 @@ do	-- slider template
 		end
 	end
 	
-	function templates:CreateSlider(parent, data)
-		local slider = CreateFrame("Slider", nil, parent)
+	function templates:CreateSlider(data)
+		local slider = CreateFrame("Slider", nil, self)
 		slider:EnableMouse(true)
 		slider:SetSize(144, 17)
 		slider:SetOrientation("HORIZONTAL")
@@ -120,6 +227,8 @@ do	-- slider template
 		slider:SetBackdrop(backdrop)
 		slider:SetScript("OnEnter", onEnter)
 		slider:SetScript("OnLeave", GameTooltip_Hide)
+		
+		slider.LoadSetting = slider.SetValue
 		
 		local text = slider:CreateFontString(nil, nil, "GameFontNormal")
 		text:SetPoint("BOTTOM", slider, "TOP")
@@ -133,25 +242,25 @@ do	-- slider template
 		max:SetPoint("TOPRIGHT", slider, "BOTTOMRIGHT", 4, 3)
 		slider.max = max
 		
-		if data then
-			slider:SetMinMaxValues(data.minValue, data.maxValue)
-			slider:SetValueStep(data.valueStep)
-			slider:SetScript("OnValueChanged", data.func)
-			text:SetText(data.text)
-			min:SetText(data.minText or data.minValue)
-			max:SetText(data.maxText or data.maxValue)
-			slider.tooltipText = data.tooltipText
-		end
-		
 		-- font string for current value
-		local value = slider:CreateFontString(nil, "BACKGROUND", "GameFontHighlightSmall")
-		value:SetPoint("CENTER", 0, -15)
-		slider.value = value
+		local currentValue = slider:CreateFontString(nil, "BACKGROUND", "GameFontHighlightSmall")
+		currentValue:SetPoint("CENTER", 0, -15)
+		slider.currentValue = currentValue
 		
 		local thumb = slider:CreateTexture()
 		thumb:SetTexture("Interface\\Buttons\\UI-SliderBar-Button-Horizontal")
 		thumb:SetSize(32, 32)
 		slider:SetThumbTexture(thumb)
+		
+		if data then
+			slider:SetMinMaxValues(data.minValue, data.maxValue)
+			slider:SetValueStep(data.valueStep)
+			slider:SetScript("OnValueChanged", onValueChanged)
+			text:SetText(data.label)
+			slider.isPercent = data.isPercent
+			setText(min, data.minText or data.minValue, data.isPercent)
+			setText(max, data.maxText or data.maxValue, data.isPercent)
+		end
 		
 		return slider
 	end
@@ -160,42 +269,38 @@ end
 do	-- swatch button template
 	local ColorPickerFrame = ColorPickerFrame
 	
-	local function swatchFunc()
-		local button = ColorPickerFrame.extraInfo
-		local r, g, b = ColorPickerFrame:GetColorRGB()
-		button.swatch:SetVertexColor(r, g, b)
-		if button.func then button:func(r, g, b) end
-		local color = button.color
+	local function setColor(self, r, g, b)
+		self.swatch:SetVertexColor(r, g, b)
+	end
+	
+	local function saveColor(self, r, g, b)
+		setColor(self, r, g, b)
+		local color = self.color
 		color.r = r
 		color.g = g
 		color.b = b
+		onSet(self, color)
+	end
+	
+	local function loadSetting(self, value)
+		local color = self.db[self.setting]
+		self.color = color
+		setColor(self, color.r, color.g, color.b)
+	end
+	
+	local function swatchFunc()
+		saveColor(ColorPickerFrame.extraInfo, ColorPickerFrame:GetColorRGB())
 	end
 
 	local function cancelFunc(prev)
-		local button = ColorPickerFrame.extraInfo
-		local r, g, b, a = prev.r, prev.g, prev.b, prev.opacity
-		button.swatch:SetVertexColor(r, g, b)
-		if button.func then button:func(r, g, b) end
-		local color = button.color
-		color.r = r
-		color.g = g
-		color.b = b
+		saveColor(ColorPickerFrame.extraInfo, ColorPicker_GetPreviousValues())
 	end
 
-	-- local function opacityFunc()
-		-- local button = ColorPickerFrame.extraInfo
-		-- local alpha = 1.0 - OpacitySliderFrame:GetValue()
-		-- if button.opacityFunc then button:opacityFunc(alpha) end
-	-- end
-	
 	local function onClick(self)
 		local info = UIDropDownMenu_CreateInfo()
 		local color = self.color
 		info.r, info.g, info.b = color.r, color.g, color.b
 		info.swatchFunc = swatchFunc
-		-- info.hasOpacity = self.hasOpacity
-		-- info.opacityFunc = opacityFunc
-		-- info.opacity = color.a
 		info.cancelFunc = cancelFunc
 		info.extraInfo = self
 		OpenColorPicker(info)
@@ -214,12 +319,17 @@ do	-- swatch button template
 		GameTooltip:Hide()
 	end
 
-	function templates:CreateColorButton(parent)
-		local btn = CreateFrame("Button", nil, parent)
+	function templates:CreateColorButton(data)
+		local btn = CreateFrame("Button", nil, self)
 		btn:SetSize(16, 16)
 		btn:SetPushedTextOffset(0, 0)
+		btn:SetScript("OnClick", onClick)
+		btn:SetScript("OnEnter", onEnter)
+		btn:SetScript("OnLeave", onLeave)
 		
-		btn:SetNormalTexture("Interface\\ChatFrame\\ChatFrameColorSwatch")
+		btn.LoadSetting = loadSetting
+		
+		btn:SetNormalTexture([[Interface\ChatFrame\ChatFrameColorSwatch]])
 		btn.swatch = btn:GetNormalTexture()
 		
 		local bg = btn:CreateTexture(nil, "BACKGROUND")
@@ -233,38 +343,36 @@ do	-- swatch button template
 		text:SetJustifyH("LEFT")
 		btn:SetFontString(text)
 		
-		btn:SetScript("OnClick", onClick)
-		btn:SetScript("OnEnter", onEnter)
-		btn:SetScript("OnLeave", onLeave)
+		btn:SetText(data.label)
 		
 		return btn
 	end
 end
 
 do	-- editbox
-	function templates:CreateEditBox(parent)
-		local editbox = CreateFrame("EditBox", nil, parent)
+	function templates:CreateEditBox()
+		local editbox = CreateFrame("EditBox", nil, self)
 		editbox:SetAutoFocus(false)
 		editbox:SetHeight(20)
 		editbox:SetFontObject("ChatFontNormal")
 		editbox:SetTextInsets(5, 0, 0, 0)
 
 		local left = editbox:CreateTexture("BACKGROUND")
-		left:SetTexture("Interface\\Common\\Common-Input-Border")
+		left:SetTexture([[Interface\Common\Common-Input-Border]])
 		left:SetTexCoord(0, 0.0625, 0, 0.625)
 		left:SetWidth(8)
 		left:SetPoint("TOPLEFT")
 		left:SetPoint("BOTTOMLEFT")
 
 		local right = editbox:CreateTexture("BACKGROUND")
-		right:SetTexture("Interface\\Common\\Common-Input-Border")
+		right:SetTexture([[Interface\Common\Common-Input-Border]])
 		right:SetTexCoord(0.9375, 1, 0, 0.625)
 		right:SetWidth(8)
 		right:SetPoint("TOPRIGHT")
 		right:SetPoint("BOTTOMRIGHT")
 
 		local mid = editbox:CreateTexture("BACKGROUND")
-		mid:SetTexture("Interface\\Common\\Common-Input-Border")
+		mid:SetTexture([[Interface\Common\Common-Input-Border]])
 		mid:SetTexCoord(0.0625, 0.9375, 0, 0.625)
 		mid:SetPoint("TOPLEFT", left, "TOPRIGHT")
 		mid:SetPoint("BOTTOMRIGHT", right, "BOTTOMLEFT")
@@ -274,6 +382,12 @@ do	-- editbox
 end
 
 do	-- dropdown menu frame
+	local function onClick(self)
+		self.owner:SetSelectedValue(self.value)
+		self.owner.db[self.owner.setting] = self.value
+		onSet(self.owner, self.value)
+	end
+	
 	local function setSelectedValue(self, value)
 		UIDropDownMenu_SetSelectedValue(self, value)
 		UIDropDownMenu_SetText(self, self.menu and self.menu[value] or value)
@@ -300,8 +414,9 @@ do	-- dropdown menu frame
 		end
 	end
 	
-	function templates:CreateDropDownMenu(name, parent, menu, valueLookup)
-		local frame = CreateFrame("Frame", name, parent, "UIDropDownMenuTemplate")
+	function templates:CreateDropDownMenu(data, name)
+		name = name or "Critline"..data.setting.."DropDown"
+		local frame = CreateFrame("Frame", name, self, "UIDropDownMenuTemplate")
 		
 		frame.SetFrameWidth = UIDropDownMenu_SetWidth
 		frame.SetSelectedValue = setSelectedValue
@@ -312,19 +427,26 @@ do	-- dropdown menu frame
 		frame.Disable = UIDropDownMenu_DisableDropDown
 		frame.SetDisabled = setDisabled
 		frame.JustifyText = UIDropDownMenu_JustifyText
-		
-		if menu then
-			for _, v in ipairs(menu) do
-				menu[v.value] = v.text
-			end
-		end
-		frame.menu = menu or valueLookup
+		frame.LoadSetting = setSelectedValue
 		
 		frame.initialize = initialize
 		
 		local label = frame:CreateFontString(name.."Label", "BACKGROUND", "GameFontNormalSmall")
 		label:SetPoint("BOTTOMLEFT", frame, "TOPLEFT", 16, 3)
 		frame.label = label
+		
+		if data then
+			if data.menu then
+				for i, v in ipairs(data.menu) do
+					data.menu[v.value] = v.text
+				end
+			end
+			frame.menu = data.menu
+			frame.onClick = onClick
+			frame.initialize = data.initialize or initialize
+			frame.label:SetText(data.label)
+			frame:SetFrameWidth(data.width)
+		end
 		
 		return frame
 	end
@@ -407,8 +529,8 @@ do	-- tab interface
 		return frame.selectedTab
 	end
 	
-	function templates:CreateTabInterface(parent)
-		local frame = CreateFrame("Frame", nil, parent)
+	function templates:CreateTabInterface()
+		local frame = CreateFrame("Frame", nil, self)
 		
 		local bg = frame:CreateTexture(nil, "BORDER")
 		bg:SetTexture(0.3, 0.3, 0.3)
@@ -426,5 +548,26 @@ do	-- tab interface
 		frame.GetSelectedTab = getSelectedTab
 		
 		return frame
+	end
+end
+
+do	-- popup
+	local function editBoxOnEnterPressed(self, data)
+		local parent = self:GetParent()
+		StaticPopupDialogs[parent.which].OnAccept(parent, data)
+		parent:Hide()
+	end
+	
+	local function editBoxOnEscapePressed(self)
+		self:GetParent():Hide()
+	end
+	
+	function addon:CreatePopup(which, info)
+		StaticPopupDialogs[which] = info
+		info.EditBoxOnEnterPressed = editBoxOnEnterPressed
+		info.EditBoxOnEscapePressed = editBoxOnEscapePressed
+		info.hideOnEscape = true
+		info.whileDead = true
+		info.timeout = 0
 	end
 end

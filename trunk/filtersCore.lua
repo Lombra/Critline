@@ -3,6 +3,7 @@ local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 
 local CombatLog_Object_IsA = CombatLog_Object_IsA
 local IsSpellKnown = IsSpellKnown
+local UnitAffectingCombat = UnitAffectingCombat
 local UnitAura = UnitAura
 
 local COMBATLOG_FILTER_ME = COMBATLOG_FILTER_ME
@@ -270,16 +271,25 @@ local directHoTs = {
 	-- [63106] = "Corruption", -- Siphon Life
 }
 
+local mt = {
+	__index = function(tbl, key)
+		local newTbl = {}
+		tbl[key] = newTbl
+		return newTbl
+	end
+}
+
 local ignoreEncounter
 local isEmpowered = {
 	player = false,
 	pet = false,
 }
 local corruptSpells = {
-	player = {},
-	pet = {},
+	player = setmetatable({}, mt),
+	pet = setmetatable({}, mt),
 }
-local corruptTargets = {}
+
+local corruptTargets = setmetatable({}, mt)
 local ignoredTargets = {}
 
 local customFilteredAuras = {}
@@ -332,17 +342,12 @@ function filters:LoadSettings()
 		customFilteredAuras[spellID] = true
 	end
 	
-	for i, v in ipairs(self.options.checkButtons) do
-		v:LoadSetting()
-	end
-	
-	self.options.slider:SetValue(self.profile.levelFilter)
+	self:LoadOptions()
 end
 
 function filters:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, sourceGUID, sourceName, sourceFlags, sourceFlags2, destGUID, destName, destFlags, destFlags2, spellID, spellName)
 	if (eventType == "SPELL_AURA_REMOVED" or eventType == "SPELL_AURA_BROKEN" or eventType == "SPELL_AURA_BROKEN_SPELL" or eventType == "SPELL_AURA_STOLEN") then
-		if targetAuras[spellID] then
-			corruptTargets[destGUID] = corruptTargets[destGUID] or {}
+		if targetAuras[spellID] and rawget(corruptTargets, destGUID)[spellID] then
 			corruptTargets[destGUID][spellID] = nil
 			addon:Debug(format("Filtered aura (%s) faded from %s.", spellName, destName))
 		end
@@ -351,7 +356,6 @@ function filters:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, s
 	if eventType == "SPELL_AURA_APPLIED" or eventType == "SPELL_AURA_APPLIED_DOSE" or eventType == "SPELL_AURA_REFRESH" then
 		-- if this is one of the damage-taken-increased auras, we flag this target - along with the aura in question - as corrupt
 		if targetAuras[spellID] then
-			corruptTargets[destGUID] = corruptTargets[destGUID] or {}
 			corruptTargets[destGUID][spellID] = true
 			ignoredTargets[destGUID] = true
 			addon:Debug(format("Target (%s) gained filtered aura. (%s) Ignore received damage.", destName, spellName))
@@ -360,9 +364,7 @@ function filters:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, s
 		-- auras applied by self
 		local sourceUnit = self:GetUnit(sourceFlags, sourceGUID)
 		if sourceUnit then
-			local corruptSpell = corruptSpells[sourceUnit][spellID] or {}
-			corruptSpell[destGUID] = self:IsEmpowered(sourceUnit) or self:IsVulnerableTarget(destGUID)
-			corruptSpells[sourceUnit][spellID] = corruptSpell
+			corruptSpells[sourceUnit][spellID][destGUID] = self:IsEmpowered(sourceUnit) or self:IsVulnerableTarget(destGUID)
 		end
 	end
 end
@@ -388,14 +390,14 @@ function filters:UNIT_NAME_UPDATE()
 end
 
 function filters:PLAYER_REGEN_ENABLED()
-	if self:ScanAuras() then
-		addon:Debug("Filtered aura(s) detected. Suppressing new records for this encounter.")
+	if not self:ScanAuras() then
+		addon:Debug("Encounter ended and no filtered auras detected. Resuming record tracking.")
 	end
 end
 
 function filters:PLAYER_REGEN_DISABLED()
 	if self:ScanAuras() then
-		addon:Debug("Filtered aura(s) detected. Suppressing new records for this encounter.")
+		addon:Debug("Encounter started and filtered auras detected. Suppressing new records for this encounter.")
 	end
 	for unit, v in pairs(ignoredTargets) do
 		if not self:IsVulnerableTarget(unit) then
@@ -482,7 +484,9 @@ function filters:AddAura(spellID)
 		self.auras.scrollFrame:Update()
 		addon:Message(L["%s added to aura filter."]:format(spellName))
 		-- after we add an aura to the filter; check if we have it
-		self:ScanAuras()
+		if self:ScanAuras() then
+			addon:Debug("Filtered aura detected. Disabling combat log tracking.")
+		end
 	end
 end
 
@@ -505,7 +509,7 @@ function filters:SpellPassesFilters(tree, spellName, spellID, isPeriodic, destGU
 	end
 	
 	local unit = isPet and "pet" or "player"
-	if ((corruptSpells[unit][spellID] and corruptSpells[unit][spellID][destGUID]) or self:IsEmpowered(unit)) and not self.profile.ignoreAuraFilter then
+	if ((rawget(corruptSpells[unit], spellID) and corruptSpells[unit][spellID][destGUID]) or self:IsEmpowered(unit)) and not self.profile.ignoreAuraFilter then
 		addon:Debug(format("Spell (%s) was cast under the influence of a filtered aura. Return.", spellName))
 		return
 	end
@@ -561,8 +565,7 @@ end
 
 -- checks if a target is affected by any vulnerability auras
 function filters:IsVulnerableTarget(guid)
-	local corruptTarget = corruptTargets[guid]
-	if (corruptTarget and next(corruptTarget)) then
+	if next(corruptTargets[guid]) then
 		return true
 	end
 end

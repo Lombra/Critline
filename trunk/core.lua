@@ -3,7 +3,6 @@ _G.Critline = Critline
 
 local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 local LSM = LibStub("LibSharedMedia-3.0")
-local templates = Critline.templates
 local _, playerClass = UnitClass("player")
 local debugging
 
@@ -291,185 +290,6 @@ local spellArrays = {dmg = {}, heal = {}, pet = {}}
 LSM:Register("sound", "Level up", [[Sound\Interface\LevelUp.ogg]])
 
 
--- tooltip for level scanning
-local tooltip = CreateFrame("GameTooltip", "CritlineTooltip", nil, "GameTooltipTemplate")
-
-
-Critline.eventFrame = CreateFrame("Frame")
-function Critline:RegisterEvent(event)
-	self.eventFrame:RegisterEvent(event)
-end
-function Critline:UnregisterEvent(event)
-	self.eventFrame:UnregisterEvent(event)
-end
-Critline:RegisterEvent("ADDON_LOADED")
-Critline:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
-Critline.eventFrame:SetScript("OnEvent", function(self, event, ...)
-	return Critline[event] and Critline[event](Critline, ...)
-end)
-
-
-local config = templates:CreateConfigFrame(addonName, true, nil, true)
-
-
-do
-	local options = {}
-	Critline.options = options
-	
-	local function toggleTree(self, module)
-		callbacks:Fire("OnTreeStateChanged", self.setting, self:GetChecked() ~= nil)
-	end
-	
-	local checkButtons = {
-		db = {},
-		percharDB = {},
-		{
-			text = L["Record damage"],
-			tooltipText = L["Check to enable damage events to be recorded."],
-			setting = "dmg",
-			perchar = true,
-			func = toggleTree,
-		},
-		{
-			text = L["Record healing"],
-			tooltipText = L["Check to enable healing events to be recorded."],
-			setting = "heal",
-			perchar = true,
-			func = toggleTree,
-		},
-		{
-			text = L["Record pet damage"],
-			tooltipText = L["Check to enable pet damage events to be recorded."],
-			setting = "pet",
-			perchar = true,
-			func = toggleTree,
-		},
-		{
-			text = L["Record PvE"],
-			tooltipText = L["Disable to ignore records where the target is an NPC."],
-			setting = "PvE",
-			gap = 16,
-		},
-		{
-			text = L["Record PvP"],
-			tooltipText = L["Disable to ignore records where the target is a player."],
-			setting = "PvP",
-		},
-		{
-			text = L["Ignore vulnerability"],
-			tooltipText = L["Enable to ignore additional damage due to vulnerability."],
-			setting = "ignoreVulnerability",
-		},
-		{
-			text = L["Chat output"],
-			tooltipText = L["Prints new record notifications to the chat frame."],
-			setting = "chatOutput",
-			newColumn = true,
-		},
-		{
-			text = L["Play sound"],
-			tooltipText = L["Plays a sound on a new record."],
-			setting = "playSound",
-			func = function(self) options.sound:SetDisabled(not self:GetChecked()) end,
-		},
-		{
-			text = L["Screenshot"],
-			tooltipText = L["Saves a screenshot on a new record."],
-			setting = "screenshot",
-			gap = 48,
-		},
-		{
-			text = L["Include old record"],
-			tooltipText = L["Includes previous record along with \"New record\" messages."],
-			setting = "oldRecord",
-		},
-		{
-			text = L["Shorten records"],
-			tooltipText = L["Use shorter format for record numbers."],
-			setting = "shortFormat",
-			func = function(self, module) callbacks:Fire("FormatChanged") module:UpdateTooltips() end,
-			gap = 16,
-		},
-		{
-			text = L["Records in spell tooltips"],
-			tooltipText = L["Include (unfiltered) records in spell tooltips."],
-			setting = "spellTooltips",
-		},
-		{
-			text = L["Detailed tooltip"],
-			tooltipText = L["Use detailed format in the summary tooltip."],
-			setting = "detailedTooltip",
-			func = function(self, module) module:UpdateTooltips() end,
-		},
-	}
-	
-	options.checkButtons = checkButtons
-	
-	for i, v in ipairs(checkButtons) do
-		local btn = templates:CreateCheckButton(config, v)
-		if i == 1 then
-			btn:SetPoint("TOPLEFT", config.title, "BOTTOMLEFT", -2, -16)
-		elseif v.newColumn then
-			btn:SetPoint("TOPLEFT", config.title, "BOTTOM", 0, -16)
-		else
-			btn:SetPoint("TOP", checkButtons[i - 1], "BOTTOM", 0, -(v.gap or 8))
-		end
-		btn.module = Critline
-		local btns = checkButtons[btn.db]
-		btns[#btns + 1] = btn
-		options[v.setting] = btn
-		checkButtons[i] = btn
-	end
-	
-	local function onClick(self)
-		self.owner:SetSelectedValue(self.value)
-		Critline.db.profile.sound = self.value
-		PlaySoundFile(LSM:Fetch("sound", self.value))
-	end
-	
-	local sound = templates:CreateDropDownMenu("CritlineSoundEffect", config)
-	sound:SetFrameWidth(160)
-	sound:SetPoint("TOPLEFT", options.playSound, "BOTTOMLEFT", -15, -8)
-	sound.initialize = function(self)
-		for _, v in ipairs(LSM:List("sound")) do
-			local info = UIDropDownMenu_CreateInfo()
-			info.text = v
-			info.func = onClick
-			info.owner = self
-			UIDropDownMenu_AddButton(info)
-		end
-	end
-	options.sound = sound
-	
-	-- summary sort dropdown
-	local menu = {
-		{
-			text = L["Alphabetically"],
-			value = "alpha",
-		},
-		{
-			text = L["By normal record"],
-			value = "normal",
-		},
-		{
-			text = L["By crit record"],
-			value = "crit",
-		},
-	}
-	
-	local sorting = templates:CreateDropDownMenu("CritlineTooltipSorting", config, menu)
-	sorting:SetFrameWidth(160)
-	sorting:SetPoint("TOPLEFT", checkButtons[#checkButtons], "BOTTOMLEFT", -15, -24)
-	sorting.label:SetText(L["Tooltip sorting:"])
-	sorting.onClick = function(self)
-		self.owner:SetSelectedValue(self.value)
-		Critline.db.profile.tooltipSort = self.value
-		Critline:UpdateTooltips()
-	end
-	options.tooltipSort = sorting
-end
-
-
 Critline.SlashCmdHandlers = {
 	debug = function() Critline:ToggleDebug() end,
 }
@@ -487,38 +307,191 @@ end
 SLASH_CRITLINE1 = "/critline"
 SLASH_CRITLINE2 = "/cl"
 
+-- tooltip for level scanning
+local tooltip = CreateFrame("GameTooltip", "CritlineTooltip", nil, "GameTooltipTemplate")
+
+Critline.eventFrame = CreateFrame("Frame")
+function Critline:RegisterEvent(event)
+	self.eventFrame:RegisterEvent(event)
+end
+function Critline:UnregisterEvent(event)
+	self.eventFrame:UnregisterEvent(event)
+end
+Critline:RegisterEvent("ADDON_LOADED")
+Critline:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+Critline.eventFrame:SetScript("OnEvent", function(self, event, ...)
+	return Critline[event] and Critline[event](Critline, ...)
+end)
+
+local config = Critline:CreateConfigFrame()
+
+do
+	local function toggleTree(self, checked)
+		callbacks:Fire("OnTreeStateChanged", self.setting, checked)
+	end
+	
+	-- summary sort dropdown
+	local menu = {
+		{
+			text = L["Alphabetically"],
+			value = "alpha",
+		},
+		{
+			text = L["By normal record"],
+			value = "normal",
+		},
+		{
+			text = L["By crit record"],
+			value = "crit",
+		},
+	}
+	
+	local options = {
+		{
+			type = "CheckButton",
+			label = L["Record damage"],
+			tooltipText = L["Check to enable damage events to be recorded."],
+			setting = "dmg",
+			perchar = true,
+			func = toggleTree,
+		},
+		{
+			type = "CheckButton",
+			label = L["Record healing"],
+			tooltipText = L["Check to enable healing events to be recorded."],
+			setting = "heal",
+			perchar = true,
+			func = toggleTree,
+		},
+		{
+			type = "CheckButton",
+			label = L["Record pet damage"],
+			tooltipText = L["Check to enable pet damage events to be recorded."],
+			setting = "pet",
+			perchar = true,
+			func = toggleTree,
+		},
+		{
+			type = "CheckButton",
+			label = L["Record PvE"],
+			tooltipText = L["Disable to ignore records where the target is an NPC."],
+			setting = "PvE",
+			gap = 8,
+		},
+		{
+			type = "CheckButton",
+			label = L["Record PvP"],
+			tooltipText = L["Disable to ignore records where the target is a player."],
+			setting = "PvP",
+		},
+		{
+			type = "CheckButton",
+			label = L["Ignore vulnerability"],
+			tooltipText = L["Enable to ignore additional damage due to vulnerability."],
+			setting = "ignoreVulnerability",
+		},
+		{
+			newColumn = true,
+			type = "CheckButton",
+			label = L["Shorten records"],
+			tooltipText = L["Use shorter format for record numbers."],
+			setting = "shortFormat",
+			func = function(self, checked)
+				callbacks:Fire("FormatChanged")
+				Critline:UpdateTooltips()
+			end,
+		},
+		{
+			type = "CheckButton",
+			label = L["Records in spell tooltips"],
+			tooltipText = L["Include (unfiltered) records in spell tooltips."],
+			setting = "spellTooltips",
+		},
+		{
+			type = "CheckButton",
+			label = L["Detailed tooltip"],
+			tooltipText = L["Use detailed format in the summary tooltip."],
+			setting = "detailedTooltip",
+			func = "UpdateTooltips",
+		},
+		{
+			type = "DropDownMenu",
+			label = L["Tooltip sorting:"],
+			setting = "tooltipSort",
+			width = 160,
+			func = "UpdateTooltips",
+			menu = menu,
+		},
+		{
+			type = "CheckButton",
+			label = L["Include old record"],
+			tooltipText = L["Includes previous record along with \"New record\" messages."],
+			setting = "oldRecord",
+		},
+		{
+			type = "CheckButton",
+			label = L["Chat output"],
+			tooltipText = L["Prints new record notifications to the chat frame."],
+			setting = "chatOutput",
+		},
+		{
+			type = "CheckButton",
+			label = L["Screenshot"],
+			tooltipText = L["Saves a screenshot on a new record."],
+			setting = "screenshot",
+		},
+		{
+			type = "DropDownMenu",
+			label = L["Sound effect"],
+			setting = "sound",
+			width = 160,
+			func = function(self, value)
+				-- hack not to play the sound when settings are loaded from a triggered event
+				if not GetMouseButtonClicked() then return end
+				PlaySoundFile(LSM:Fetch("sound", value))
+			end,
+			initialize = function(self)
+				for _, v in ipairs(LSM:List("sound")) do
+					local info = UIDropDownMenu_CreateInfo()
+					info.text = v
+					info.func = self.onClick
+					info.owner = self
+					UIDropDownMenu_AddButton(info)
+				end
+			end,
+		},
+	}
+	
+	config:CreateOptions(options, Critline)
+end
+
 
 local defaults = {
 	profile = {
 		PvE = true,
 		PvP = true,
 		ignoreVulnerability = true,
-		chatOutput = false,
-		playSound = true,
-		sound = "Level up",
-		screenshot = false,
-		oldRecord = false,
 		shortFormat = false,
 		spellTooltips = true,
 		detailedTooltip = false,
 		tooltipSort = "normal",
+		oldRecord = false,
+		chatOutput = false,
+		screenshot = false,
+		sound = "None",
 	},
 }
 
-
 -- which trees are enabled by default for a given class
+-- if not specified; defaults to only damage enabled
 local treeDefaults = {
-	DEATHKNIGHT	= {dmg = true, heal = false, pet = false},
-	DRUID		= {dmg = true, heal = true,  pet = false},
-	HUNTER		= {dmg = true, heal = false, pet = true},
-	MAGE		= {dmg = true, heal = false, pet = false},
-	MONK		= {dmg = true, heal = true,  pet = false},
-	PALADIN		= {dmg = true, heal = true,  pet = false},
-	PRIEST		= {dmg = true, heal = true,  pet = false},
-	ROGUE		= {dmg = true, heal = false, pet = false},
-	SHAMAN		= {dmg = true, heal = true,  pet = false},
-	WARLOCK		= {dmg = true, heal = false, pet = true},
-	WARRIOR		= {dmg = true, heal = false, pet = false},
+	DRUID	= {heal = true},
+	HUNTER	= {pet = true},
+	MONK	= {heal = true},
+	PALADIN	= {heal = true},
+	PRIEST	= {heal = true},
+	SHAMAN	= {heal = true},
+	WARLOCK	= {pet = true},
 }
 
 function Critline:ADDON_LOADED(addon)
@@ -528,9 +501,13 @@ function Critline:ADDON_LOADED(addon)
 		self.db = db
 		
 		local percharDefaults = {
-			profile = treeDefaults[playerClass],
+			profile = treeDefaults[playerClass] or {},
 		}
-		
+		-- everyone wants damage!
+		percharDefaults.profile.dmg = true
+		-- set these to false rather than nil if disabled, for consistency
+		percharDefaults.profile.heal = percharDefaults.profile.heal or false
+		percharDefaults.profile.pet = percharDefaults.profile.pet or false
 		percharDefaults.profile.spells = {
 			dmg = {},
 			heal = {},
@@ -575,6 +552,8 @@ function Critline:ADDON_LOADED(addon)
 				end
 			end
 		end
+		-- deprecated
+		self.db.profile.playSound = nil
 		
 		self:LoadSettings()
 		self:LoadPerCharSettings()
@@ -582,7 +561,6 @@ function Critline:ADDON_LOADED(addon)
 		self.ADDON_LOADED = nil
 	end
 end
-
 
 function Critline:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, sourceGUID, sourceName, sourceFlags, sourceFlags2, destGUID, destName, destFlags, destFlags2, ...)
 	-- we seem to get events with standard arguments equal to nil, so they need to be ignored
@@ -745,10 +723,8 @@ function Critline:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, 
 	end
 end
 
-
 function Critline:UNIT_LEVEL(unit)
 end
-
 
 function Critline:IsMyPet(flags, guid)
 	local isMyPet = CombatLog_Object_IsA(flags, COMBATLOG_FILTER_MY_PET)
@@ -793,16 +769,14 @@ function Critline:GetLevelFromGUID(destGUID)
 end
 
 
-function Critline:Message(msg)
-	if msg then
-		DEFAULT_CHAT_FRAME:AddMessage("|cffffff00Critline:|r "..msg)
-	end
+function Critline:Message(...)
+	print("|cffffff00Critline:|r", ...)
 end
 
 
-function Critline:Debug(msg)
+function Critline:Debug(...)
 	if debugging then
-		DEFAULT_CHAT_FRAME:AddMessage("|cff56a3ffCritlineDebug:|r "..msg)
+		print("|cff56a3ffCritlineDebug:|r", ...)
 	end
 end
 
@@ -820,15 +794,7 @@ end
 
 function Critline:LoadSettings()
 	callbacks:Fire("SettingsLoaded")
-	
-	local options = self.options
-	
-	for _, btn in ipairs(options.checkButtons.db) do
-		btn:LoadSetting()
-	end
-	
-	options.sound:SetSelectedValue(self.db.profile.sound)
-	options.tooltipSort:SetSelectedValue(self.db.profile.tooltipSort)
+	config:LoadOptions(self)
 end
 
 
@@ -854,9 +820,7 @@ function Critline:LoadPerCharSettings()
 	self:UpdateTopRecords()
 	self:UpdateTooltips()
 	
-	for _, btn in ipairs(self.options.checkButtons.percharDB) do
-		btn:LoadSetting()
-	end
+	config:LoadOptions(self, true)
 end
 
 
@@ -877,13 +841,11 @@ function Critline:NewRecord(tree, spellID, periodic, amount, critical, prevRecor
 		self:Message(format(L["New %s%s record - %s"], critical and "|cffff0000"..L["critical "].."|r" or "", self:GetFullSpellName(spellID, periodic, true), amount))
 	end
 	
-	if self.db.profile.playSound then 
-		PlaySoundFile(LSM:Fetch("sound", self.db.profile.sound))
-	end
-	
 	if self.db.profile.screenshot then 
 		TakeScreenshot() 
 	end
+	
+	PlaySoundFile(LSM:Fetch("sound", self.db.profile.sound))
 end
 
 

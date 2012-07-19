@@ -29,17 +29,14 @@ button:SetScript("OnClick", function(self)
 end)
 
 -- "edit tooltip format" popup
-StaticPopupDialogs["CRITLINE_RESET_ALL"] = {
+addon:CreatePopup("CRITLINE_RESET_ALL", {
 	text = L["Are you sure you want to reset all %s records?"],
 	button1 = YES,
 	button2 = NO,
 	OnAccept = function(self, data)
 		module:ResetAll(data)
 	end,
-	hideOnEscape = true,
-	whileDead = true,
-	timeout = 0,
-}
+})
 
 local colorFormat = GREEN_FONT_COLOR_CODE.."%s"..FONT_COLOR_CODE_CLOSE
 
