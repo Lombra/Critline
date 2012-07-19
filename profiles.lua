@@ -1,5 +1,4 @@
 ﻿local addonName, addon = ...
-local templates = addon.templates
 
 local L = {
 	default = "Default",
@@ -343,7 +342,7 @@ local function deleteProfileOnClick(self)
 end
 
 local function createProfileUI(name, db)
-	local frame = templates:CreateConfigFrame(name, true, true)
+	local frame = addon:AddCategory(name, true, true)
 	frame.db = db
 	
 	frame.ProfilesLoaded = profilesLoaded
@@ -378,7 +377,7 @@ local function createProfileUI(name, db)
 	-- chooseDesc:SetWordWrap(true)
 	chooseDesc:SetText(L.choose_desc)
 
-	local newProfile = templates:CreateEditBox(frame)
+	local newProfile = frame:CreateEditBox()
 	newProfile:SetWidth(160)
 	newProfile:SetPoint("TOPLEFT", chooseDesc, "BOTTOMLEFT", 0, -16)
 	newProfile:SetScript("OnEscapePressed", newProfile.ClearFocus)
@@ -392,12 +391,13 @@ local function createProfileUI(name, db)
 	label:SetHeight(18)
 	label:SetText(L.new)
 
-	local choose = templates:CreateDropDownMenu("CritlineDBChooseProfile"..name, frame, nil, defaultProfiles)
+	local choose = frame:CreateDropDownMenu(nil, "CritlineDBChooseProfile"..name)
 	choose:SetFrameWidth(144)
 	choose:SetPoint("LEFT", newProfile, "RIGHT", 0, -2)
 	choose.label:SetText(L.choose)
 	choose.initialize = initializeDropdown
 	choose.func = chooseProfileOnClick
+	choose.menu = defaultProfiles
 	choose.common = true
 	objects.choose = choose
 
@@ -418,13 +418,14 @@ local function createProfileUI(name, db)
 		text:SetText(L.enabled)
 		objects.dualEnabled = enabled
 
-		local dualProfile = templates:CreateDropDownMenu("CritlineDBDualProfile"..name, frame, nil, defaultProfiles)
+		local dualProfile = frame:CreateDropDownMenu(nil, "CritlineDBDualProfile"..name)
 		dualProfile:SetFrameWidth(144)
 		dualProfile:SetPoint("LEFT", choose)
 		dualProfile:SetPoint("TOP", enabled)
 		dualProfile.label:SetText(L.dual_profile)
 		dualProfile.initialize = initializeDropdown
 		dualProfile.func = dualProfileOnClick
+		dualProfile.menu = defaultProfiles
 		dualProfile.common = true
 		objects.dualProfile = dualProfile
 		
@@ -437,12 +438,13 @@ local function createProfileUI(name, db)
 	copyDesc:SetWordWrap(true)
 	copyDesc:SetText(L.copy_desc)
 
-	local copy = templates:CreateDropDownMenu("CritlineDBCopyProfile"..name, frame, nil, defaultProfiles)
+	local copy = frame:CreateDropDownMenu(nil, "CritlineDBCopyProfile"..name)
 	copy:SetFrameWidth(144)
 	copy:SetPoint("TOPLEFT", copyDesc, "BOTTOMLEFT", -16, -8)
 	copy.label:SetText(L.copy)
 	copy.initialize = initializeDropdown
 	copy.func = copyProfileOnClick
+	copy.menu = defaultProfiles
 	copy.nocurrent = true
 	objects.copy = copy
 
@@ -452,19 +454,20 @@ local function createProfileUI(name, db)
 	deleteDesc:SetWordWrap(true)
 	deleteDesc:SetText(L.delete_desc)
 
-	local delete = templates:CreateDropDownMenu("CritlineDBDeleteProfile"..name, frame, nil, defaultProfiles)
+	local delete = frame:CreateDropDownMenu(nil, "CritlineDBDeleteProfile"..name)
 	delete:SetFrameWidth(144)
 	delete:SetPoint("TOPLEFT", deleteDesc, "BOTTOMLEFT", -16, -8)
 	delete.label:SetText(L.delete)
 	delete.initialize = initializeDropdown
 	delete.func = deleteProfileOnClick
+	delete.menu = defaultProfiles
 	delete.nocurrent = true
 	objects.delete = delete
 	
 	return frame
 end
 
-StaticPopupDialogs["CRITLINE_DELETE_PROFILE"] = {
+addon:CreatePopup("CRITLINE_DELETE_PROFILE", {
 	text = L.delete_confirm,
 	button1 = YES,
 	button2 = NO,
@@ -476,9 +479,7 @@ StaticPopupDialogs["CRITLINE_DELETE_PROFILE"] = {
 	OnCancel = function(self, data)
 		data.obj:SetSelectedValue(nil)
 	end,
-	whileDead = true,
-	timeout = 0,
-}
+})
 
 local profiles = createProfileUI("Profiles", "db")
 profiles.desc:SetText("This profile controls all settings that are not related to individual trees or their records.")

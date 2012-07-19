@@ -1,5 +1,4 @@
 local addonName, addon = ...
-
 local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 local templates = addon.templates
 
@@ -105,7 +104,7 @@ local menuList = {
 	},
 }
 
-local auraTrackerScope = templates:CreateDropDownMenu("CritlineAuraTrackerScope", auraTracker)
+local auraTrackerScope = templates.CreateDropDownMenu(auraTracker, nil, "CritlineAuraTrackerScope")
 auraTrackerScope:SetPoint("TOP", 0, -16)
 auraTrackerScope:SetFrameWidth(220)
 auraTrackerScope:JustifyText("LEFT")
@@ -123,7 +122,7 @@ auraTrackerScope.initialize = function(self)
 	end
 end
 
-local auraTrackerAuraType = templates:CreateDropDownMenu("CritlineAuraTrackerAuraType", auraTracker)
+local auraTrackerAuraType = templates.CreateDropDownMenu(auraTracker, nil, "CritlineAuraTrackerAuraType")
 auraTrackerAuraType:SetPoint("TOPLEFT", auraTrackerScope, "BOTTOMLEFT")
 auraTrackerAuraType:SetFrameWidth(96)
 auraTrackerAuraType:JustifyText("LEFT")
@@ -160,7 +159,7 @@ do
 	end
 end
 
-local filterOptions = templates:CreateDropDownMenu("CritlineAuraTrackerFilterOptions", auraTracker)
+local filterOptions = templates.CreateDropDownMenu(auraTracker, nil, "CritlineAuraTrackerFilterOptions")
 filterOptions:SetPoint("TOPRIGHT", auraTrackerScope, "BOTTOMRIGHT")
 filterOptions:SetFrameWidth(96)
 filterOptions:JustifyText("LEFT")
@@ -227,7 +226,7 @@ do
 	end
 end
 
-local search = templates:CreateEditBox(auraTracker)
+local search = templates.CreateEditBox(auraTracker)
 search:SetPoint("TOPLEFT", auraTrackerAuraType, "BOTTOMLEFT", 18, -8)
 search:SetPoint("TOPRIGHT", filterOptions, "BOTTOMRIGHT", -18, -8)
 search:SetWidth(192)

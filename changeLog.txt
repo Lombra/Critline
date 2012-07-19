@@ -9,6 +9,11 @@
 - Fix custom aura filter.
 - Now using tabbed navigation rather than dropdown in a few places.
 - Resetting a record now also clears any previous record it had.
+- Removed 'Play sound' option. You can just select 'None' on the dropdown.
+- Sound is now off by default.
+- 'Ignore aura filter' should now work properly when toggled.
+- Add a texture to the splash frame indicating its hit box that's shown when unlocking the splash frame.
+- Add an option to control the fade duration of the splash frame.
 - Aura tracker is no longer localised as it's considered merely a development tool.
 
 4.3.0

@@ -54,63 +54,43 @@ addon.spellList:AddSpellOption({
 	menuList = channels,
 })
 
-local function onAccept(self, data)
-	lastTarget = self.editBox:GetText()
-	local target = lastTarget:trim()
-	if target == "" then
-		addon:Message(L["Invalid player name."])
-		return
-	else
-		announce(data, "WHISPER", target)
-	end
+local function onShow(self)
+	self.editBox:SetText(lastTarget)
+	self.editBox:HighlightText()
 end
 
-StaticPopupDialogs["CRITLINE_ANNOUNCE_WHISPER"] = {
+addon:CreatePopup("CRITLINE_ANNOUNCE_WHISPER", {
 	text = L["Enter whisper target"],
 	button1 = ACCEPT,
 	button2 = CANCEL,
 	hasEditBox = true,
-	OnAccept = onAccept,
-	EditBoxOnEnterPressed = function(self, data)
-		local parent = self:GetParent()
-		onAccept(parent, data)
-		parent:Hide()
+	OnAccept = function(self, data)
+		lastTarget = self.editBox:GetText()
+		local target = lastTarget:trim()
+		if target == "" then
+			addon:Message(L["Invalid player name."])
+			return
+		else
+			announce(data, "WHISPER", target)
+		end
 	end,
-	OnShow = function(self, data)
-		self.editBox:SetText(lastTarget)
-		self.editBox:HighlightText()
-	end,
-	whileDead = true,
-	timeout = 0,
-}
+	OnShow = onShow,
+})
 
-local function onAccept(self, data)
-	lastTarget = self.editBox:GetText()
-	local target = GetChannelName(lastTarget:trim())
-	target = target
-	if target == 0 then
-		addon:Message(L["Invalid channel. Please enter a valid channel name or ID."])
-		return
-	else
-		announce(data, "CHANNEL", target)
-	end
-end
-
-StaticPopupDialogs["CRITLINE_ANNOUNCE_CHANNEL"] = {
+addon:CreatePopup("CRITLINE_ANNOUNCE_CHANNEL", {
 	text = ADD_CHANNEL,
 	button1 = ACCEPT,
 	button2 = CANCEL,
 	hasEditBox = true,
-	OnAccept = onAccept,
-	EditBoxOnEnterPressed = function(self, data)
-		local parent = self:GetParent()
-		onAccept(parent, data)
-		parent:Hide()
+	OnAccept = function(self, data)
+		lastTarget = self.editBox:GetText()
+		local target = GetChannelName(lastTarget:trim())
+		if target == 0 then
+			addon:Message(L["Invalid channel. Please enter a valid channel name or ID."])
+			return
+		else
+			announce(data, "CHANNEL", target)
+		end
 	end,
-	OnShow = function(self, data)
-		self.editBox:SetText(lastTarget)
-		self.editBox:HighlightText()
-	end,
-	whileDead = true,
-	timeout = 0,
-}
+	OnShow = onShow,
+})

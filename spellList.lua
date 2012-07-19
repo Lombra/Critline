@@ -6,7 +6,7 @@ local BUTTON_HEIGHT = 36
 
 local selectedTree
 
-local spellList = addon.templates:CreateConfigFrame("Spells", true, true)
+local spellList = addon:AddCategory("Spells", true, true)
 addon.spellList = spellList
 
 spellList.desc:SetText("This is where you can review and manage all your registered spells. Click the button on the right hand side of a spell for options.")
@@ -24,9 +24,9 @@ dropdown.initialize = function(self, level, menuList)
 	end
 end
 
-local spellListContainer = addon.templates:CreateTabInterface(spellList)
+local spellListContainer = spellList:CreateTabInterface()
 spellListContainer:SetHeight(NUM_BUTTONS * BUTTON_HEIGHT + 4)
-spellListContainer:SetPoint("TOP", spellList.title, "BOTTOM", 0, -36 -32)
+spellListContainer:SetPoint("TOP", spellList.title, "BOTTOM", 0, -68)
 spellListContainer:SetPoint("LEFT", 32, 0)
 spellListContainer:SetPoint("RIGHT", -32, 0)
 

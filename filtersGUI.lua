@@ -1,87 +1,71 @@
 local addonName, addon = ...
 local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
-local templates = addon.templates
 
-local filters = addon.templates:CreateConfigFrame(FILTERS, true, nil, nil, addon.filters)
+local filters = addon:AddCategory(FILTERS, true, nil, addon.filters)
 
 do
-	local options = {}
-	filters.options = options
-
-	local checkButtons = {
+	local options = {
 		{
-			text = L["Filter new spells"],
+			type = "CheckButton",
+			label = L["Filter new spells"],
 			tooltipText = L["Enable to filter out new spell entries by default."],
 			setting = "filterNew",
 		},
 		{
-			text = L["Ignore mob filter"],
+			type = "CheckButton",
+			label = L["Ignore mob filter"],
 			tooltipText = L["Enable to ignore integrated mob filter."],
 			setting = "ignoreMobFilter",
 		},
 		{
-			text = L["Ignore aura filter"],
+			type = "CheckButton",
+			label = L["Ignore aura filter"],
 			tooltipText = L["Enable to ignore integrated aura filter."],
 			setting = "ignoreAuraFilter",
-			func = function(self, module)
-				if self:GetChecked() then
-					module:ScanAuras()
+			func = function(self, checked)
+				if checked then
+					filters:ResetEmpowered()
 				else
-					module:ResetEmpowered()
+					filters:ScanAuras()
 				end
 			end,
 		},
 		{
-			text = L["Only known spells"],
+			type = "CheckButton",
+			label = L["Only known spells"],
 			tooltipText = L["Enable to ignore spells that are not in your (or your pet's) spell book."],
 			setting = "onlyKnown",
 		},
 		{
-			text = L["Suppress mind control"],
+			type = "CheckButton",
+			label = L["Suppress mind control"],
 			tooltipText = L["Suppress all records while mind controlled."],
 			setting = "suppressMC",
 		},
 		{
-			text = L["Don't filter magic"],
+			type = "CheckButton",
+			label = L["Don't filter magic"],
 			tooltipText = L["Enable to let magical damage ignore the level filter."],
 			setting = "dontFilterMagic",
 		},
+		{
+			type = "Slider",
+			label = L["Level filter"],
+			tooltipText = L["If level difference between you and the target is greater than this setting, records will not be registered."],
+			setting = "levelFilter",
+			minValue = -1,
+			maxValue = 10,
+			valueStep = 1,
+			minText = OFF,
+			func = function(self, value)
+				if value == -1 then
+					self.currentValue:SetText(OFF)
+				end
+			end,
+		}
 	}
 
-	options.checkButtons = checkButtons
-	
-	local columnEnd = #checkButtons
-
-	for i, v in ipairs(checkButtons) do
-		local btn = templates:CreateCheckButton(filters, v)
-		if i == 1 then
-			btn:SetPoint("TOPLEFT", filters.title, "BOTTOMLEFT", -2, -16)
-		elseif btn.newColumn then
-			btn:SetPoint("TOPLEFT", filters.title, "BOTTOM", 0, -16)
-			columnEnd = i - 1
-		else
-			btn:SetPoint("TOP", checkButtons[i - 1], "BOTTOM", 0, -8)
-		end
-		btn.module = filters
-		checkButtons[i] = btn
-	end
-	
-	local slider = templates:CreateSlider(filters, {
-		text = L["Level filter"],
-		tooltipText = L["If level difference between you and the target is greater than this setting, records will not be registered."],
-		minValue = -1,
-		maxValue = 10,
-		valueStep = 1,
-		minText = OFF,
-		maxText = 10,
-		func = function(self)
-			local value = self:GetValue()
-			self.value:SetText(value == -1 and OFF or value)
-			filters.profile.levelFilter = value
-		end,
-	})
-	slider:SetPoint("TOPLEFT", checkButtons[#checkButtons], "BOTTOMLEFT", 9, -19)
-	options.slider = slider
+	filters:CreateOptions(options)
 end
 
 addon.spellList:AddSpellOption({
@@ -99,7 +83,7 @@ local NUMFILTERBUTTONS = 24
 local FILTERBUTTONHEIGHT = 18
 local BUTTON_OFFSET_TOP = 2
 
-local filterList = templates:CreateTabInterface(filters)
+local filterList = filters:CreateTabInterface()
 filterList:SetPoint("TOPLEFT", filters.title, "BOTTOM", -32, -40)
 filterList:SetPoint("RIGHT", -48, 0)
 filterList:SetHeight(NUMFILTERBUTTONS * FILTERBUTTONHEIGHT + BUTTON_OFFSET_TOP)
@@ -360,37 +344,27 @@ do	-- filter tabs
 	filterList:SelectTab(1)
 end
 
-do
-	local function onAccept(self)
+addon:CreatePopup("CRITLINE_ADD_MOB_BY_NAME", {
+	text = L["Enter mob name"],
+	button1 = ACCEPT,
+	button2 = CANCEL,
+	hasEditBox = true,
+	OnAccept = function(self)
 		local name = self.editBox:GetText():trim()
 		if not name:match("%S+") then
 			addon:Message(L["Invalid mob name."])
 			return
 		end
 		filters:AddMob(name)
-	end
+	end,
+})
 
-	StaticPopupDialogs["CRITLINE_ADD_MOB_BY_NAME"] = {
-		text = L["Enter mob name"],
-		button1 = OKAY,
-		button2 = CANCEL,
-		hasEditBox = true,
-		OnAccept = onAccept,
-		EditBoxOnEnterPressed = function(self)
-			local parent = self:GetParent()
-			onAccept(parent)
-			parent:Hide()
-		end,
-		EditBoxOnEscapePressed = function(self)
-			self:GetParent():Hide()
-		end,
-		whileDead = true,
-		timeout = 0,
-	}
-end
-
-do
-	local function onAccept(self)
+addon:CreatePopup("CRITLINE_ADD_AURA_BY_ID", {
+	text = L["Enter spell ID"],
+	button1 = ACCEPT,
+	button2 = CANCEL,
+	hasEditBox = true,
+	OnAccept = function(self)
 		local id = tonumber(self.editBox:GetText())
 		if not id then
 			addon:Message(L["Invalid input. Please enter a spell ID."])
@@ -400,23 +374,5 @@ do
 			return
 		end
 		filters:AddAura(id)
-	end
-
-	StaticPopupDialogs["CRITLINE_ADD_AURA_BY_ID"] = {
-		text = L["Enter spell ID"],
-		button1 = OKAY,
-		button2 = CANCEL,
-		hasEditBox = true,
-		OnAccept = onAccept,
-		EditBoxOnEnterPressed = function(self)
-			local parent = self:GetParent()
-			onAccept(parent)
-			parent:Hide()
-		end,
-		EditBoxOnEscapePressed = function(self)
-			self:GetParent():Hide()
-		end,
-		whileDead = true,
-		timeout = 0,
-	}
-end
+	end,
+})
