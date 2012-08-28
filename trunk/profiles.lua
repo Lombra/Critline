@@ -382,15 +382,9 @@ local function createProfileUI(name, db)
 	newProfile:SetPoint("TOPLEFT", chooseDesc, "BOTTOMLEFT", 0, -16)
 	newProfile:SetScript("OnEscapePressed", newProfile.ClearFocus)
 	newProfile:SetScript("OnEnterPressed", newProfileOnEnterPressed)
+	newProfile.label:SetText(L.new)
 	objects.newProfile = newProfile
-
-	local label = newProfile:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-	label:SetPoint("BOTTOMLEFT", newProfile, "TOPLEFT", 0, -2)
-	label:SetPoint("BOTTOMRIGHT", newProfile, "TOPRIGHT", 0, -2)
-	label:SetJustifyH("LEFT")
-	label:SetHeight(18)
-	label:SetText(L.new)
-
+	
 	local choose = frame:CreateDropDownMenu(nil, "CritlineDBChooseProfile"..name)
 	choose:SetFrameWidth(144)
 	choose:SetPoint("LEFT", newProfile, "RIGHT", 0, -2)

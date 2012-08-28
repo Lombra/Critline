@@ -3,10 +3,10 @@ local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 
 local function onUpdate(self)
 	local xpos, ypos = GetCursorPosition()
-	local xmin, ymin = Minimap:GetLeft(), Minimap:GetBottom()
+	local xmin, ymin = Minimap:GetCenter()
 	
-	xpos = xmin - xpos / Minimap:GetEffectiveScale() + 70
-	ypos = ypos / Minimap:GetEffectiveScale() - ymin - 70
+	xpos = xpos / Minimap:GetEffectiveScale() - xmin
+	ypos = ypos / Minimap:GetEffectiveScale() - ymin
 	
 	local pos = atan2(ypos, xpos)
 	self.db.profile.pos = pos
@@ -18,9 +18,9 @@ minimap:SetToplevel(true)
 minimap:SetMovable(true)
 minimap:RegisterForClicks("LeftButtonUp", "RightButtonUp")
 minimap:RegisterForDrag("LeftButton")
-minimap:SetPoint("TOPLEFT", -15, 0)
 minimap:SetSize(32, 32)
 minimap:SetHighlightTexture([[Interface\Minimap\UI-Minimap-ZoomButton-Highlight]])
+minimap:SetFrameLevel(8)
 minimap:Hide()
 minimap:SetScript("OnClick", function(self, button)
 	local display = addon.display
@@ -47,17 +47,17 @@ minimap:SetScript("OnDragStart", function(self) self:SetScript("OnUpdate", onUpd
 minimap:SetScript("OnDragStop", function(self) self:SetScript("OnUpdate", nil) end)
 minimap:SetScript("OnHide", function(self) self:SetScript("OnUpdate", nil) end)
 
-local icon = minimap:CreateTexture(nil, "BORDER")
-icon:SetTexture(addon.trees.dmg.icon)
+local icon = minimap:CreateTexture()
 icon:SetSize(20, 20)
 icon:SetPoint("TOPLEFT", 6, -6)
+icon:SetTexture(addon.trees.dmg.icon)
 
 local border = minimap:CreateTexture(nil, "OVERLAY")
-border:SetTexture([[Interface\Minimap\MiniMap-TrackingBorder]])
 border:SetSize(54, 54)
 border:SetPoint("TOPLEFT")
+border:SetTexture([[Interface\Minimap\MiniMap-TrackingBorder]])
 
-local config = addon:AddCategory(L["Minimap button"], true)
+local config = addon:AddCategory(L["Minimap"], true)
 
 local options = {
 	{
@@ -66,11 +66,7 @@ local options = {
 		tooltipText = L["Show minimap button."],
 		setting = "show",
 		func = function(self, checked)
-			if checked then
-				minimap:Show()
-			else
-				minimap:Hide()
-			end
+			minimap:SetShown(checked)
 		end,
 	},
 	{
@@ -90,7 +86,7 @@ local defaults = {
 	profile = {
 		show = true,
 		locked = false,
-		pos = 0,
+		pos = 225,
 	}
 }
 
@@ -107,5 +103,5 @@ function minimap:LoadSettings()
 end
 
 function minimap:Move(angle)
-	self:SetPoint("TOPLEFT", (52 - 80 * cos(angle)), (80 * sin(angle) - 52))
+	self:SetPoint("CENTER", 80 * cos(angle), 80 * sin(angle))
 end

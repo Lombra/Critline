@@ -118,13 +118,8 @@ do
 				display:SetWidth(checked and FRAME_WIDTH or FRAME_WIDTH_WIDE)
 				height = checked and FRAME_HEIGHT or FRAME_HEIGHT_WIDE
 				for _, tree in pairs(trees) do
-					if checked then
-						tree.icon:Show()
-						tree.label:Hide()
-					else
-						tree.icon:Hide()
-						tree.label:Show()
-					end
+					tree.icon:SetShown(checked)
+					tree.label:SetShown(not checked)
 					tree:SetHeight(height)
 				end
 				display:UpdateLayout()
@@ -264,11 +259,7 @@ function display:UpdateRecords(event, tree)
 end
 
 function display:UpdateTree(event, tree, enabled)
-	if enabled then
-		trees[tree]:Show()
-	else
-		trees[tree]:Hide()
-	end
+	trees[tree]:SetShown(enabled)
 	self:UpdateLayout()
 end
 
@@ -298,9 +289,5 @@ function display:UpdateLayout()
 	self:SetHeight(#shown * (height + 2) + 6)
 	
 	-- hide the entire frame if it turns out none of the individual frames are shown
-	if #shown == 0 or not self.profile.show then
-		self:Hide()
-	else
-		self:Show()
-	end
+	self:SetShown(#shown > 0 and self.profile.show)
 end

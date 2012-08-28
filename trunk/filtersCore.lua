@@ -1,8 +1,11 @@
 local addonName, addon = ...
 local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 
+local format = format
 local CombatLog_Object_IsA = CombatLog_Object_IsA
+local IsPlayerSpell = IsPlayerSpell
 local IsSpellKnown = IsSpellKnown
+local GetSpellLink = GetSpellLink
 local UnitAffectingCombat = UnitAffectingCombat
 local UnitAura = UnitAura
 
@@ -216,61 +219,6 @@ local targetAuras = {
 	[109728] = true, -- Expose Weakness (Deathwing, Kalecgos - LFR)
 }
 
--- used for the "player spells only" option, due to only the main spell ID being recognised
--- these will not be displayed on any tooltip, why they don't go in the main exceptions table
-local playerSpells = {
-	-- Warrior
-	[12721] = true, -- Deep Wounds
-	[44949] = true, -- Whirlwind Off-hand
-	[76858] = true, -- Opportunity Strike
-	[85384] = true, -- Raging Blow Off-hand
-	-- Death knight
-	[50536] = true, -- Unholy Blight
-		-- Gargoyle
-		[51963] = true, -- Gargoyle Strike
-		-- Ghoul
-		[91778] = true, -- Sweeping Claws
-		[91797] = true, -- Monstrous Blow
-	-- Paladin
-	[20187] = true, -- Judgement of Righteousness
-	[20424] = true, -- Seals of Command
-	[31803] = true, -- Censure
-	[31804] = true, -- Judgement of Truth
-	[86704] = true, -- Ancient Fury
-	[96172] = true, -- Hand of Light
-	-- Hunter
-	[83077] = true, -- Improved Serpent Sting
-	-- Shaman
-	[32176] = true, -- Stormstrike Off-hand
-	[52752] = true, -- Ancestral Awakening
-	[86958] = true, -- Cleansing Waters
-	[88767] = true, -- Fulmination
-	-- Rogue
-	[2818] = true, -- Deadly Poison
-	[8680] = true, -- Instant Poison
-	[13218] = true, -- Wound Poison
-	[27576] = true, -- Mutilate Off-hand
-	[79136] = true, -- Venomous Wound
-	-- Priest
-	[15290] = true, -- Vampiric Embrace
-	[63675] = true, -- Improved Devouring Plague
-	[75999] = true, -- Improved Devouring Plague (heal)
-	[77489] = true, -- Echo of Light
-	[88684] = true, -- Holy Word: Serenity
-	[88685] = true, -- Holy Word: Sanctuary
-	-- Warlock
-		-- Infernal
-		[22703] = true, -- Infernal Awakening
-		-- Doomguard
-		[85692] = true, -- Doom Bolt
-}
-
--- these heals are treated as periodic, but has no aura associated with them, or is associated to an aura with a different name, need to add exceptions for them to filter properly
-local directHoTs = {
-	[54172] = true, -- Divine Storm
-	-- [63106] = "Corruption", -- Siphon Life
-}
-
 local mt = {
 	__index = function(tbl, key)
 		local newTbl = {}
@@ -292,7 +240,8 @@ local corruptSpells = {
 local corruptTargets = setmetatable({}, mt)
 local ignoredTargets = {}
 
-local customFilteredAuras = {}
+-- user added filter rules
+local customPlayerSpells, excludedSpells, customFilteredAuras, customFilteredMobs
 
 
 local defaults = {
@@ -306,8 +255,10 @@ local defaults = {
 		levelFilter = -1,
 	},
 	global = {
-		mobs = {},
+		include = {},
+		exclude = {},
 		auras = {},
+		mobs = {},
 	},
 }
 
@@ -321,13 +272,35 @@ function filters:AddonLoaded()
 	self.db = addon.db:RegisterNamespace("filters", defaults)
 	addon.RegisterCallback(self, "SettingsLoaded", "LoadSettings")
 	
+	self:RegisterUnitEvent("UNIT_AURA", "player", "pet")
 	self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
-	self:RegisterEvent("UNIT_AURA")
 	self:RegisterEvent("PLAYER_LOGIN")
 	self:RegisterEvent("UNIT_NAME_UPDATE")
 	self:RegisterEvent("PLAYER_REGEN_DISABLED")
 	self:RegisterEvent("PLAYER_CONTROL_LOST")
 	self:RegisterEvent("PLAYER_CONTROL_GAINED")
+	
+	local global = self.db.global
+	
+	-- convert from < 4.5.0 arrays
+	if type(global.auras[1]) == "string" or type(global.mobs[1]) == "string" then
+		local auras = {}
+		for i, aura in ipairs(global.auras) do
+			auras[aura] = true
+		end
+		global.auras = auras
+		
+		local mobs = {}
+		for i, mob in ipairs(global.mobs) do
+			mobs[mob] = true
+		end
+		global.mobs = mobs
+	end
+
+	customPlayerSpells = global.include
+	excludedSpells = global.exclude
+	customFilteredAuras = global.auras
+	customFilteredMobs = global.mobs
 	
 	self.AddonLoaded = nil
 end
@@ -336,12 +309,6 @@ addon.RegisterCallback(filters, "AddonLoaded")
 
 function filters:LoadSettings()
 	self.profile = self.db.profile
-	
-	-- dictionary table copy for easy lookup
-	for i, spellID in ipairs(self.db.global.auras) do
-		customFilteredAuras[spellID] = true
-	end
-	
 	self:LoadOptions()
 end
 
@@ -455,67 +422,43 @@ function filters:CheckPlayerControl()
 	end
 end
 
-function filters:FilterSpell(filter, tree, data)
-	data.filtered = filter
-	addon:GetSpellInfo(tree, data.spellID, data.periodic).filtered = filter
-	addon:UpdateTopRecords(tree)
-	addon:UpdateRecords(tree)
+local function debugSpell(spellID, reason)
+	addon:Debug(format("Skipped %s (%d). %s.", GetSpellLink(spellID), spellID, reason))
 end
 
--- adds a mob to the mob filter
-function filters:AddMob(name)
-	if self:IsFilteredTarget(name) then
-		addon:Message(L["%s is already in mob filter."]:format(name))
-	else
-		tinsert(self.db.global.mobs, name)
-		self.mobs.scrollFrame:Update()
-		addon:Message(L["%s added to mob filter."]:format(name))
-	end
-end
-
--- adds an aura to the aura filter
-function filters:AddAura(spellID)
-	local spellName = GetSpellInfo(spellID)
-	if self:IsFilteredAura(spellID) then
-		addon:Message(L["%s is already in aura filter."]:format(spellName))
-	else
-		tinsert(self.db.global.auras, spellID)
-		customFilteredAuras[spellID] = true
-		self.auras.scrollFrame:Update()
-		addon:Message(L["%s added to aura filter."]:format(spellName))
-		-- after we add an aura to the filter; check if we have it
-		if self:ScanAuras() then
-			addon:Debug("Filtered aura detected. Disabling combat log tracking.")
-		end
-	end
-end
-
-function filters:RemoveAura(spellID)
-	customFilteredAuras[spellID] = nil
-	if not self:ScanAuras("player") then
-		addon:Debug("No filtered aura detected on player. Resuming record tracking.")
-	end
-	if not self:ScanAuras("pet") then
-		addon:Debug("No filtered aura detected on pet. Resuming record tracking.")
-	end
+local function debugTarget(guid, name, reason)
+	addon:Debug(format("Skipped target |cffffd200|Hunit:%s:%s|h[%s]|h|r. %s.", guid, name, name, reason))
 end
 
 -- check if a spell passes the filter settings
-function filters:SpellPassesFilters(tree, spellName, spellID, isPeriodic, destGUID, destName, school, targetLevel)
+function filters:SpellPassesFilters(tree, spellName, spellID, isPeriodic, destGUID, destName, school, targetLevel, rawID)
 	local isPet = tree == "pet"
-	if spellID and not (playerSpells[spellID] or IsSpellKnown(spellID, isPet) or (isPet and spellID == 6603)) and self.profile.onlyKnown then
-		addon:Debug(format("%s (%d) is not in your%s spell book. Return.", spellName, spellID, isPet and " pet's" or ""))
+	
+	if excludedSpells[rawID] or excludedSpells[spellName] then
+		debugSpell(rawID, "Is excluded")
 		return
+	end
+	
+	if self.profile.onlyKnown and not (customPlayerSpells[spellID] or customPlayerSpells[spellName]) then
+		if isPet then
+			if not (IsSpellKnown(spellID, isPet) or spellID == 6603) then
+				debugSpell(spellID, "Not in pet's spell book")
+				return
+			end
+		elseif not IsPlayerSpell(spellID) then
+			debugSpell(spellID, "Not in spell book")
+			return
+		end
 	end
 	
 	local unit = isPet and "pet" or "player"
 	if ((rawget(corruptSpells[unit], spellID) and corruptSpells[unit][spellID][destGUID]) or self:IsEmpowered(unit)) and not self.profile.ignoreAuraFilter then
-		addon:Debug(format("Spell (%s) was cast under the influence of a filtered aura. Return.", spellName))
+		debugSpell(spellID, "Filtered auras are active")
 		return
 	end
 	
 	if self:IsIgnoredTarget(destGUID) and not self.profile.ignoreAuraFilter then
-		addon:Debug("Target is vulnerable. Return.")
+		debugTarget(destGUID, destName, "Affected by filtered auras")
 		return
 	end
 	
@@ -527,17 +470,84 @@ function filters:SpellPassesFilters(tree, spellName, spellID, isPeriodic, destGU
 	-- ignore level adjustment if magic damage and the setting is enabled
 	if not isHeal and (self.profile.levelFilter >= 0) and (self.profile.levelFilter < levelDiff) and (school == 1 or not self.profile.dontFilterMagic) then
 		-- target level is too low to pass level filter
-		addon:Debug(format("Target (%s) level too low (%d) and damage school is filtered. Return.", destName, targetLevel))
+		debugTarget(destGUID, destName, format("Too low level (%d) and damage school is filtered", targetLevel))
 		return
 	end
 	
-	local filteredTarget = self:IsFilteredTarget(destName, destGUID)
-	if filteredTarget then
-		addon:Debug(format("Target (%s) is in %s target filter.", destName, filteredTarget))
+	if self:IsFilteredTarget(destName, destGUID) then
+		debugTarget(destGUID, destName, "In mob filter")
 		return
 	end
 	
-	return true, self:IsFilteredSpell(tree, spellID, isPeriodic and 2 or 1), targetLevel
+	return true, self:IsFilteredSpell(tree, spellID, isPeriodic and 2 or 1)
+end
+
+function filters:FilterSpell(filter, tree, data)
+	data.filtered = filter
+	addon:GetSpellInfo(tree, data.id, data.periodic).filtered = filter
+	addon:UpdateTopRecords(tree)
+	addon:UpdateRecords(tree)
+end
+
+-- adds an aura to the aura filter
+function filters:AddAura()
+	-- after we add an aura to the filter; check if we have it
+	if self:ScanAuras() then
+		addon:Debug("Filtered aura detected. Disabling combat log tracking.")
+	end
+end
+
+function filters:RemoveAura()
+	if not self:ScanAuras("player") then
+		addon:Debug("No filtered aura detected on player. Resuming record tracking.")
+	end
+	if not self:ScanAuras("pet") then
+		addon:Debug("No filtered aura detected on pet. Resuming record tracking.")
+	end
+end
+
+local filterTypes = {
+	include = {
+		name = L["included spells"],
+	},
+	exclude = {
+		name = L["excluded spells"],
+	},
+	auras = {
+		name = L["aura filter"],
+		check = "IsFilteredAura",
+		add = "AddAura",
+		remove = "RemoveAura",
+	},
+	mobs = {
+		name = L["mob filter"],
+		check = "IsFilteredTarget",
+	}
+}
+
+function filters:AddFilterEntry(type, value)
+	local filter = self.db.global[type]
+	local filterData = filterTypes[type]
+	local check = filters[filterData.check]
+	if (check and check(filters, value)) or filter[value] then
+		addon:Message(L["%s is already in %s."]:format(value, filterData.name))
+		return
+	end
+	filter[value] = true
+	self.scrollFrame:Update()
+	addon:Message(L["%s added to %s."]:format(value, filterData.name))
+	local func = filters[filterData.add]
+	if func then
+		func(filters)
+	end
+end
+
+function filters:RemoveFilterEntry(type, value)
+	self.db.global[type][value] = nil
+	local func = filters[filterTypes[type].remove]
+	if func then
+		func(filters)
+	end
 end
 
 -- check if a spell will be filtered out
@@ -572,14 +582,7 @@ end
 
 function filters:IsFilteredTarget(targetName, guid)
 	-- GUID is provided if the function was called from the combat event handler
-	if guid and not self.profile.ignoreMobFilter and specialMobs[tonumber(guid:sub(7, 10), 16)] then
-		return "default"
-	end
-	for _, v in ipairs(self.db.global.mobs) do
-		if v:lower() == targetName:lower() then
-			return "custom"
-		end
-	end
+	return (guid and not self.profile.ignoreMobFilter and specialMobs[tonumber(guid:sub(7, 10), 16)]) or customFilteredMobs[targetName]
 end
 
 function filters:IsFilteredAura(spellID)

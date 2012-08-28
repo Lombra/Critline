@@ -9,7 +9,7 @@ local selectedTree
 local spellList = addon:AddCategory("Spells", true, true)
 addon.spellList = spellList
 
-spellList.desc:SetText("This is where you can review and manage all your registered spells. Click the button on the right hand side of a spell for options.")
+spellList.desc:SetText(L["Here you can review and manage all your registered spells. Click the button on the right hand side of a spell for options."])
 
 -- this table gets populated with "Filter", "Reset", "Announce" etc
 local spellOptions = {}
@@ -35,55 +35,9 @@ for i, v in ipairs(addon.treeIndex) do
 	tab:SetLabel(addon.trees[v].title)
 end
 
-local scrollFrame = CreateFrame("ScrollFrame", "CritlineSpellsScrollFrame", spellListContainer, "FauxScrollFrameTemplate")
-scrollFrame:SetAllPoints()
-scrollFrame:SetScript("OnVerticalScroll", function(self, offset) FauxScrollFrame_OnVerticalScroll(self, offset, BUTTON_HEIGHT, self.Update) end)
-scrollFrame.Update = function(self, event, tree)
-	local spells = addon:GetSpellArray(selectedTree)
-	local size = #spells
-	FauxScrollFrame_Update(self, size, NUM_BUTTONS, BUTTON_HEIGHT)
-	local offset = FauxScrollFrame_GetOffset(self)
-	local owner = GameTooltip:GetOwner()
-	for line = 1, NUM_BUTTONS do
-		local item = self.buttons[line]
-		local lineplusoffset = line + offset
-		if lineplusoffset <= size then
-			local data = spells[lineplusoffset]
-			item.data = data
-			item.button.data = data
-			local normal = data.normal
-			local crit = data.crit
-			item.icon:SetTexture(addon:GetSpellTexture(data.spellID))
-			if addon.filters then
-				item.icon:SetDesaturated(data.filtered)
-				item.spellName:SetFontObject(data.filtered and "GameFontDisable" or "GameFontNormal")
-			end
-			item.spellName:SetText(addon:GetFullSpellName(data.spellID, data.periodic))
-			item.target:SetFormattedText("%s\n%s",
-				normal and normal.target or "-",
-				crit and crit.target or "-")
-			item.record:SetFormattedText("%s\n%s",
-				spellList:GetTextColor(data, "normal"),
-				spellList:GetTextColor(data, "crit"))
-			if item == owner then
-				item:OnEnter()
-			end
-			item:Show()
-		else
-			item:Hide()
-		end
-	end
-	
-	-- hide the menu since we can't tell if it's still referring to the same spell (no need if a different tree was updated)
-	if DropDownList1:IsShown() and UIDROPDOWNMENU_OPEN_MENU == dropdown and tree == selectedTree then
-		CloseDropDownMenus()
-	end
-end
-
 local function onEnter(self)
 	GameTooltip:SetOwner(self, "ANCHOR_LEFT")
-	GameTooltip.Critline = true
-	GameTooltip:SetSpellByID(self.data.spellID)
+	GameTooltip:SetSpellByID(self.data.id)
 	GameTooltip:AddLine(" ")
 	addon:AddTooltipLine(self.data)
 	if addon.GetPreviousRecord then
@@ -105,17 +59,8 @@ local function onClick(self)
 	ToggleDropDownMenu(nil, self.data, dropdown, self, 0, 0, spellOptions)
 end
 
--- create list of check buttons
-local buttons = {}
-for i = 1, NUM_BUTTONS do
+local function createButton()
 	local item = CreateFrame("Frame", nil, spellListContainer)
-	item:SetHeight(BUTTON_HEIGHT)
-	if i == 1 then
-		item:SetPoint("TOPLEFT", 4, -2)
-	else
-		item:SetPoint("TOP", buttons[i - 1], "BOTTOM")
-	end
-	item:SetPoint("RIGHT")
 	item:SetScript("OnEnter", onEnter)
 	item:SetScript("OnLeave", GameTooltip_Hide)
 	item.OnEnter = onEnter
@@ -155,15 +100,48 @@ for i = 1, NUM_BUTTONS do
 	record:SetSpacing(2)
 	item.record = record
 	
-	buttons[i] = item
+	return item
 end
-scrollFrame.buttons = buttons
+
+local scrollFrame = spellList:CreateScrollFrame("CritlineSpellsScrollFrame", spellList, NUM_BUTTONS, BUTTON_HEIGHT, createButton, 4, -2)
+scrollFrame:SetAllPoints(spellListContainer)
+scrollFrame.PreUpdate = function(self)
+	return GameTooltip:GetOwner()
+end
+scrollFrame.PostUpdate = function(self, event, tree)
+	-- hide the menu since we can't tell if it's still referring to the same spell (no need if a different tree was updated)
+	if DropDownList1:IsShown() and UIDROPDOWNMENU_OPEN_MENU == dropdown and tree == selectedTree then
+		CloseDropDownMenus()
+	end
+end
+scrollFrame.GetList = function()
+	return addon:GetSpellArray(selectedTree)
+end
+scrollFrame.OnButtonShow = function(self, item, data, owner)
+	item.data = data
+	item.button.data = data
+	local normal = data.normal
+	local crit = data.crit
+	item.icon:SetTexture(addon:GetSpellTexture(data.id))
+	if addon.filters then
+		item.icon:SetDesaturated(data.filtered)
+		item.spellName:SetFontObject(data.filtered and "GameFontDisable" or "GameFontNormal")
+	end
+	item.spellName:SetText(addon:GetFullSpellName(data.name, data.periodic))
+	item.target:SetFormattedText("%s\n%s",
+		normal and normal.target or "-",
+		crit and crit.target or "-")
+	item.record:SetFormattedText("%s\n%s",
+		spellList:GetTextColor(data, "normal"),
+		spellList:GetTextColor(data, "crit"))
+	if item == owner then
+		item:OnEnter()
+	end
+end
 
 spellListContainer.OnTabSelected = function(self, tabIndex)
 	selectedTree = addon.treeIndex[tabIndex]
-	FauxScrollFrame_SetOffset(scrollFrame, 0)
-	scrollFrame.ScrollBar:SetValue(0)
-	scrollFrame:Update()
+	scrollFrame:Reset()
 end
 
 spellListContainer:SelectTab(1)
