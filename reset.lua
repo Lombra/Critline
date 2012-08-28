@@ -60,15 +60,15 @@ addon.spellList:AddSpellOption(setmetatable({
 	text = L["Revert"],
 	func = function(self, tree)
 		local data = self.value
-		local history = history[tree][data.spellID]
-		local spell = addon:GetSpellInfo(tree, data.spellID, data.periodic)
+		local history = history[tree][data.id]
+		local spell = addon:GetSpellInfo(tree, data.id, data.periodic)
 		for k, v in pairs(history[data.periodic]) do
 			local hitType = spell[k]
 			local amount, target = hitType.amount, hitType.target
 			for k, v in pairs(v) do
 				hitType[k] = v
 			end
-			addon:Message(format("Reverted %s (%d, %s) record on %s.", data.spellName, amount, tree, target))
+			addon:Message(format("Reverted %s (%d, %s) record on %s.", data.name, amount, tree, target))
 		end
 		history[data.periodic] = nil
 		addon:UpdateTopRecords(tree)
@@ -81,8 +81,8 @@ addon.spellList:AddSpellOption({
 	text = L["Reset"],
 	func = function(self, tree)
 		local data = self.value
-		addon:DeleteSpell(tree, data.spellID, data.periodic)
-		local history = history[tree][data.spellID]
+		addon:DeleteSpell(tree, data.id, data.periodic)
+		local history = history[tree][data.id]
 		if history then
 			history[data.periodic] = nil
 		end
@@ -92,7 +92,7 @@ addon.spellList:AddSpellOption({
 })
 
 function addon:GetPreviousRecord(data, tree)
-	local prevRecord = history[tree][data.spellID]
+	local prevRecord = history[tree][data.id]
 	return prevRecord and prevRecord[data.periodic]
 end
 
@@ -105,7 +105,7 @@ function module:ResetAll(tree)
 end
 
 -- stores previous record for the undo feature
-function module:NewRecord(event, tree, spellID, periodic, amount, crit, prevRecord)
+function module:NewRecord(event, tree, spellID, spellName, periodic, amount, crit, prevRecord)
 	-- do not store previous record if it was 0
 	if prevRecord.amount == 0 then
 		return
@@ -124,8 +124,7 @@ function module:NewRecord(event, tree, spellID, periodic, amount, crit, prevReco
 	for k, v in pairs(prevRecord) do
 		spell[periodic][hitType][k] = v
 	end
-	addon:Debug(format("Storing previous record for %s = %d (%s, %s, %s)",
-						addon:GetSpellName(spellID), prevRecord.amount, tree, periodic == 2 and "periodic" or "direct", hitType))
+	addon:Debug(format("Storing previous %s %s record for %s (%d)", hitType, tree, addon:GetFullSpellName(spellName, periodic), prevRecord.amount))
 end
 
 addon.RegisterCallback(module, "NewRecord")

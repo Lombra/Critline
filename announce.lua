@@ -10,7 +10,7 @@ local announceFormat = format("%%s - %s: %%s %s: %%s", L["Normal"], L["Crit"])
 local function announce(data, channel, target)
 	local normal = data.normal and addon:ShortenNumber(data.normal.amount)
 	local crit = data.crit and addon:ShortenNumber(data.crit.amount)
-	local text = format(announceFormat, addon:GetFullSpellName(data.spellID, data.periodic, true), (normal or "-"), (crit or "-"))
+	local text = format(announceFormat, addon:GetFullSpellName(data.name, data.periodic, true), (normal or "-"), (crit or "-"))
 	SendChatMessage(text, channel, nil, target)
 end
 
@@ -55,33 +55,22 @@ addon.spellList:AddSpellOption({
 })
 
 local function onShow(self)
+	self.button1:Disable()
 	self.editBox:SetText(lastTarget)
 	self.editBox:HighlightText()
 end
 
 addon:CreatePopup("CRITLINE_ANNOUNCE_WHISPER", {
 	text = L["Enter whisper target"],
-	button1 = ACCEPT,
-	button2 = CANCEL,
-	hasEditBox = true,
 	OnAccept = function(self, data)
 		lastTarget = self.editBox:GetText()
-		local target = lastTarget:trim()
-		if target == "" then
-			addon:Message(L["Invalid player name."])
-			return
-		else
-			announce(data, "WHISPER", target)
-		end
+		announce(data, "WHISPER", lastTarget:trim())
 	end,
 	OnShow = onShow,
-})
+}, true)
 
 addon:CreatePopup("CRITLINE_ANNOUNCE_CHANNEL", {
 	text = ADD_CHANNEL,
-	button1 = ACCEPT,
-	button2 = CANCEL,
-	hasEditBox = true,
 	OnAccept = function(self, data)
 		lastTarget = self.editBox:GetText()
 		local target = GetChannelName(lastTarget:trim())
@@ -93,4 +82,4 @@ addon:CreatePopup("CRITLINE_ANNOUNCE_CHANNEL", {
 		end
 	end,
 	OnShow = onShow,
-})
+}, true)

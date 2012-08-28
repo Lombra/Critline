@@ -233,12 +233,12 @@ end
 local red1 = {r = 1, g = 0, b = 0}
 local red255 = {r = 255, g = 0, b = 0}
 
-function splash:NewRecord(event, tree, spellID, periodic, amount, crit, prevRecord, isFiltered)
+function splash:NewRecord(event, tree, spellID, spellName, periodic, amount, crit, prevRecord, isFiltered)
 	if isFiltered then
 		return
 	end
 	
-	spell = format(L["New %s record!"], addon:GetFullSpellName(spellID, periodic, true))
+	spell = format(L["New %s record!"], addon:GetFullSpellName(spellName, periodic, true))
 	amount = addon:ShortenNumber(amount)
 	if addon.db.profile.oldRecord and prevRecord.amount > 0 then
 		amount = format("%s (%s)", amount, addon:ShortenNumber(prevRecord.amount))

@@ -1,6 +1,6 @@
-## Interface: 40300
+## Interface: 50001
 ## Title: Critline
-## Version: 4.4.0
+## Version: 4.5.0
 ## Notes: Saves your normal and critical records and flashes a message if you break the record.
 ## Author: L'ombra
 ## SavedVariables: CritlineDB
@@ -34,6 +34,7 @@ display.lua
 minimap.lua
 reset.lua
 announce.lua
+advanced.lua
 Broker.lua
 profiles.lua
 AuraTracker.lua

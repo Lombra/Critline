@@ -20,11 +20,11 @@ for k, v in pairs(addon.trees) do
 					local v = spells[i]
 					local normal = v.normal
 					if normal and normal.amount == normalRecord then
-						normalSpell = v.spellName
+						normalSpell = v.name
 					end
 					local crit = v.crit
 					if crit and crit.amount == critRecord then
-						critSpell = v.spellName
+						critSpell = v.name
 					end
 					if (normalSpell or not normalRecord) and (critSpell or not normalRecord) then
 						break

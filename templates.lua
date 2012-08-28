@@ -128,6 +128,7 @@ do	-- config frame
 		"CreateColorButton",
 		"CreateEditBox",
 		"CreateDropDownMenu",
+		"CreateScrollFrame",
 		"CreateTabInterface",
 	}
 	
@@ -248,7 +249,7 @@ do	-- slider template
 		slider.currentValue = currentValue
 		
 		local thumb = slider:CreateTexture()
-		thumb:SetTexture("Interface\\Buttons\\UI-SliderBar-Button-Horizontal")
+		thumb:SetTexture([[Interface\Buttons\UI-SliderBar-Button-Horizontal]])
 		thumb:SetSize(32, 32)
 		slider:SetThumbTexture(thumb)
 		
@@ -377,6 +378,13 @@ do	-- editbox
 		mid:SetPoint("TOPLEFT", left, "TOPRIGHT")
 		mid:SetPoint("BOTTOMRIGHT", right, "BOTTOMLEFT")
 		
+		local label = editbox:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+		label:SetPoint("BOTTOMLEFT", editbox, "TOPLEFT", 0, -2)
+		label:SetPoint("BOTTOMRIGHT", editbox, "TOPRIGHT", 0, -2)
+		label:SetJustifyH("LEFT")
+		label:SetHeight(18)
+		editbox.label = label
+		
 		return editbox
 	end
 end
@@ -452,6 +460,94 @@ do	-- dropdown menu frame
 	end
 end
 
+do	-- faux scroll frame
+	local function dummy() end
+	
+	local function onShow(self)
+		if self.doUpdate then
+			self:Update()
+		end
+	end
+	
+	local function onParentShow(self)
+		onShow(self.scrollFrame)
+	end
+
+	local function onVerticalScroll(self, offset)
+		FauxScrollFrame_OnVerticalScroll(self, offset, self.buttonHeight, self.Update)
+	end
+	
+	local scrollPrototype = {}
+
+	function scrollPrototype:Reset()
+		self:SetOffset(0)
+		self.ScrollBar:SetValue(0)
+		self:Update()
+	end
+	
+	function scrollPrototype:Update(...)
+		if not (self.parent:GetParent() and self.parent:IsVisible()) then
+			self.doUpdate = true
+			return
+		end
+		
+		self:SetupButtons(self:PreUpdate())
+		
+		self:PostUpdate(...)
+	end
+
+	function scrollPrototype:SetupButtons(...)
+		local list = self:GetList()
+		if not list then return end
+		
+		local length = #list
+		local buttons = self.buttons
+		FauxScrollFrame_Update(self, length, #buttons, self.buttonHeight)
+		local offset = self:GetOffset()
+		for line = 1, #buttons do
+			local lineplusoffset = line + offset
+			local button = buttons[line]
+			local show = lineplusoffset <= length
+			if show then
+				self:OnButtonShow(button, list[lineplusoffset], ...)
+			end
+			button:SetShown(show)
+		end
+		self.doUpdate = nil
+	end
+
+	function templates:CreateScrollFrame(name, parent, numButtons, buttonHeight, buttonFactory, initialXOffset, initialYOffset)
+		local scrollFrame = CreateFrame("ScrollFrame", name, parent, "FauxScrollFrameTemplate")
+		scrollFrame:SetScript("OnShow", onShow)
+		scrollFrame:SetScript("OnVerticalScroll", onVerticalScroll)
+		scrollFrame.GetOffset = FauxScrollFrame_GetOffset
+		scrollFrame.SetOffset = FauxScrollFrame_SetOffset
+		scrollFrame.Reset = scrollPrototype.Reset
+		scrollFrame.PreUpdate = dummy
+		scrollFrame.PostUpdate = dummy
+		scrollFrame.Update = scrollPrototype.Update
+		scrollFrame.SetupButtons = scrollPrototype.SetupButtons
+		scrollFrame.buttonHeight = buttonHeight
+		scrollFrame.buttons = {}
+		for i = 1, numButtons do
+			local button = buttonFactory(parent)
+			if i == 1 then
+				button:SetPoint("TOPLEFT", scrollFrame, initialXOffset, initialYOffset)
+			else
+				button:SetPoint("TOPLEFT", scrollFrame.buttons[i - 1], "BOTTOMLEFT")
+			end
+			button:SetPoint("RIGHT", scrollFrame.buttons[i - 1] or scrollFrame)
+			button:SetHeight(buttonHeight)
+			button:SetID(i)
+			scrollFrame.buttons[i] = button
+		end
+		scrollFrame.parent = parent
+		parent:HookScript("OnShow", onParentShow)
+		parent.scrollFrame = scrollFrame
+		return scrollFrame
+	end
+end
+
 do	-- tab interface
 	local function setLabel(self, text)
 		self:SetText(text)
@@ -461,20 +557,10 @@ do	-- tab interface
 	local function selectTab(frame, tabIndex)
 		frame.selectedTab = tabIndex
 		for i, tab in ipairs(frame.tabs) do
-			if i == tabIndex then
-				tab:Disable()
-				tab:SetHeight(20)
-				tab.bg:SetTexture(0.3, 0.3, 0.3)
-				if tab.frame then
-					tab.frame:Show()
-				end
-			else
-				tab:Enable()
-				tab:SetHeight(16)
-				tab.bg:SetTexture(0.7, 0.7, 0.7)
-				if tab.frame then
-					tab.frame:Hide()
-				end
+			local active = i == tabIndex
+			tab:SetEnabled(not active)
+			if tab.frame then
+				tab.frame:SetShown(active)
 			end
 		end
 		if frame.OnTabSelected then
@@ -487,20 +573,32 @@ do	-- tab interface
 		selectTab(self.container, self:GetID())
 	end
 	
+	local function onEnable(self)
+		self:SetHeight(16)
+		self.bg:SetTexture(0.7, 0.7, 0.7)
+	end
+	
+	local function onDisable(self)
+		self:SetHeight(20)
+		self.bg:SetTexture(0.3, 0.3, 0.3)
+	end
+	
 	local function createTab(frame)
 		local tab = CreateFrame("Button", nil, frame)
-		tab:SetSize(64, 20)
+		tab:SetSize(64, 16)
 		tab:SetNormalFontObject(GameFontNormalSmall)
 		tab:SetHighlightFontObject(GameFontHighlightSmall)
 		tab:SetDisabledFontObject(GameFontHighlightSmall)
+		tab:SetScript("OnClick", onClick)
+		tab:SetScript("OnEnable", onEnable)
+		tab:SetScript("OnDisable", onDisable)
+		tab.SetLabel = setLabel
+		tab.container = frame
 		local highlight = tab:CreateTexture()
 		highlight:SetTexture([[Interface\PaperDollInfoFrame\UI-Character-Tab-Highlight]])
 		highlight:SetPoint("BOTTOMLEFT", -2, -6)
 		highlight:SetPoint("TOPRIGHT", 2, 6)
 		tab:SetHighlightTexture(highlight)
-		tab:SetScript("OnClick", onClick)
-		tab.SetLabel = setLabel
-		tab.container = frame
 
 		local index = #frame.tabs + 1
 		if index == 1 then
@@ -512,7 +610,7 @@ do	-- tab interface
 		frame.tabs[index] = tab
 		
 		local bg = tab:CreateTexture(nil, "BORDER")
-		bg:SetTexture(0.3, 0.3, 0.3)
+		bg:SetTexture(0.7, 0.7, 0.7)
 		bg:SetBlendMode("MOD")
 		bg:SetAllPoints()
 		tab.bg = bg
@@ -552,22 +650,44 @@ do	-- tab interface
 end
 
 do	-- popup
+	local function onShow(self)
+		self.button1:Disable()
+	end
+	
 	local function editBoxOnEnterPressed(self, data)
 		local parent = self:GetParent()
-		StaticPopupDialogs[parent.which].OnAccept(parent, data)
-		parent:Hide()
+		if parent.button1:IsEnabled() then
+			StaticPopupDialogs[parent.which].OnAccept(parent, data)
+			parent:Hide()
+		end
 	end
 	
 	local function editBoxOnEscapePressed(self)
 		self:GetParent():Hide()
 	end
 	
-	function addon:CreatePopup(which, info)
+	local function editBoxOnTextChanged(self)
+		local parent = self:GetParent()
+		if parent.editBox:GetText():trim() ~= "" then
+			parent.button1:Enable()
+		else
+			parent.button1:Disable()
+		end
+	end
+	
+	function addon:CreatePopup(which, info, editBox)
 		StaticPopupDialogs[which] = info
-		info.EditBoxOnEnterPressed = editBoxOnEnterPressed
-		info.EditBoxOnEscapePressed = editBoxOnEscapePressed
 		info.hideOnEscape = true
 		info.whileDead = true
 		info.timeout = 0
+		if editBox then
+			info.button1 = ACCEPT
+			info.button2 = CANCEL
+			info.hasEditBox = true
+			info.OnShow = onShow
+			info.EditBoxOnEnterPressed = editBoxOnEnterPressed
+			info.EditBoxOnEscapePressed = editBoxOnEscapePressed
+			info.EditBoxOnTextChanged = editBoxOnTextChanged
+		end
 	end
 end

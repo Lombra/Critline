@@ -34,8 +34,8 @@ auraTracker:EnableMouse(true)
 auraTracker:SetSize(320, 360)
 auraTracker:SetPoint("CENTER")
 
+auraTracker:RegisterUnitEvent("UNIT_AURA", "player")
 auraTracker:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
-auraTracker:RegisterEvent("UNIT_AURA")
 auraTracker:RegisterEvent("PLAYER_LOGIN")
 auraTracker:RegisterEvent("UNIT_NAME_UPDATE")
 auraTracker:RegisterEvent("PLAYER_REGEN_DISABLED")
@@ -237,71 +237,6 @@ local label = search:CreateFontString(nil, nil, "GameFontNormalSmall")
 label:SetPoint("BOTTOMLEFT", search, "TOPLEFT")
 label:SetText("Text filter")
 
-local NUM_BUTTONS = 6
-local BUTTON_HEIGHT = 36
-
-local scrollFrame = CreateFrame("ScrollFrame", "CritlineAuraTrackerScrollFrame", auraTracker, "FauxScrollFrameTemplate")
-scrollFrame:SetHeight(NUM_BUTTONS * BUTTON_HEIGHT)
-scrollFrame:SetPoint("TOP", search, "BOTTOM", 0, -8)
-scrollFrame:SetPoint("LEFT", 32, 0)
-scrollFrame:SetPoint("RIGHT", -32, 0)
-scrollFrame:SetScript("OnVerticalScroll", function(self, offset) FauxScrollFrame_OnVerticalScroll(self, offset, BUTTON_HEIGHT, self.Update) end)
-
-local sortedAuras = {}
-
-function scrollFrame:Update()
-	if not auraTracker:IsShown() then
-		self.doUpdate = true
-		return
-	end
-	
-	self.doUpdate = nil
-	
-	wipe(sortedAuras)
-	
-	local n = 0
-	local search = search:GetText():lower()
-	for spellID, v in pairs(currentFilter) do
-		if filters[v.type] and (v.sourceType == filters.sourceType or not v.sourceType) and (v.spellName:lower():find(search, nil, true) or v.sourceName:lower():find(search, nil, true)) then
-			n = n + 1
-			sortedAuras[n] = spellID
-		end
-	end
-	
-	sort(sortedAuras, filters.sort)
-	
-	FauxScrollFrame_Update(self, n, NUM_BUTTONS, BUTTON_HEIGHT)
-	
-	local offset = FauxScrollFrame_GetOffset(self)
-	local buttons = self.buttons
-	for line = 1, NUM_BUTTONS do
-		local button = buttons[line]
-		local lineplusoffset = line + offset
-		if lineplusoffset <= n then
-			local spellID = sortedAuras[lineplusoffset]
-			button:SetFormattedText("%s (%d)", currentFilter[spellID].spellName, spellID)
-			button.source:SetText(currentFilter[spellID].source)
-			button.icon:SetTexture(addon:GetSpellTexture(spellID))
-			button.spellID = spellID
-			-- local disabled = filters:IsFilteredAura(spellID)
-			-- button.icon:SetDesaturated(disabled)
-			-- button.text:SetFontObject(disabled and "GameFontDisable" or "GameFontNormal")
-			button:Show()
-		else
-			button:Hide()
-		end
-	end
-end
-
-auraTracker:SetScript("OnShow", function(self)
-	if scrollFrame.doUpdate then
-		scrollFrame:Update()
-	end
-end)
-
-local auraTrackerButtons = {}
-scrollFrame.buttons = auraTrackerButtons
-
 -- local function onClick(self)
 	-- local disabled = filters:IsFilteredAura(self.spellID)
 	-- if disabled then
@@ -334,26 +269,12 @@ local function onEnter(self)
 	GameTooltip:Show()
 end
 
-for i = 1, NUM_BUTTONS do
+local function createButton()
 	local btn = CreateFrame("Button", nil, auraTracker)
-	btn:SetHeight(BUTTON_HEIGHT)
-	if i == 1 then
-		btn:SetPoint("TOP", scrollFrame)
-	else
-		btn:SetPoint("TOP", auraTrackerButtons[i - 1], "BOTTOM")
-	end
-	btn:SetPoint("LEFT", scrollFrame)
-	btn:SetPoint("RIGHT", scrollFrame)
 	btn:SetPushedTextOffset(0, 0)
 	-- btn:SetScript("OnClick", onClick)
 	btn:SetScript("OnEnter", onEnter)
 	btn:SetScript("OnLeave", GameTooltip_Hide)
-	
-	if i % 2 == 0 then
-		local bg = btn:CreateTexture(nil, "BACKGROUND")
-		bg:SetAllPoints()
-		bg:SetTexture(1, 1, 1, 0.1)
-	end
 	
 	local icon = btn:CreateTexture()
 	icon:SetSize(32, 32)
@@ -373,7 +294,53 @@ for i = 1, NUM_BUTTONS do
 	source:SetJustifyH("LEFT")
 	btn.source = source
 	
-	auraTrackerButtons[i] = btn
+	return btn
+end
+
+local NUM_BUTTONS = 6
+local BUTTON_HEIGHT = 36
+
+local sortedAuras = {}
+
+local scrollFrame = templates.CreateScrollFrame(template, "CritlineAuraTrackerScrollFrame", auraTracker, NUM_BUTTONS, BUTTON_HEIGHT, createButton)
+scrollFrame:SetHeight(NUM_BUTTONS * BUTTON_HEIGHT)
+scrollFrame:SetPoint("TOP", search, "BOTTOM", 0, -8)
+scrollFrame:SetPoint("LEFT", 32, 0)
+scrollFrame:SetPoint("RIGHT", -32, 0)
+
+scrollFrame.GetList = function(self)
+	wipe(sortedAuras)
+	
+	local n = 0
+	local search = search:GetText():lower()
+	for spellID, v in pairs(currentFilter) do
+		if filters[v.type] and (v.sourceType == filters.sourceType or not v.sourceType) and (v.spellName:lower():find(search, nil, true) or v.sourceName:lower():find(search, nil, true)) then
+			n = n + 1
+			sortedAuras[n] = spellID
+		end
+	end
+	
+	sort(sortedAuras, filters.sort)
+	
+	return sortedAuras
+end
+
+scrollFrame.OnButtonShow = function(self, button, spellID)
+	button:SetFormattedText("%s (%d)", currentFilter[spellID].spellName, spellID)
+	button.source:SetText(currentFilter[spellID].source)
+	button.icon:SetTexture(addon:GetSpellTexture(spellID))
+	button.spellID = spellID
+	-- local disabled = filters:IsFilteredAura(spellID)
+	-- button.icon:SetDesaturated(disabled)
+	-- button.text:SetFontObject(disabled and "GameFontDisable" or "GameFontNormal")
+end
+
+for i, btn in ipairs(scrollFrame.buttons) do
+	if i % 2 == 0 then
+		local bg = btn:CreateTexture(nil, "BACKGROUND")
+		bg:SetAllPoints()
+		bg:SetTexture(1, 1, 1, 0.1)
+	end
 end
 
 function auraTracker:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, sourceGUID, sourceName, sourceFlags, sourceFlags2, destGUID, destName, destFlags, destFlags2, spellID, spellName, spellSchool, auraType)
@@ -390,12 +357,6 @@ function auraTracker:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaste
 		if auraTable then
 			self:RegisterAura(auraTable, sourceName, sourceGUID, spellID, spellName, auraType)
 		end
-	end
-end
-
-function auraTracker:UNIT_AURA(unit)
-	if unit == "player" then
-		self:ScanAuras()
 	end
 end
 
@@ -445,6 +406,8 @@ function auraTracker:ScanAuras()
 	end
 	scrollFrame:Update()
 end
+
+auraTracker.UNIT_AURA = auraTracker.ScanAuras
 
 function auraTracker:RegisterAura(auraTable, sourceName, sourceGUID, spellID, spellName, auraType)
 	local session = auraTable.session
