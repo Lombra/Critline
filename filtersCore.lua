@@ -33,10 +33,14 @@ local specialMobs = {
 	[48270] = true, -- Exposed Head of Magmaw
 	[52155] = true, -- High Priest Venoxis
 	[54191] = true, -- Risen Ghoul (End Time)
+	[58817] = true, -- Spirit of Lao-Fe
+	[63311] = true, -- Scar-Shell
+	[64277] = true, -- Spirit Fragment
+	[64883] = true, -- Crumbling Jade Warrior
 }
 
 -- auras that when gained will suppress record tracking
-local specialAuras = {
+local filteredAuras = {
 	[23768] = true, -- Sayge's Dark Fortune of Damage
 	[24378] = true, -- Berserking (battlegrounds)
 	[53642] = true,	-- Might of Mograine (Light's Hope Chapel)
@@ -47,12 +51,35 @@ local specialAuras = {
 	[58549] = true,	-- Tenacity (Lake Wintergrasp)
 	[59641] = true,	-- Warchief's Blessing (The Battle For The Undercity)
 	[60964] = true,	-- Strength of Wrynn (The Battle For The Undercity)
+	[76232] = true, -- Storm's Fury (Ragnaros - Mount Hyjal) ?
 	[81096] = true, -- Red Mist (Red Mist)
+	[82840] = true, -- Vulnerable (Deepstone Elemental)
 	[84719] = true, -- Beach Head Control (Twilight Shore - Alliance)
 	[84720] = true, -- Beach Head Control (Twilight Shore - Horde)
 	[86872] = true, -- Frothing Rage (Thundermar Ale)
 	[93777] = true, -- Invocation of Flame (Skullcrusher the Mountain)
 	[93778] = true, -- Invocation of Flame (Elemental Bonds: Fury)
+	[95723] = true, -- Storm's Fury (Ragnaros - Mount Hyjal) ?
+	[96960] = true, -- Antlers of Malorne (Galenges)
+	[108918] = true, -- Deafened (Shadow of Doubt)
+	[114586] = true, -- Yoon's Poison
+	[116864] = true, -- Kafa-Crash
+	[116952] = true, -- Kafa-Crash
+	[117164] = true, -- Kafa Rush
+	[124427] = true, -- Lushroom Dust
+	[126035] = true, -- Broken Shell (Rankbite Ancient)
+	[126126] = true, -- Upchuck (Vicejaw)
+	[126340] = true, -- Expose Vulnerability (Golden Lotus Defender)
+	[126825] = true, -- Sonic Disruption
+	[127662] = true, -- Assassin's Gaze
+	[129007] = true, -- Zijin Sting (Zijin Hollowfly)
+	[129874] = true, -- Brewrific (Oona Brewchugger)
+	[130165] = true, -- Luckydo
+	[134244] = true, -- Hellscream's Warsong
+	[133455] = true, -- Horde Supremacy
+	[133456] = true, -- Alliance Supremacy
+	[134797] = true, -- Banner of King Varian Wrynn
+	[135219] = true, -- Reaver Bombs
 	
 	-- The Deadmines
 	[90932] = true, -- Ragezone (Defias Blood Wizard)
@@ -66,8 +93,11 @@ local specialAuras = {
 	[44406] = true,	-- Energy Infusion (Vexallus)
 	
 	-- Karazhan
-	[30402] = true, -- Nether Beam - Dominance (Netherspite)
+	[30423] = true, -- Nether Beam - Dominance (Netherspite)
 	-- Black Temple
+	[41406] = true, -- Dementia (Priestess of Dementia)
+	[41337] = true,	-- Aura of Anger (Reliquary of Souls)
+	[41350] = true,	-- Aura of Desire (Reliquary of Souls)
 	[40604] = true, -- Fel Rage (Gurtogg Bloodboil)
 	[40880] = true, -- Prismatic Aura: Shadow (Mother Shahraz)
 	[40882] = true, -- Prismatic Aura: Fire (Mother Shahraz)
@@ -75,43 +105,59 @@ local specialAuras = {
 	[40891] = true, -- Prismatic Aura: Arcane (Mother Shahraz)
 	[40896] = true, -- Prismatic Aura: Frost (Mother Shahraz)
 	[40897] = true, -- Prismatic Aura: Holy (Mother Shahraz)
-	[41337] = true,	-- Aura of Anger (Reliquary of Souls)
-	[41350] = true,	-- Aura of Desire (Reliquary of Souls)
-	[41406] = true, -- Dementia (Priestess of Dementia)
+	-- Sunwell Plateau
+	[46287] = true, -- Infernal Defense (Apocalypse Guard)
+	[46474] = true, -- Sacrifice of Anveena (Kil'jaeden)
 	
+	-- Azjol-Nerub
+	[59348] = true, -- Infected Wound (Hadronox)
 	-- Ahn'kahet: The Old Kingdom
 	[56648] = true,	-- Potent Fungus (Amanitar)
+	
 	-- The Eye of Eternity
 	[55849] = true,	-- Power Spark (Malygos)
 	-- Ulduar
 	[61888] = true, -- Overwhelming Power (Assembly of Iron 25)
+	[64320] = true, -- Rune of Power (Assembly of Iron)
+	[64637] = true, -- Overwhelming Power (Assembly of Iron 10)
 	[62243] = true, -- Unstable Sun Beam (Elder Brightleaf)
+	[64321] = true, -- Potent Pheromones (Freya)
+	[63711] = true, -- Storm Power (Hodir 10)
+	[65134] = true, -- Storm Power (Hodir 25)
+	[65280] = true, -- Singed (Hodir)
+	-- [64436] = true, -- Magnetic Core (Aerial Command Unit) -- no event
+	[63277] = true, -- Shadow Crash (General Vezax)
 	[62650] = true, -- Fortitude of Frost (Yogg-Saron)
 	[62670] = true, -- Resilience of Nature (Yogg-Saron)
 	[62671] = true, -- Speed of Invention (Yogg-Saron)
 	[62702] = true, -- Fury of the Storm (Yogg-Saron)
 	[63138] = true, -- Sara's Fervor (Yogg-Saron)
-	[63277] = true, -- Shadow Crash (General Vezax)
-	[63711] = true, -- Storm Power (Hodir 10)
-	[64320] = true, -- Rune of Power (Assembly of Iron)
-	[64321] = true, -- Potent Pheromones (Freya)
-	[64637] = true, -- Overwhelming Power (Assembly of Iron 10)
-	[65134] = true, -- Storm Power (Hodir 25)
+	-- Trial of the Crusader
+	[66758] = true, -- Staggered Daze (Icehowl)
 	-- Icecrown Citadel
+	[73822] = true, -- Hellscream's Warsong (Icecrown Citadel)
+	[73828] = true, -- Strength of Wrynn (Icecrown Citadel) 
+	[69871] = true, -- Plague Stream (Plague Scientist)
 	[70227] = true, -- Empowered Blood (Empowered Orb)
+	[72219] = true, -- Gastric Bloat (Festergut)
 	[70867] = true, -- Essence of the Blood Queen (Blood Queen Lana'thel)
 	[70879] = true, -- Essence of the Blood Queen (Blood Queen Lana'thel, bitten by a player)
 	[71532] = true, -- Essence of the Blood Queen (Blood Queen Lana'thel heroic)
-	[72219] = true, -- Gastric Bloat (Festergut)
-	[73822] = true, -- Hellscream's Warsong (Icecrown Citadel)
-	[73828] = true, -- Strength of Wrynn (Icecrown Citadel) 
 	
+	-- Blackrock Caverns
+	[75846] = true, -- Superheated Quicksilver Armor (Karsh Steelbender) ?
+	[76015] = true, -- Superheated Quicksilver Armor (Karsh Steelbender) ?
+	[93567] = true, -- Superheated Quicksilver Armor (Karsh Steelbender) ?
 	-- Throne of the Tides
 	[76133] = true, -- Tidal Surge (Neptulon)
 	[76155] = true, -- Tidal Surge (Neptulon)
 	-- Grim Batol
+	[76415] = true, -- Dizzy (Twilight Enforcer - normal)
+	[90666] = true, -- Dizzy (Twilight Enforcer - heroic)
 	[76693] = true, -- Empowering Twilight (Crimsonborne Warlord)
 	[90707] = true, -- Empowering Twilight 
+	[75664] = true, -- Shadow Gale (Erudax) ?
+	-- [91086] = true, -- Shadow Gale (Erudax heroic) -- no event
 	-- Halls of Origination
 	[76159] = true, -- Pyrogenics (Sun-Touched Spriteling)
 	[76355] = true, -- Blessing of the Sun (Rajh)
@@ -119,104 +165,105 @@ local specialAuras = {
 	-- Lost City of the Tol'vir
 	[91871] = true, -- Lightning Charge (Siamat)
 	-- Zul'Gurub
+	[96802] = true, -- Bethekk's Blessing (Lesser Priest of Bethekk)
 	[96493] = true, -- Spirit's Vengeance (Bloodlord Mandokir)
 	[96494] = true, -- Spirit's Vengeance (Bloodlord Mandokir)
-	[96802] = true, -- Bethekk's Blessing (Lesser Priest of Bethekk)
+	[97320] = true, -- Sunder Rift (Jin'do the Godbreaker)
+	-- End Time
+	[101602] = true, -- Throw Totem (Echo of Baine)
 	-- Hour of Twilight
 	[103744] = true, -- Water Shell (Thrall)
 	[103817] = true, -- Rising Fire
 	-- Well of Eternity
 	[102994] = true, -- Shadow Walk (Illidan Stormrage)
-	[103018] = true, -- Shadow Ambusher (Illidan Stormrage)
 	[103020] = true, -- Shadow Walk (Illidan Stormrage)
+	[103018] = true, -- Shadow Ambusher (Illidan Stormrage)
 	
 	-- Bastion of Twilight
-	[82170] = true, -- Corruption: Absolute (Cho'gall)
+	[87683] = true, -- Dragon's Vengeance (Halfus Wyrmbreaker)
 	[86622] = true, -- Engulfing Magic (Theralion) ?
 	[95639] = true, -- Engulfing Magic (Theralion) ?
 	[95640] = true, -- Engulfing Magic (Theralion) ?
 	[95641] = true, -- Engulfing Magic (Theralion) ?
+	[82170] = true, -- Corruption: Absolute (Cho'gall)
 	-- Blackwing Descent
+	[80718] = true, -- Burden of the Crown (Spirit of Corehammer)
 	[79624] = true, -- Power Generator (Arcanotron) ?
 	[79629] = true, -- Power Generator (Arcanotron 10)
-	[80718] = true, -- Burden of the Crown (Spirit of Corehammer)
-	[91555] = true, -- Power Generator (Arcanotron 25)
-	[91556] = true, -- Power Generator (Arcanotron 10 heroic)
-	-- Firelands
-	[98245] = true, -- Legendary Concentration (Majordomo Staghelm)
-	[98252] = true, -- Epic Concentration (Majordomo Staghelm)
-	[98253] = true, -- Rare Concentration (Majordomo Staghelm)
-	[98254] = true, -- Uncommon Concentration (Majordomo Staghelm)
-	[99389] = true, -- Imprinted (Voracious Hatchling)
-	[99762] = true, -- Flames of the Firehawk (Inferno Firehawk)
-	[100359] = true, -- Imprinted (Voracious Hatchling)
-	-- Dragon Soul
-	[106029] = true, -- Kalecgos' Presence (no event)
-	[107770] = true, -- Pure Water
-	[109457] = true, -- Ysera's Presence (no event) ?
-	[109606] = true, -- Kalecgos' Presence (LFR - no event)
-	[109640] = true, -- Ysera's Presence (LFR - no event)
-}
-
--- these are auras that increases the target's damage or healing received
-local targetAuras = {
-	[82840] = true, -- Vulnerable (Deepstone Elemental)
-	[95723] = true, -- Storm's Fury (Ragnaros - Mount Hyjal) ?
-	[96960] = true, -- Antlers of Malorne (Galenges)
-	
-	-- Sunwell Plateau
-	[46287] = true, -- Infernal Defense (Apocalypse Guard)
-	[46474] = true, -- Sacrifice of Anveena (Kil'jaeden)
-	-- Ulduar
-	[64436] = true, -- Magnetic Core (Aerial Command Unit) -- no event
-	[65280] = true, -- Singed (Hodir)
-	-- Trial of the Crusader
-	[66758] = true, -- Staggered Daze (Icehowl) ?
-	
-	-- Blackrock Caverns
-	[75846] = true, -- Superheated Quicksilver Armor (Karsh Steelbender) ?
-	[76015] = true, -- Superheated Quicksilver Armor (Karsh Steelbender) ?
-	[76232] = true, -- Storm's Fury (Ragnaros - Mount Hyjal) ?
-	[93567] = true, -- Superheated Quicksilver Armor (Karsh Steelbender) ?
-	-- Grim Batol
-	[75664] = true, -- Shadow Gale (Erudax) ?
-	[76415] = true, -- Dizzy (Twilight Enforcer - normal)
-	-- [91086] = true, -- Shadow Gale (Erudax heroic) -- no event
-	[90666] = true, -- Dizzy (Twilight Enforcer - heroic)
-	-- Zul'Gurub
-	[97320] = true, -- Sunder Rift (Jin'do the Godbreaker)
-	-- End Time
-	[101602] = true, -- Throw Totem (Echo of Baine)
-	
-	-- Bastion of Twilight
-	[87683] = true, -- Dragon's Vengeance (Halfus Wyrmbreaker)
-	-- Blackwing Descent
-	[77615] = true, -- Debilitating Slime (Maloriak)
-	[77717] = true, -- Vertigo (Atramedes 10)
 	[80164] = true, -- Chemical Cloud (Toxitron)
-	[91478] = true, -- Chemical Cloud (Toxitron 25) ?
 	[91479] = true, -- Chemical Cloud (Toxitron 10 heroic)
-	[92389] = true, -- Vertigo (Atramedes 25) ?
-	[92390] = true, -- Vertigo (Atramedes 10 heroic)
+	[91478] = true, -- Chemical Cloud (Toxitron 25) ?
+	[91556] = true, -- Power Generator (Arcanotron 10 heroic)
+	[91555] = true, -- Power Generator (Arcanotron 25)
+	[77615] = true, -- Debilitating Slime (Maloriak)
 	[92910] = true, -- Debilitating Slime (Maloriak) ?
+	[77717] = true, -- Vertigo (Atramedes 10)
+	[92390] = true, -- Vertigo (Atramedes 10 heroic)
+	[92389] = true, -- Vertigo (Atramedes 25) ?
 	-- Throne of the Four Winds
 	[87904] = true, -- Feedback (Al'Akir)
 	[101458] = true, -- Feedback (Al'Akir 25) ?
 	[101460] = true, -- Feedback (Al'Akir 25 heroic)
 	-- Firelands
+	[99762] = true, -- Flames of the Firehawk (Inferno Firehawk)
 	[98596] = true, -- Infernal Rage (Spark of Rhyolith)
 	[99432] = true, -- Burnout (Alysrazor)
+	[99389] = true, -- Imprinted (Voracious Hatchling)
+	[100359] = true, -- Imprinted (Voracious Hatchling)
+	[98245] = true, -- Legendary Concentration (Majordomo Staghelm)
+	[98252] = true, -- Epic Concentration (Majordomo Staghelm)
+	[98253] = true, -- Rare Concentration (Majordomo Staghelm)
+	[98254] = true, -- Uncommon Concentration (Majordomo Staghelm)
 	-- Dragon Soul
+	[107770] = true, -- Pure Water
 	[104031] = true, -- Void Diffusion (Warlord Zon'ozz)
+	[108934] = true, -- Feedback (Hagara the Stormbinder)
+	[106029] = true, -- Kalecgos' Presence (no event)
+	[109606] = true, -- Kalecgos' Presence (LFR - no event)
+	[109457] = true, -- Ysera's Presence (no event) ?
+	[109640] = true, -- Ysera's Presence (LFR - no event)
 	[106588] = true, -- Expose Weakness (Deathwing)
 	[106600] = true, -- Expose Weakness (Deathwing)
 	[106613] = true, -- Expose Weakness (Deathwing)
 	[106624] = true, -- Expose Weakness (Deathwing)
-	[108934] = true, -- Feedback (Hagara the Stormbinder)
 	[109582] = true, -- Expose Weakness (Deathwing, Alexstrasza - LFR)
 	[109619] = true, -- Expose Weakness (Deathwing, Nozdormu - LFR)
 	[109637] = true, -- Expose Weakness (Deathwing, Ysera - LFR)
 	[109728] = true, -- Expose Weakness (Deathwing, Kalecgos - LFR)
+	
+	-- Shado-Pan Monastery
+	[127576] = true, -- Parting Smoke (Sha of Violence)
+	-- Mogu'shan Palace
+	[118988] = true, -- Reckless Inspiration (Gekkan)
+	[129262] = true, -- Reckless Inspiration (Gekkan)
+	-- Scarlet Halls
+	[113969] = true, -- Unarmored
+	[113970] = true, -- Unarmored
+	-- Scholomance
+	[114141] = true, -- Boiling Bloodthirst (Krastinovian Carver)
+	-- Siege of Niuzao Temple
+	[120938] = true, -- Residue (Resin Flake)
+	-- Theramore's Fall
+	[105690] = true, -- Standard of Theramore
+	-- Crypt of Forgotten Kings
+	[129025] = true, -- Uncontrolled Anger (Hateful Monstrosity)
+	-- Mogu'shan Vaults
+	[117549] = true, -- Spiritual Innervation (Gara'jal the Spiritbinder)
+	[117870] = true, -- Touch of the Titans (Elegon)
+	[119360] = true, -- Draw Power (Elegon)
+	[119387] = true, -- Draw Power (Elegon)
+	[124967] = true, -- Draw Power (Elegon)
+	[116782] = true, -- Titan Gas (Spirit Kings)
+	-- Heart of Fear
+	[123235] = true, -- Weak Points (Garalon)
+	[123423] = true, -- Weak Points (Garalon)
+	[123426] = true, -- Weak Points (Garalon)
+	[123428] = true, -- Weak Points (Garalon)
+	[122354] = true, -- Recklessness (Wind Lord Mel'jarak)
+	[123059] = true, -- Destabilize (Amber Shaper Un'sok)
+	-- Terrace of Endless Spring
+	[122858] = true, -- Bathed in Light (Tsulong)
+	[118977] = true, -- Fearless (Sha of Fear)
 }
 
 local mt = {
@@ -314,7 +361,7 @@ end
 
 function filters:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, sourceGUID, sourceName, sourceFlags, sourceFlags2, destGUID, destName, destFlags, destFlags2, spellID, spellName)
 	if (eventType == "SPELL_AURA_REMOVED" or eventType == "SPELL_AURA_BROKEN" or eventType == "SPELL_AURA_BROKEN_SPELL" or eventType == "SPELL_AURA_STOLEN") then
-		if targetAuras[spellID] and rawget(corruptTargets, destGUID)[spellID] then
+		if self:IsFilteredAura(spellID) and rawget(corruptTargets, destGUID) and corruptTargets[destGUID][spellID] then
 			corruptTargets[destGUID][spellID] = nil
 			addon:Debug(format("Filtered aura (%s) faded from %s.", spellName, destName))
 		end
@@ -322,7 +369,7 @@ function filters:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, s
 	
 	if eventType == "SPELL_AURA_APPLIED" or eventType == "SPELL_AURA_APPLIED_DOSE" or eventType == "SPELL_AURA_REFRESH" then
 		-- if this is one of the damage-taken-increased auras, we flag this target - along with the aura in question - as corrupt
-		if targetAuras[spellID] then
+		if self:IsFilteredAura(spellID) then
 			corruptTargets[destGUID][spellID] = true
 			ignoredTargets[destGUID] = true
 			addon:Debug(format("Target (%s) gained filtered aura. (%s) Ignore received damage.", destName, spellName))
@@ -561,7 +608,6 @@ function filters:ResetEmpowered()
 	isEmpowered.pet = false
 end
 
--- scan for filtered auras from the specialAuras table
 function filters:IsEmpowered(unit)
 	if isEmpowered[unit] or (unit == "player" and not self.inControl) then
 		return true
@@ -586,7 +632,7 @@ function filters:IsFilteredTarget(targetName, guid)
 end
 
 function filters:IsFilteredAura(spellID)
-	return specialAuras[spellID] or customFilteredAuras[spellID]
+	return filteredAuras[spellID] or customFilteredAuras[spellID]
 end
 
 function filters:GetUnit(unitFlags, unitGUID)
