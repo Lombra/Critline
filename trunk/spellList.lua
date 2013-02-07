@@ -36,6 +36,7 @@ for i, v in ipairs(addon.treeIndex) do
 end
 
 local function onEnter(self)
+	GameTooltip.Critline = true
 	GameTooltip:SetOwner(self, "ANCHOR_LEFT")
 	GameTooltip:SetSpellByID(self.data.id)
 	GameTooltip:AddLine(" ")

@@ -32,8 +32,10 @@ local specialMobs = {
 	[46273] = true, -- Debilitated Apexar
 	[48270] = true, -- Exposed Head of Magmaw
 	[52155] = true, -- High Priest Venoxis
+	[56637] = true, -- Ook-Ook
 	[54191] = true, -- Risen Ghoul (End Time)
 	[58817] = true, -- Spirit of Lao-Fe
+	[62270] = true, -- Voress'thalik
 	[63311] = true, -- Scar-Shell
 	[64277] = true, -- Spirit Fragment
 	[64883] = true, -- Crumbling Jade Warrior
@@ -42,6 +44,7 @@ local specialMobs = {
 -- auras that when gained will suppress record tracking
 local filteredAuras = {
 	[23768] = true, -- Sayge's Dark Fortune of Damage
+	[23505] = true, -- Berserking (battlegrounds)
 	[24378] = true, -- Berserking (battlegrounds)
 	[53642] = true,	-- Might of Mograine (Light's Hope Chapel)
 	[56330] = true,	-- Iron's Bane (Storm Peaks quest)
@@ -57,6 +60,7 @@ local filteredAuras = {
 	[84719] = true, -- Beach Head Control (Twilight Shore - Alliance)
 	[84720] = true, -- Beach Head Control (Twilight Shore - Horde)
 	[86872] = true, -- Frothing Rage (Thundermar Ale)
+	[87352] = true, -- Upset Stomach (Hogger)
 	[93777] = true, -- Invocation of Flame (Skullcrusher the Mountain)
 	[93778] = true, -- Invocation of Flame (Elemental Bonds: Fury)
 	[95723] = true, -- Storm's Fury (Ragnaros - Mount Hyjal) ?
@@ -66,20 +70,34 @@ local filteredAuras = {
 	[116864] = true, -- Kafa-Crash
 	[116952] = true, -- Kafa-Crash
 	[117164] = true, -- Kafa Rush
+	[121164] = true, -- Orb of Power
+	[121175] = true, -- Orb of Power
+	[121176] = true, -- Orb of Power
+	[121177] = true, -- Orb of Power
+	[121580] = true, -- Malevolence (Furious Sprite)
+	[123847] = true, -- Trampled
 	[124427] = true, -- Lushroom Dust
 	[126035] = true, -- Broken Shell (Rankbite Ancient)
 	[126126] = true, -- Upchuck (Vicejaw)
 	[126340] = true, -- Expose Vulnerability (Golden Lotus Defender)
+	[126528] = true, -- Burning Oil
 	[126825] = true, -- Sonic Disruption
+	[126974] = true, -- Gift of Power
 	[127662] = true, -- Assassin's Gaze
 	[129007] = true, -- Zijin Sting (Zijin Hollowfly)
+	[129356] = true, -- Overcome by Anger (Sha of Anger)
 	[129874] = true, -- Brewrific (Oona Brewchugger)
 	[130165] = true, -- Luckydo
+	[132952] = true, -- Berserking
 	[134244] = true, -- Hellscream's Warsong
 	[133455] = true, -- Horde Supremacy
 	[133456] = true, -- Alliance Supremacy
 	[134797] = true, -- Banner of King Varian Wrynn
 	[135219] = true, -- Reaver Bombs
+	[135524] = true, -- Combat Momentum
+	[135607] = true, -- Undying Secrets
+	[135774] = true, -- Orestes' Mark
+	[135871] = true, -- Horde Banner
 	
 	-- The Deadmines
 	[90932] = true, -- Ragezone (Defias Blood Wizard)
@@ -236,6 +254,8 @@ local filteredAuras = {
 	-- Mogu'shan Palace
 	[118988] = true, -- Reckless Inspiration (Gekkan)
 	[129262] = true, -- Reckless Inspiration (Gekkan)
+	-- Gate of the Setting Sun
+	[107146] = true, -- Broken Carapace (Raigonn)
 	-- Scarlet Halls
 	[113969] = true, -- Unarmored
 	[113970] = true, -- Unarmored
@@ -243,10 +263,13 @@ local filteredAuras = {
 	[114141] = true, -- Boiling Bloodthirst (Krastinovian Carver)
 	-- Siege of Niuzao Temple
 	[120938] = true, -- Residue (Resin Flake)
+	[120778] = true, -- Caustic Tar
 	-- Theramore's Fall
 	[105690] = true, -- Standard of Theramore
 	-- Crypt of Forgotten Kings
 	[129025] = true, -- Uncontrolled Anger (Hateful Monstrosity)
+	-- Unga Ingoo
+	[121893] = true, -- Gettin' Scurvy! (Captain Ook)
 	-- Mogu'shan Vaults
 	[117549] = true, -- Spiritual Innervation (Gara'jal the Spiritbinder)
 	[117870] = true, -- Touch of the Titans (Elegon)

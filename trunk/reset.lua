@@ -17,18 +17,16 @@ module:SetScript("OnEvent", function(self)
 	self:ClearHistory()
 end)
 
--- reset/announce button
-local button = CreateFrame("Button", nil, addon.spellList, "UIPanelButtonTemplate")
-button:SetPoint("BOTTOMRIGHT", CritlineSpellsScrollFrame, "TOPRIGHT", 0, 8)
-button:SetSize(100, 22)
-button:SetText(L["Reset all"])
-button:SetScript("OnClick", function(self)
+local resetButton = CreateFrame("Button", nil, addon.spellList, "UIPanelButtonTemplate")
+resetButton:SetPoint("BOTTOMRIGHT", CritlineSpellsScrollFrame, "TOPRIGHT", 0, 8)
+resetButton:SetSize(100, 22)
+resetButton:SetText(L["Reset all"])
+resetButton:SetScript("OnClick", function(self)
 	PlaySound("gsTitleOptionOK")
 	local tree = addon.spellList:GetSelectedTree()
 	StaticPopup_Show("CRITLINE_RESET_ALL", addon.trees[tree].label, nil, tree)
 end)
 
--- "edit tooltip format" popup
 addon:CreatePopup("CRITLINE_RESET_ALL", {
 	text = L["Are you sure you want to reset all %s records?"],
 	button1 = YES,
@@ -37,6 +35,15 @@ addon:CreatePopup("CRITLINE_RESET_ALL", {
 		module:ResetAll(data)
 	end,
 })
+
+local revertButton = CreateFrame("Button", nil, addon.spellList, "UIPanelButtonTemplate")
+revertButton:SetPoint("RIGHT", resetButton, "LEFT", -8, 0)
+revertButton:SetSize(100, 22)
+revertButton:SetText(L["Revert all"])
+revertButton:SetScript("OnClick", function(self)
+	PlaySound("gsTitleOptionOK")
+	module:RevertAll(addon.spellList:GetSelectedTree())
+end)
 
 local colorFormat = GREEN_FONT_COLOR_CODE.."%s"..FONT_COLOR_CODE_CLOSE
 
@@ -102,6 +109,26 @@ function module:ResetAll(tree)
 	addon:Message(format(L["Reset all %s records."], tree))
 	addon:UpdateTopRecords(tree)
 	addon:UpdateSpells(tree)
+end
+
+function module:RevertAll(tree)
+	local history = history[tree]
+	for spellID, v in pairs(history) do
+		for periodic, v in ipairs(v) do
+			local spell = addon:GetSpellInfo(tree, spellID, periodic)
+			for k, v in pairs(v) do
+				local hitType = spell[k]
+				local amount, target = hitType.amount, hitType.target
+				for k, v in pairs(v) do
+					hitType[k] = v
+				end
+			end
+		end
+	end
+	wipe(history)
+	addon:Message(format(L["Reverted all recent %s records."], addon.trees[tree].label))
+	addon:UpdateTopRecords(tree)
+	addon:UpdateRecords(tree)
 end
 
 -- stores previous record for the undo feature
