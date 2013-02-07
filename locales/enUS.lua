@@ -150,12 +150,15 @@ L["Invalid channel. Please enter a valid channel name or ID."] = true
 
 -- reset
 L["Are you sure you want to reset all %s records?"] = true
+L["Are you sure you want to revert all recent %s records?"] = true
 L["Previous record:"] = true
 L["Reset"] = true
 L["Reset all"] = true
 L["Reset all %s records."] = true
 L["Reset %s (%s) records."] = true
 L["Revert"] = true
+L["Revert all"] = true
+L["Reverted all recent %s records."] = true
 
 -- advanced
 L["Spell mappings"] = true
