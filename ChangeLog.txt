@@ -1,3 +1,9 @@
+4.5.1
+- Add a bunch of bad MoP auras.
+- Add button for reverting all eligible records.
+- Make sure tooltip info is not added twice in the spell list when tooltip info is enabled.
+- Adding custom auras to the filter should now also work for target auras.
+
 4.5.0
 - 5.0 update. Not backwards compatible.
 - Remove all types of hardcoded spell exceptions.
