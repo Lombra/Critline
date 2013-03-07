@@ -380,15 +380,19 @@ local menu = {
 		end,
 	},
 	info = {
-		spellMappings = L["Spell mappings causes the source spell to be registered as if it were the target spell. It will be stored with the ID, name and icon of"..
-					" the target spell. Useful for merging different spell IDs of the same spell into a single record. Spells will immediately be converted"..
-					" into their target ID after a mapping has been created."],
-		tooltipMappings = L["Tooltip mappings causes the tooltip of the source spell to display the records of the target spell. "..
-						"Useful for when several tooltips refer to the same spell, or you want to display some side effect of a spell. "..
-						"Any tooltip can only display the records of one database entry at a time."],
-		spellNameOverrides = L["Name overrides will cause the source spell to be listed as "..
-								"the target name in tree tooltips, new record messages and the spell list."],
-		spellIconOverrides = L["Icon overrides will cause the source spell to use the target texture in the spell list."],
+		spellMappings =
+			L["Spell mappings causes the source spell to be registered as if it were the target spell. It will be stored with the ID, name and icon of"..
+			" the target spell. Useful for merging different spell IDs of the same spell into a single record. Spells will immediately be converted"..
+			" into their target ID after a mapping has been created."],
+		tooltipMappings =
+			L["Tooltip mappings causes the tooltip of the source spell to display the records of the target spell. "..
+			"Useful for when several tooltips refer to the same spell, or you want to display some side effect of a spell. "..
+			"Any tooltip can only display the records of one database entry at a time."],
+		spellNameOverrides =
+			L["Name overrides will cause the source spell to be listed as "..
+			"the target name in tree tooltips, new record messages and the spell list."],
+		spellIconOverrides =
+			L["Icon overrides will cause the source spell to use the target texture in the spell list."],
 	},
 }
 

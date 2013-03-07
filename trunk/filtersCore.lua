@@ -54,6 +54,7 @@ local filteredAuras = {
 	[58549] = true,	-- Tenacity (Lake Wintergrasp)
 	[59641] = true,	-- Warchief's Blessing (The Battle For The Undercity)
 	[60964] = true,	-- Strength of Wrynn (The Battle For The Undercity)
+	[62064] = true, -- Tower Control (Wintergrasp)
 	[76232] = true, -- Storm's Fury (Ragnaros - Mount Hyjal) ?
 	[81096] = true, -- Red Mist (Red Mist)
 	[82840] = true, -- Vulnerable (Deepstone Elemental)
@@ -65,6 +66,7 @@ local filteredAuras = {
 	[93778] = true, -- Invocation of Flame (Elemental Bonds: Fury)
 	[95723] = true, -- Storm's Fury (Ragnaros - Mount Hyjal) ?
 	[96960] = true, -- Antlers of Malorne (Galenges)
+	-- Pandaria
 	[108918] = true, -- Deafened (Shadow of Doubt)
 	[114586] = true, -- Yoon's Poison
 	[116864] = true, -- Kafa-Crash
@@ -77,6 +79,7 @@ local filteredAuras = {
 	[121580] = true, -- Malevolence (Furious Sprite)
 	[123847] = true, -- Trampled
 	[124427] = true, -- Lushroom Dust
+	[125668] = true, -- Surrounding Mist
 	[126035] = true, -- Broken Shell (Rankbite Ancient)
 	[126126] = true, -- Upchuck (Vicejaw)
 	[126340] = true, -- Expose Vulnerability (Golden Lotus Defender)
@@ -85,9 +88,12 @@ local filteredAuras = {
 	[126974] = true, -- Gift of Power
 	[127662] = true, -- Assassin's Gaze
 	[129007] = true, -- Zijin Sting (Zijin Hollowfly)
+	[129048] = true, -- Tasty Brew
 	[129356] = true, -- Overcome by Anger (Sha of Anger)
 	[129874] = true, -- Brewrific (Oona Brewchugger)
 	[130165] = true, -- Luckydo
+	[130181] = true, -- Spritely
+	[131012] = true, -- Sha Tendrils
 	[132952] = true, -- Berserking
 	[134244] = true, -- Hellscream's Warsong
 	[133455] = true, -- Horde Supremacy
@@ -98,6 +104,8 @@ local filteredAuras = {
 	[135607] = true, -- Undying Secrets
 	[135774] = true, -- Orestes' Mark
 	[135871] = true, -- Horde Banner
+	[136775] = true, -- Jaguar Ferocity
+	[138422] = true, -- Confidence of Kros (Skumblade Brute)
 	
 	-- The Deadmines
 	[90932] = true, -- Ragezone (Defias Blood Wizard)
@@ -135,9 +143,9 @@ local filteredAuras = {
 	-- The Eye of Eternity
 	[55849] = true,	-- Power Spark (Malygos)
 	-- Ulduar
+	[64637] = true, -- Overwhelming Power (Assembly of Iron 10)
 	[61888] = true, -- Overwhelming Power (Assembly of Iron 25)
 	[64320] = true, -- Rune of Power (Assembly of Iron)
-	[64637] = true, -- Overwhelming Power (Assembly of Iron 10)
 	[62243] = true, -- Unstable Sun Beam (Elder Brightleaf)
 	[64321] = true, -- Potent Pheromones (Freya)
 	[63711] = true, -- Storm Power (Hodir 10)
@@ -186,6 +194,7 @@ local filteredAuras = {
 	[96802] = true, -- Bethekk's Blessing (Lesser Priest of Bethekk)
 	[96493] = true, -- Spirit's Vengeance (Bloodlord Mandokir)
 	[96494] = true, -- Spirit's Vengeance (Bloodlord Mandokir)
+	[106615] = true, -- Tempered Spirit (Bloodlord Mandokir) ?
 	[97320] = true, -- Sunder Rift (Jin'do the Godbreaker)
 	-- End Time
 	[101602] = true, -- Throw Totem (Echo of Baine)
@@ -271,6 +280,7 @@ local filteredAuras = {
 	-- Unga Ingoo
 	[121893] = true, -- Gettin' Scurvy! (Captain Ook)
 	-- Mogu'shan Vaults
+	[116541] = true, -- Energized Tiles (Stone Guard heroic)
 	[117549] = true, -- Spiritual Innervation (Gara'jal the Spiritbinder)
 	[117870] = true, -- Touch of the Titans (Elegon)
 	[119360] = true, -- Draw Power (Elegon)
@@ -287,6 +297,9 @@ local filteredAuras = {
 	-- Terrace of Endless Spring
 	[122858] = true, -- Bathed in Light (Tsulong)
 	[118977] = true, -- Fearless (Sha of Fear)
+	-- Throne of Thunder
+	[138002] = true, -- Fluidity (Jin'Rokh the Breaker)
+	[137240] = true, -- Cracked Shell (Horridon)
 }
 
 local mt = {
