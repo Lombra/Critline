@@ -418,7 +418,7 @@ function auraTracker:RegisterAura(auraTable, sourceName, sourceGUID, spellID, sp
 	local source = "n/a"
 	local sourceType
 	
-	if sourceGUID then
+	if sourceGUID and sourceGUID ~= "" then
 		if self:IsPvPTarget(sourceGUID) then
 			-- this is a player or a player's permanent pet
 			source = PVP

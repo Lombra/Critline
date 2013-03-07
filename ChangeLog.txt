@@ -1,6 +1,10 @@
+4.5.2
+- Fixed error in aura tracker.
+- Added some filtered auras from Isle and Throne of Thunder.
+
 4.5.1
-- Add a bunch of bad MoP auras.
-- Add button for reverting all eligible records.
+- Added a bunch of bad MoP auras.
+- Added button to the spell list for reverting all recent records.
 - Make sure tooltip info is not added twice in the spell list when tooltip info is enabled.
 - Adding custom auras to the filter should now also work for target auras.
 
