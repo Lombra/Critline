@@ -399,7 +399,7 @@ function filters:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, s
 	if (eventType == "SPELL_AURA_REMOVED" or eventType == "SPELL_AURA_BROKEN" or eventType == "SPELL_AURA_BROKEN_SPELL" or eventType == "SPELL_AURA_STOLEN") then
 		if self:IsFilteredAura(spellID) and rawget(corruptTargets, destGUID) and corruptTargets[destGUID][spellID] then
 			corruptTargets[destGUID][spellID] = nil
-			addon:Debug(format("Filtered aura (%s) faded from %s.", spellName, destName))
+			addon:Debug(format("Filtered aura (%s) faded from %s.", spellName, tostring(destName)))
 		end
 	end
 	
@@ -408,7 +408,7 @@ function filters:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, s
 		if self:IsFilteredAura(spellID) then
 			corruptTargets[destGUID][spellID] = true
 			ignoredTargets[destGUID] = true
-			addon:Debug(format("Target (%s) gained filtered aura. (%s) Ignore received damage.", destName, spellName))
+			addon:Debug(format("Target (%s) gained filtered aura. (%s) Ignore received damage.", tostring(destName), spellName))
 		end
 		
 		-- auras applied by self
