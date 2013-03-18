@@ -106,6 +106,7 @@ local filteredAuras = {
 	[135871] = true, -- Horde Banner
 	[136775] = true, -- Jaguar Ferocity
 	[138422] = true, -- Confidence of Kros (Skumblade Brute)
+	[139068] = true, -- Determination (LFR wipe recovery)
 	
 	-- The Deadmines
 	[90932] = true, -- Ragezone (Defias Blood Wizard)
