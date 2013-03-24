@@ -259,6 +259,7 @@ local filteredAuras = {
 	[109637] = true, -- Expose Weakness (Deathwing, Ysera - LFR)
 	[109728] = true, -- Expose Weakness (Deathwing, Kalecgos - LFR)
 	
+	[90385] = true, -- Ragezone
 	-- Shado-Pan Monastery
 	[127576] = true, -- Parting Smoke (Sha of Violence)
 	-- Mogu'shan Palace
@@ -274,12 +275,15 @@ local filteredAuras = {
 	-- Siege of Niuzao Temple
 	[120938] = true, -- Residue (Resin Flake)
 	[120778] = true, -- Caustic Tar
+	[119395] = true, -- Detonate (General Pa'valak)
 	-- Theramore's Fall
 	[105690] = true, -- Standard of Theramore
 	-- Crypt of Forgotten Kings
 	[129025] = true, -- Uncontrolled Anger (Hateful Monstrosity)
 	-- Unga Ingoo
 	[121893] = true, -- Gettin' Scurvy! (Captain Ook)
+	-- Dagger in the Dark
+	[133475] = true, -- Mogu Power ?
 	-- Mogu'shan Vaults
 	[116541] = true, -- Energized Tiles (Stone Guard heroic)
 	[117549] = true, -- Spiritual Innervation (Gara'jal the Spiritbinder)
