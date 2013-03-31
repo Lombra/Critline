@@ -98,6 +98,7 @@ local filteredAuras = {
 	[134244] = true, -- Hellscream's Warsong
 	[133455] = true, -- Horde Supremacy
 	[133456] = true, -- Alliance Supremacy
+	[134851] = true, -- Strange Feeling (Meatball)
 	[134797] = true, -- Banner of King Varian Wrynn
 	[135219] = true, -- Reaver Bombs
 	[135524] = true, -- Combat Momentum
@@ -106,6 +107,7 @@ local filteredAuras = {
 	[135871] = true, -- Horde Banner
 	[136775] = true, -- Jaguar Ferocity
 	[138422] = true, -- Confidence of Kros (Skumblade Brute)
+	[139015] = true, -- Blessing of Thunder (God-Hulk Ramuk)
 	[139068] = true, -- Determination (LFR wipe recovery)
 	
 	-- The Deadmines
@@ -303,8 +305,10 @@ local filteredAuras = {
 	[122858] = true, -- Bathed in Light (Tsulong)
 	[118977] = true, -- Fearless (Sha of Fear)
 	-- Throne of Thunder
-	[138002] = true, -- Fluidity (Jin'Rokh the Breaker)
+	[138002] = true, -- Fluidity (Jin'rokh the Breaker)
 	[137240] = true, -- Cracked Shell (Horridon)
+	[134092] = true, -- Shell Concussion (Tortos)
+	[140741] = true, -- Primal Nutriments (Ji-Kun)
 }
 
 local mt = {
