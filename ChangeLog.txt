@@ -1,3 +1,7 @@
+4.5.3
+- Fixed error in filter module.
+- Added more new (and some old) filtered auras.
+
 4.5.2
 - Fixed error in aura tracker.
 - Added some filtered auras from Isle and Throne of Thunder.
