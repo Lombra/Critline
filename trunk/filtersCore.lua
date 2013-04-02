@@ -285,7 +285,7 @@ local filteredAuras = {
 	-- Unga Ingoo
 	[121893] = true, -- Gettin' Scurvy! (Captain Ook)
 	-- Dagger in the Dark
-	[133475] = true, -- Mogu Power ?
+	[133475] = true, -- Mogu Power
 	-- Mogu'shan Vaults
 	[116541] = true, -- Energized Tiles (Stone Guard heroic)
 	[117549] = true, -- Spiritual Innervation (Gara'jal the Spiritbinder)
