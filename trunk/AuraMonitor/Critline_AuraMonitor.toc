@@ -1,0 +1,8 @@
+## Interface: 50200
+## Title: Critline: AuraMonitor
+## Version: @project-version@
+## Notes: Aura monitoring module for Critline.
+## Author: Lombra
+## RequiredDeps: Critline
+
+Core.lua

@@ -67,6 +67,7 @@ local filteredAuras = {
 	[95723] = true, -- Storm's Fury (Ragnaros - Mount Hyjal) ?
 	[96960] = true, -- Antlers of Malorne (Galenges)
 	-- Pandaria
+	[79863] = true, -- Hemorrhage (Taoshi)
 	[108918] = true, -- Deafened (Shadow of Doubt)
 	[114586] = true, -- Yoon's Poison
 	[116864] = true, -- Kafa-Crash
