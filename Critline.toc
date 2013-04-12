@@ -6,35 +6,34 @@
 ## SavedVariables: CritlineDB
 ## SavedVariablesPerCharacter: CritlinePerCharDB
 
-libs\LibStub.lua
-libs\CallbackHandler-1.0.lua
-libs\AceDB-3.0.lua
-libs\AceLocale-3.0.lua
-libs\LibDataBroker-1.1.lua
-libs\LibDualSpec-1.0.lua
-libs\LibSharedMedia-3.0.lua
+Libs\LibStub\LibStub.lua
+Libs\CallbackHandler-1.0\CallbackHandler-1.0.lua
+Libs\AceDB-3.0\AceDB-3.0.lua
+Libs\AceLocale-3.0\AceLocale-3.0.lua
+Libs\LibDataBroker-1.1\LibDataBroker-1.1.lua
+Libs\LibDualSpec-1.0\LibDualSpec-1.0.lua
+Libs\LibSharedMedia-3.0\LibSharedMedia-3.0.lua
 
-locales\enUS.lua
-locales\deDE.lua
-locales\esES.lua
-locales\frFR.lua
-locales\koKR.lua
-locales\ruRU.lua
-locales\zhCN.lua
-locales\zhTW.lua
+Locales\enUS.lua
+Locales\deDE.lua
+Locales\esES.lua
+Locales\frFR.lua
+Locales\koKR.lua
+Locales\ruRU.lua
+Locales\zhCN.lua
+Locales\zhTW.lua
 
-templates.lua
-core.lua
+Templates.lua
+Core.lua
 
-spellList.lua
-filtersCore.lua
-filtersGUI.lua
-splash.lua
-display.lua
-minimap.lua
-reset.lua
-announce.lua
-advanced.lua
+SpellList.lua
+FilterCore.lua
+FilterGUI.lua
+Splash.lua
+Display.lua
+Minimap.lua
+Reset.lua
+Announce.lua
+Advanced.lua
 Broker.lua
-profiles.lua
-AuraTracker.lua
+Profiles.lua

@@ -106,9 +106,6 @@ end
 
 local scrollFrame = spellList:CreateScrollFrame("CritlineSpellsScrollFrame", spellList, NUM_BUTTONS, BUTTON_HEIGHT, createButton, 4, -2)
 scrollFrame:SetAllPoints(spellListContainer)
-scrollFrame.PreUpdate = function(self)
-	return GameTooltip:GetOwner()
-end
 scrollFrame.PostUpdate = function(self, event, tree)
 	-- hide the menu since we can't tell if it's still referring to the same spell (no need if a different tree was updated)
 	if DropDownList1:IsShown() and UIDROPDOWNMENU_OPEN_MENU == dropdown and tree == selectedTree then
@@ -118,7 +115,7 @@ end
 scrollFrame.GetList = function()
 	return addon:GetSpellArray(selectedTree)
 end
-scrollFrame.OnButtonShow = function(self, item, data, owner)
+scrollFrame.OnButtonShow = function(self, item, data)
 	item.data = data
 	item.button.data = data
 	local normal = data.normal
@@ -135,7 +132,7 @@ scrollFrame.OnButtonShow = function(self, item, data, owner)
 	item.record:SetFormattedText("%s\n%s",
 		spellList:GetTextColor(data, "normal"),
 		spellList:GetTextColor(data, "crit"))
-	if item == owner then
+	if GameTooltip:IsOwned(item) then
 		item:OnEnter()
 	end
 end
