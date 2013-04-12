@@ -8,3 +8,5 @@ externals:
 
 move-folders:
     Critline/AuraMonitor: Critline_AuraMonitor
+
+enable-nolib-creation: no
