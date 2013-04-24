@@ -1,3 +1,6 @@
+4.6.0
+- The aura tracker is now its own addon and was reworked heavily.
+
 4.5.3
 - Fixed error in filter module.
 - Added more new (and some old) filtered auras.

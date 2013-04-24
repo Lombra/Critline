@@ -493,12 +493,6 @@ function Critline:FixSpells()
 end
 
 function Critline:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, sourceGUID, sourceName, sourceFlags, sourceFlags2, destGUID, destName, destFlags, destFlags2, ...)
-	-- if we don't have a destName (who we hit or healed) and we don't have a sourceName (us or our pets) then we leave
-	if not (destName or sourceName) then
-		self:Debug("nil source/dest")
-		return
-	end
-	
 	local isPet
 	
 	-- if sourceGUID is not us or our pet, we leave
@@ -554,14 +548,20 @@ function Critline:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, 
 		spellIDCache[spellID] = spellID
 	end
 	
-	local spellMapping = spellMappings[spellID]
-	if spellMapping then
-		spellID = spellMapping
-	end
-	
 	-- return if the event has no amount (non-absorbing aura applied)
 	if not amount then
 		return
+	end
+	
+	-- if we don't have a destName (who we hit or healed) and we don't have a sourceName (us or our pets) then we leave
+	if not destName then
+		self:Debug(format("No target info for %s (%d).", spellName, spellID))
+		return
+	end
+	
+	local spellMapping = spellMappings[spellID]
+	if spellMapping then
+		spellID = spellMapping
 	end
 	
 	-- some absorb effects seem to have a floating point amount

@@ -107,6 +107,7 @@ local filteredAuras = {
 	[135774] = true, -- Orestes' Mark
 	[135871] = true, -- Horde Banner
 	[136775] = true, -- Jaguar Ferocity
+	[136980] = true, -- Blood Infusion
 	[138422] = true, -- Confidence of Kros (Skumblade Brute)
 	[139015] = true, -- Blessing of Thunder (God-Hulk Ramuk)
 	[139068] = true, -- Determination (LFR wipe recovery)
@@ -563,7 +564,7 @@ function filters:SpellPassesFilters(tree, spellName, spellID, isPeriodic, destGU
 	-- ignore level adjustment if magic damage and the setting is enabled
 	if not isHeal and (self.profile.levelFilter >= 0) and (self.profile.levelFilter < levelDiff) and (school == 1 or not self.profile.dontFilterMagic) then
 		-- target level is too low to pass level filter
-		debugTarget(destGUID, destName, format("Too low level (%d) and damage school is filtered", targetLevel))
+		debugTarget(destGUID, destName, format("Too low level (%d) and spell school is filtered", targetLevel))
 		return
 	end
 	
