@@ -106,11 +106,15 @@ local filteredAuras = {
 	[135607] = true, -- Undying Secrets
 	[135774] = true, -- Orestes' Mark
 	[135871] = true, -- Horde Banner
-	[136775] = true, -- Jaguar Ferocity
-	[136980] = true, -- Blood Infusion
-	[138422] = true, -- Confidence of Kros (Skumblade Brute)
-	[139015] = true, -- Blessing of Thunder (God-Hulk Ramuk)
 	[139068] = true, -- Determination (LFR wipe recovery)
+		-- Isle of Thunder
+		[136775] = true, -- Jaguar Ferocity
+		[136980] = true, -- Blood Infusion
+		[138422] = true, -- Confidence of Kros (Skumblade Brute)
+		[138834] = true, -- Thunder Surge
+		[139015] = true, -- Blessing of Thunder (God-Hulk Ramuk)
+		[139119] = true, -- Thunder's Boon
+		[140434] = true, -- Splitting Headache
 	
 	-- The Deadmines
 	[90932] = true, -- Ragezone (Defias Blood Wizard)
@@ -311,6 +315,8 @@ local filteredAuras = {
 	[137240] = true, -- Cracked Shell (Horridon)
 	[134092] = true, -- Shell Concussion (Tortos)
 	[140741] = true, -- Primal Nutriments (Ji-Kun)
+	[136184] = true, -- Thick Bones (Primordius)
+	[136186] = true, -- Clear Mind (Primordius)
 }
 
 local mt = {

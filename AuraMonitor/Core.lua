@@ -256,9 +256,9 @@ end)
 
 local function onClick(self, spellID, arg2, checked)
 	if checked then
-		addon.filters:RemoveFilterEntry("auras", spellID)
-	else
 		addon.filters:AddFilterEntry("auras", spellID)
+	else
+		addon.filters:RemoveFilterEntry("auras", spellID)
 	end
 	addon.filters.scrollFrame:Update()
 	frame:Update()
