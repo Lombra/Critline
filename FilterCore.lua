@@ -70,6 +70,7 @@ local filteredAuras = {
 	[79863] = true, -- Hemorrhage (Taoshi)
 	[108918] = true, -- Deafened (Shadow of Doubt)
 	[114586] = true, -- Yoon's Poison
+	[115006] = true, -- Hozen Rage (Hozen Groundpounder)
 	[116864] = true, -- Kafa-Crash
 	[116952] = true, -- Kafa-Crash
 	[117164] = true, -- Kafa Rush
@@ -94,12 +95,12 @@ local filteredAuras = {
 	[129874] = true, -- Brewrific (Oona Brewchugger)
 	[130165] = true, -- Luckydo
 	[130181] = true, -- Spritely
+	[130838] = true, -- Sloshed (Stolen Brew Keg)
 	[131012] = true, -- Sha Tendrils
 	[132952] = true, -- Berserking
 	[134244] = true, -- Hellscream's Warsong
 	[133455] = true, -- Horde Supremacy
 	[133456] = true, -- Alliance Supremacy
-	[134851] = true, -- Strange Feeling (Meatball)
 	[134797] = true, -- Banner of King Varian Wrynn
 	[135219] = true, -- Reaver Bombs
 	[135524] = true, -- Combat Momentum
@@ -107,7 +108,11 @@ local filteredAuras = {
 	[135774] = true, -- Orestes' Mark
 	[135871] = true, -- Horde Banner
 	[139068] = true, -- Determination (LFR wipe recovery)
-		-- Isle of Thunder
+	-- Brawler's Guild
+		[134624] = true, -- Tough Luck (Smash Hoofstomp)
+		[134851] = true, -- Strange Feeling (Meatball)
+		[133379] = true, -- Power Overwhelming (Millhouse Manastorm)
+	-- Isle of Thunder
 		[136775] = true, -- Jaguar Ferocity
 		[136980] = true, -- Blood Infusion
 		[138422] = true, -- Confidence of Kros (Skumblade Brute)
@@ -292,6 +297,12 @@ local filteredAuras = {
 	[121893] = true, -- Gettin' Scurvy! (Captain Ook)
 	-- Dagger in the Dark
 	[133475] = true, -- Mogu Power
+	-- Dark Heart of Pandaria
+	[141663] = true, -- Primal Rage (Earthborn Hatred)
+	[141681] = true, -- Orb of Power
+	-- Battle of the High Seas
+	[141327] = true, -- Volatile Concoction (Lieutenant Fizzboil)
+	[141154] = true, -- Riposte (Admiral Hagman)
 	-- Mogu'shan Vaults
 	[116541] = true, -- Energized Tiles (Stone Guard heroic)
 	[117549] = true, -- Spiritual Innervation (Gara'jal the Spiritbinder)
