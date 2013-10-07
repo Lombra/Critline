@@ -228,39 +228,30 @@ do	-- slider template
 		slider:SetBackdrop(backdrop)
 		slider:SetScript("OnEnter", onEnter)
 		slider:SetScript("OnLeave", GameTooltip_Hide)
+		slider:SetThumbTexture([[Interface\Buttons\UI-SliderBar-Button-Horizontal]])
 		
 		slider.LoadSetting = slider.SetValue
 		
-		local text = slider:CreateFontString(nil, nil, "GameFontNormal")
-		text:SetPoint("BOTTOM", slider, "TOP")
-		slider.text = text
+		slider.text = slider:CreateFontString(nil, nil, "GameFontNormal")
+		slider.text:SetPoint("BOTTOM", slider, "TOP")
 		
-		local min = slider:CreateFontString(nil, nil, "GameFontHighlightSmall")
-		min:SetPoint("TOPLEFT", slider, "BOTTOMLEFT", -4, 3)
-		slider.min = min
+		slider.min = slider:CreateFontString(nil, nil, "GameFontHighlightSmall")
+		slider.min:SetPoint("TOPLEFT", slider, "BOTTOMLEFT", -4, 3)
 		
-		local max = slider:CreateFontString(nil, nil, "GameFontHighlightSmall")
-		max:SetPoint("TOPRIGHT", slider, "BOTTOMRIGHT", 4, 3)
-		slider.max = max
+		slider.max = slider:CreateFontString(nil, nil, "GameFontHighlightSmall")
+		slider.max:SetPoint("TOPRIGHT", slider, "BOTTOMRIGHT", 4, 3)
 		
-		-- font string for current value
-		local currentValue = slider:CreateFontString(nil, "BACKGROUND", "GameFontHighlightSmall")
-		currentValue:SetPoint("CENTER", 0, -15)
-		slider.currentValue = currentValue
-		
-		local thumb = slider:CreateTexture()
-		thumb:SetTexture([[Interface\Buttons\UI-SliderBar-Button-Horizontal]])
-		thumb:SetSize(32, 32)
-		slider:SetThumbTexture(thumb)
+		slider.currentValue = slider:CreateFontString(nil, "BACKGROUND", "GameFontHighlightSmall")
+		slider.currentValue:SetPoint("CENTER", 0, -15)
 		
 		if data then
 			slider:SetMinMaxValues(data.minValue, data.maxValue)
 			slider:SetValueStep(data.valueStep)
 			slider:SetScript("OnValueChanged", onValueChanged)
-			text:SetText(data.label)
+			slider.text:SetText(data.label)
 			slider.isPercent = data.isPercent
-			setText(min, data.minText or data.minValue, data.isPercent)
-			setText(max, data.maxText or data.maxValue, data.isPercent)
+			setText(slider.min, data.minText or data.minValue, data.isPercent)
+			setText(slider.max, data.maxText or data.maxValue, data.isPercent)
 		end
 		
 		return slider
@@ -486,7 +477,7 @@ do	-- faux scroll frame
 	end
 	
 	function scrollPrototype:Update(...)
-		if not (self.parent:GetParent() and self.parent:IsVisible()) then
+		if not self.parent:IsVisible() then
 			self.doUpdate = true
 			return
 		end
@@ -668,11 +659,7 @@ do	-- popup
 	
 	local function editBoxOnTextChanged(self)
 		local parent = self:GetParent()
-		if parent.editBox:GetText():trim() ~= "" then
-			parent.button1:Enable()
-		else
-			parent.button1:Disable()
-		end
+		parent.button1:SetEnabled(parent.editBox:GetText():trim() ~= "")
 	end
 	
 	function addon:CreatePopup(which, info, editBox)

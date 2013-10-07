@@ -108,10 +108,15 @@ local filteredAuras = {
 	[135774] = true, -- Orestes' Mark
 	[135871] = true, -- Horde Banner
 	[139068] = true, -- Determination (LFR wipe recovery)
+	[141556] = true, -- Blindside (Wrathion)
+	[142191] = true, -- Amber Globule Detonation (Proving Grounds)
+	[142489] = true, -- Exposed! (Proving Grounds)
 	-- Brawler's Guild
 		[134624] = true, -- Tough Luck (Smash Hoofstomp)
 		[134851] = true, -- Strange Feeling (Meatball)
 		[133379] = true, -- Power Overwhelming (Millhouse Manastorm)
+		[141371] = true, -- Cooled (Anthracite)
+		[141229] = true, -- Malfunctioning (Blingtron 3000)
 	-- Isle of Thunder
 		[136775] = true, -- Jaguar Ferocity
 		[136980] = true, -- Blood Infusion
@@ -120,6 +125,8 @@ local filteredAuras = {
 		[139015] = true, -- Blessing of Thunder (God-Hulk Ramuk)
 		[139119] = true, -- Thunder's Boon
 		[140434] = true, -- Splitting Headache
+	-- Timelss Isle
+		[147284] = true, -- Xuen's Strength
 	
 	-- The Deadmines
 	[90932] = true, -- Ragezone (Defias Blood Wizard)
@@ -317,17 +324,33 @@ local filteredAuras = {
 	[123426] = true, -- Weak Points (Garalon)
 	[123428] = true, -- Weak Points (Garalon)
 	[122354] = true, -- Recklessness (Wind Lord Mel'jarak)
+	[125873] = true, -- Recklessness (Wind Lord Mel'jarak heroic)
 	[123059] = true, -- Destabilize (Amber Shaper Un'sok)
 	-- Terrace of Endless Spring
+	[118191] = true, -- Corrupted Essence (Protectors of the Endless)
 	[122858] = true, -- Bathed in Light (Tsulong)
+	[123705] = true, -- Scary Fog (Lei Shi)
+	[123712] = true, -- Scary Fog (Lei Shi)
 	[118977] = true, -- Fearless (Sha of Fear)
 	-- Throne of Thunder
 	[138002] = true, -- Fluidity (Jin'rokh the Breaker)
 	[137240] = true, -- Cracked Shell (Horridon)
 	[134092] = true, -- Shell Concussion (Tortos)
+	[136431] = true, -- Shell Concussion (Tortos)
 	[140741] = true, -- Primal Nutriments (Ji-Kun)
 	[136184] = true, -- Thick Bones (Primordius)
 	[136186] = true, -- Clear Mind (Primordius)
+	-- Siege of Orgrimmar
+	[143459] = true, -- Sha Residue (Immerseus)
+	[144364] = true, -- Power of the Titans (Sha of Pride)
+	[144843] = true, -- Overcome (Sha of Pride)
+	[143594] = true, -- Berserker Stance (General Nazgrim)
+	[147906] = true, -- Wrecking Ball (Starved Yeti)
+	[144210] = true, -- Death From Above (Siegecrafter Blackfuse)
+	
+	[147877] = true, -- Adrenaline Bomb
+	[147554] = true, -- Blood of Y'Shaarj
+	[147083] = true, -- Lesser Sha Residue
 }
 
 local mt = {
@@ -412,6 +435,13 @@ function filters:AddonLoaded()
 	excludedSpells = global.exclude
 	customFilteredAuras = global.auras
 	customFilteredMobs = global.mobs
+	
+	for aura in pairs(filteredAuras) do
+		if customFilteredAuras[aura] then
+			customFilteredAuras[aura] = nil
+			addon:Message(format("%s has been added to default filters and was removed from custom filters.", GetSpellInfo(aura)))
+		end
+	end
 	
 	self.AddonLoaded = nil
 end
