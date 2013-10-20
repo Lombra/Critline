@@ -1,5 +1,10 @@
 4.6.0
 - The aura tracker is now its own addon and was reworked heavily.
+- Add many filtered auras.
+- Remove custom filtered auras on login that exists in default filter.
+- Properly update all scroll frames on login.
+- Implement .pkgmeta and externals.
+- ToC 5.4.
 
 4.5.3
 - Fixed error in filter module.
