@@ -206,6 +206,8 @@ scrollFrame.OnButtonShow = function(self, button, entry, selected)
 end
 scrollFrame.doUpdate = true
 
+addon.RegisterCallback(scrollFrame, "SettingsLoaded", "Update")
+
 do	-- filter tabs
 	local function setShown(self, show)
 		if show then
