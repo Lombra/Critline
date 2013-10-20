@@ -341,16 +341,16 @@ local filteredAuras = {
 	[136184] = true, -- Thick Bones (Primordius)
 	[136186] = true, -- Clear Mind (Primordius)
 	-- Siege of Orgrimmar
+	[147083] = true, -- Lesser Sha Residue (Immerseus trash)
 	[143459] = true, -- Sha Residue (Immerseus)
 	[144364] = true, -- Power of the Titans (Sha of Pride)
 	[144843] = true, -- Overcome (Sha of Pride)
 	[143594] = true, -- Berserker Stance (General Nazgrim)
 	[147906] = true, -- Wrecking Ball (Starved Yeti)
+	[147877] = true, -- Adrenaline Bomb (Siegecrafter Blackfuse trash)
 	[144210] = true, -- Death From Above (Siegecrafter Blackfuse)
 	
-	[147877] = true, -- Adrenaline Bomb
 	[147554] = true, -- Blood of Y'Shaarj
-	[147083] = true, -- Lesser Sha Residue
 }
 
 local mt = {
