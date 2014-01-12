@@ -722,7 +722,7 @@ end
 
 function filters:IsFilteredTarget(targetName, guid)
 	-- GUID is provided if the function was called from the combat event handler
-	return (guid and not self.profile.ignoreMobFilter and specialMobs[tonumber(guid:sub(7, 10), 16)]) or customFilteredMobs[targetName]
+	return (guid and not self.profile.ignoreMobFilter and specialMobs[tonumber(guid:sub(6, 10), 16)]) or customFilteredMobs[targetName]
 end
 
 function filters:IsFilteredAura(spellID)
