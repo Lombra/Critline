@@ -675,7 +675,7 @@ end
 function Critline:IsMyPet(flags, guid)
 	local isMyPet = CombatLog_Object_IsA(flags, COMBATLOG_FILTER_MY_PET)
 	local isGuardian = band(flags, COMBATLOG_OBJECT_TYPE_GUARDIAN) ~= 0
-	return isMyPet and ((not isGuardian and HasPetUI()) or classPets[tonumber(guid:sub(7, 10), 16)])
+	return isMyPet and ((not isGuardian and HasPetUI()) or classPets[tonumber(guid:sub(6, 10), 16)])
 end
 
 local levelCache = {}

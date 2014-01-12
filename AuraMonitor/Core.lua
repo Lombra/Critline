@@ -470,7 +470,7 @@ function frame:RegisterAura(targetType, spellID, spellName, auraType, sourceName
 			source = PVP
 			sourceType = "pvp"
 		else
-			source = tonumber(sourceGUID:sub(7, 10), 16)
+			source = tonumber(sourceGUID:sub(6, 10), 16)
 			sourceType = "npc"
 		end
 	end
@@ -484,7 +484,7 @@ function frame:RegisterAura(targetType, spellID, spellName, auraType, sourceName
 			dest = PVP
 			destType = "pvp"
 		else
-			dest = tonumber(destGUID:sub(7, 10), 16)
+			dest = tonumber(destGUID:sub(6, 10), 16)
 			destType = "npc"
 		end
 	end
