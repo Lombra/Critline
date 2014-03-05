@@ -1,6 +1,8 @@
 ﻿local addonName, addon = ...
 local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 
+local Libra = LibStub("Libra")
+
 local templates = {}
 addon.templates = templates
 
@@ -186,13 +188,6 @@ do	-- check button
 end
 
 do	-- slider template
-	local backdrop = {
-		bgFile = [[Interface\Buttons\UI-SliderBar-Background]],
-		edgeFile = [[Interface\Buttons\UI-SliderBar-Border]],
-		tile = true, tileSize = 8, edgeSize = 8,
-		insets = {left = 3, right = 3, top = 6, bottom = 6}
-	}
-	
 	local function setText(self, value, isPercent)
 		if isPercent then
 			self:SetFormattedText("%.0f%%", value * 100)
@@ -201,54 +196,25 @@ do	-- slider template
 		end
 	end
 	
-	local function onValueChanged(self, value, userInput)
+	local function onValueChanged(self, value, isUserInput)
 		setText(self.currentValue, value, self.isPercent)
 		-- only set values if the value was set by a human; they will already have been set by LoadSettings
-		if userInput then
+		if isUserInput then
 			self.db[self.setting] = value
 			onSet(self, value)
 		end
 	end
 	
-	local function onEnter(self)
-		if self:IsEnabled() then
-			if self.tooltipText then
-				GameTooltip:SetOwner(self, self.tooltipOwnerPoint or "ANCHOR_RIGHT")
-				GameTooltip:SetText(self.tooltipText, nil, nil, nil, nil, true)
-			end
-		end
-	end
-	
 	function templates:CreateSlider(data)
-		local slider = CreateFrame("Slider", nil, self)
-		slider:EnableMouse(true)
-		slider:SetSize(144, 17)
-		slider:SetOrientation("HORIZONTAL")
+		local slider = Libra:CreateSlider(self)
 		slider:SetHitRectInsets(0, 0, -10, -10)
-		slider:SetBackdrop(backdrop)
-		slider:SetScript("OnEnter", onEnter)
-		slider:SetScript("OnLeave", GameTooltip_Hide)
-		slider:SetThumbTexture([[Interface\Buttons\UI-SliderBar-Button-Horizontal]])
-		
 		slider.LoadSetting = slider.SetValue
-		
-		slider.text = slider:CreateFontString(nil, nil, "GameFontNormal")
-		slider.text:SetPoint("BOTTOM", slider, "TOP")
-		
-		slider.min = slider:CreateFontString(nil, nil, "GameFontHighlightSmall")
-		slider.min:SetPoint("TOPLEFT", slider, "BOTTOMLEFT", -4, 3)
-		
-		slider.max = slider:CreateFontString(nil, nil, "GameFontHighlightSmall")
-		slider.max:SetPoint("TOPRIGHT", slider, "BOTTOMRIGHT", 4, 3)
-		
-		slider.currentValue = slider:CreateFontString(nil, "BACKGROUND", "GameFontHighlightSmall")
-		slider.currentValue:SetPoint("CENTER", 0, -15)
 		
 		if data then
 			slider:SetMinMaxValues(data.minValue, data.maxValue)
 			slider:SetValueStep(data.valueStep)
 			slider:SetScript("OnValueChanged", onValueChanged)
-			slider.text:SetText(data.label)
+			slider.label:SetText(data.label)
 			slider.isPercent = data.isPercent
 			setText(slider.min, data.minText or data.minValue, data.isPercent)
 			setText(slider.max, data.maxText or data.maxValue, data.isPercent)
@@ -388,16 +354,11 @@ do	-- dropdown menu frame
 	end
 	
 	local function setSelectedValue(self, value)
-		UIDropDownMenu_SetSelectedValue(self, value)
-		UIDropDownMenu_SetText(self, self.menu and self.menu[value] or value)
-	end
-	
-	local function setDisabled(self, disable)
-		if disable then
-			self:Disable()
-		else
-			self:Enable()
-		end
+		self._selectedValue = value
+		self.selectedValue = value
+		self:Refresh(useValue)
+		self.selectedValue = nil
+		self:SetText(self.menu and self.menu[value] or value)
 	end
 	
 	local function initialize(self)
@@ -409,30 +370,17 @@ do	-- dropdown menu frame
 			info.func = onClick or v.func
 			info.owner = self
 			info.fontObject = v.fontObject
-			UIDropDownMenu_AddButton(info)
+			self:AddButton(info)
 		end
 	end
 	
-	function templates:CreateDropDownMenu(data, name)
-		name = name or "Critline"..data.setting.."DropDown"
-		local frame = CreateFrame("Frame", name, self, "UIDropDownMenuTemplate")
+	function templates:CreateDropDownMenu(data)
+		local frame = Libra:CreateDropdown("Frame", self)
 		
-		frame.SetFrameWidth = UIDropDownMenu_SetWidth
 		frame.SetSelectedValue = setSelectedValue
-		frame.GetSelectedValue = UIDropDownMenu_GetSelectedValue
-		frame.Refresh = UIDropDownMenu_Refresh
-		frame.SetText = UIDropDownMenu_SetText
-		frame.Enable = UIDropDownMenu_EnableDropDown
-		frame.Disable = UIDropDownMenu_DisableDropDown
-		frame.SetDisabled = setDisabled
-		frame.JustifyText = UIDropDownMenu_JustifyText
 		frame.LoadSetting = setSelectedValue
 		
 		frame.initialize = initialize
-		
-		local label = frame:CreateFontString(name.."Label", "BACKGROUND", "GameFontNormalSmall")
-		label:SetPoint("BOTTOMLEFT", frame, "TOPLEFT", 16, 3)
-		frame.label = label
 		
 		if data then
 			if data.menu then
@@ -443,8 +391,8 @@ do	-- dropdown menu frame
 			frame.menu = data.menu
 			frame.onClick = onClick
 			frame.initialize = data.initialize or initialize
-			frame.label:SetText(data.label)
-			frame:SetFrameWidth(data.width)
+			frame:SetLabel(data.label)
+			frame:SetWidth(data.width)
 		end
 		
 		return frame
@@ -666,7 +614,6 @@ do	-- popup
 		StaticPopupDialogs[which] = info
 		info.hideOnEscape = true
 		info.whileDead = true
-		info.timeout = 0
 		if editBox then
 			info.button1 = ACCEPT
 			info.button2 = CANCEL

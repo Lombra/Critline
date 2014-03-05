@@ -118,7 +118,7 @@ do
 					info.text = v
 					info.func = self.onClick
 					info.owner = self
-					UIDropDownMenu_AddButton(info)
+					self:AddButton(info)
 				end
 			end,
 		},

@@ -1,5 +1,6 @@
 local addonName, addon = ...
 local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
+local Libra = LibStub("Libra")
 
 local NUM_BUTTONS = 12
 local BUTTON_HEIGHT = 36
@@ -14,13 +15,12 @@ spellList.desc:SetText(L["Here you can review and manage all your registered spe
 -- this table gets populated with "Filter", "Reset", "Announce" etc
 local spellOptions = {}
 
-local dropdown = CreateFrame("Frame")
-dropdown.displayMode = "MENU"
+local dropdown = Libra:CreateDropdown("Menu")
 dropdown.initialize = function(self, level, menuList)
 	for i, info in ipairs(menuList) do
 		info.value = UIDROPDOWNMENU_MENU_VALUE
 		info.arg1 = selectedTree
-		UIDropDownMenu_AddButton(info, level)
+		self:AddButton(info, level)
 	end
 end
 
@@ -53,11 +53,11 @@ local function onEnter(self)
 end
 
 local function onClick(self)
-	if DropDownList1:IsShown() and UIDROPDOWNMENU_MENU_VALUE ~= self.data then
-		CloseDropDownMenus()
+	if UIDROPDOWNMENU_MENU_VALUE ~= self.data then
+		dropdown:CloseMenus()
 	end
 	PlaySound("igMainMenuOptionCheckBoxOn")
-	ToggleDropDownMenu(nil, self.data, dropdown, self, 0, 0, spellOptions)
+	dropdown:Toggle(self.data, self, 0, 0, spellOptions)
 end
 
 local function createButton()
@@ -108,8 +108,8 @@ local scrollFrame = spellList:CreateScrollFrame("CritlineSpellsScrollFrame", spe
 scrollFrame:SetAllPoints(spellListContainer)
 scrollFrame.PostUpdate = function(self, event, tree)
 	-- hide the menu since we can't tell if it's still referring to the same spell (no need if a different tree was updated)
-	if DropDownList1:IsShown() and UIDROPDOWNMENU_OPEN_MENU == dropdown and tree == selectedTree then
-		CloseDropDownMenus()
+	if tree == selectedTree then
+		dropdown:CloseMenus()
 	end
 end
 scrollFrame.GetList = function()
@@ -140,6 +140,7 @@ end
 spellListContainer.OnTabSelected = function(self, tabIndex)
 	selectedTree = addon.treeIndex[tabIndex]
 	scrollFrame:Reset()
+	dropdown:CloseMenus()
 end
 
 spellListContainer:SelectTab(1)

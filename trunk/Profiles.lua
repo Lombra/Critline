@@ -270,7 +270,7 @@ local function profilesLoaded(self)
 	
 	local isDualSpecEnabled = db:IsDualSpecEnabled()
 	self.dualEnabled:SetChecked(isDualSpecEnabled)
-	self.dualProfile:SetDisabled(not isDualSpecEnabled)
+	self.dualProfile:SetEnabled(isDualSpecEnabled)
 	
 	self:CheckProfiles()
 end
@@ -291,9 +291,9 @@ local function onProfileDeleted(self, event, db, profile)
 end
 
 local function checkProfiles(self)
-	local hasNoProfiles = self:HasNoProfiles()
-	self.copy:SetDisabled(hasNoProfiles)
-	self.delete:SetDisabled(hasNoProfiles)
+	local hasProfiles = not self:HasNoProfiles()
+	self.copy:SetEnabled(hasProfiles)
+	self.delete:SetEnabled(hasProfiles)
 end
 
 local function hasNoProfiles(self)
@@ -307,7 +307,7 @@ local function initializeDropdown(self)
 		info.value = v.value
 		info.func = self.func
 		info.owner = self
-		UIDropDownMenu_AddButton(info)
+		self:AddButton(info)
 	end
 end
 
@@ -324,12 +324,12 @@ end
 local function enableDualProfileOnClick(self)
 	local checked = self:GetChecked()
 	self.db:SetDualSpecEnabled(checked)
-	self.dualProfile:SetDisabled(not checked)
+	self.dualProfile:SetEnabled(checked)
 end
 
 local function dualProfileOnClick(self)
 	self.owner.db:SetDualSpecProfile(self.value)
-	UIDropDownMenu_SetSelectedValue(self.owner, self.value)
+	self.owner:SetSelectedValue(self.value)
 end
 
 local function copyProfileOnClick(self)
@@ -337,7 +337,7 @@ local function copyProfileOnClick(self)
 end
 
 local function deleteProfileOnClick(self)
-	UIDropDownMenu_SetSelectedValue(self.owner, self.value)
+	self.owner:SetSelectedValue(self.value)
 	StaticPopup_Show("CRITLINE_DELETE_PROFILE", nil, nil, {db = self.owner.db, obj = self.owner})
 end
 
@@ -385,10 +385,10 @@ local function createProfileUI(name, db)
 	newProfile.label:SetText(L.new)
 	objects.newProfile = newProfile
 	
-	local choose = frame:CreateDropDownMenu(nil, "CritlineDBChooseProfile"..name)
-	choose:SetFrameWidth(144)
+	local choose = frame:CreateDropDownMenu()
+	choose:SetWidth(144)
 	choose:SetPoint("LEFT", newProfile, "RIGHT", 0, -2)
-	choose.label:SetText(L.choose)
+	choose:SetLabel(L.choose)
 	choose.initialize = initializeDropdown
 	choose.func = chooseProfileOnClick
 	choose.menu = defaultProfiles
@@ -412,11 +412,11 @@ local function createProfileUI(name, db)
 		text:SetText(L.enabled)
 		objects.dualEnabled = enabled
 
-		local dualProfile = frame:CreateDropDownMenu(nil, "CritlineDBDualProfile"..name)
-		dualProfile:SetFrameWidth(144)
+		local dualProfile = frame:CreateDropDownMenu()
+		dualProfile:SetWidth(144)
 		dualProfile:SetPoint("LEFT", choose)
 		dualProfile:SetPoint("TOP", enabled)
-		dualProfile.label:SetText(L.dual_profile)
+		dualProfile:SetLabel(L.dual_profile)
 		dualProfile.initialize = initializeDropdown
 		dualProfile.func = dualProfileOnClick
 		dualProfile.menu = defaultProfiles
@@ -432,10 +432,10 @@ local function createProfileUI(name, db)
 	copyDesc:SetWordWrap(true)
 	copyDesc:SetText(L.copy_desc)
 
-	local copy = frame:CreateDropDownMenu(nil, "CritlineDBCopyProfile"..name)
-	copy:SetFrameWidth(144)
+	local copy = frame:CreateDropDownMenu()
+	copy:SetWidth(144)
 	copy:SetPoint("TOPLEFT", copyDesc, "BOTTOMLEFT", -16, -8)
-	copy.label:SetText(L.copy)
+	copy:SetLabel(L.copy)
 	copy.initialize = initializeDropdown
 	copy.func = copyProfileOnClick
 	copy.menu = defaultProfiles
@@ -448,10 +448,10 @@ local function createProfileUI(name, db)
 	deleteDesc:SetWordWrap(true)
 	deleteDesc:SetText(L.delete_desc)
 
-	local delete = frame:CreateDropDownMenu(nil, "CritlineDBDeleteProfile"..name)
-	delete:SetFrameWidth(144)
+	local delete = frame:CreateDropDownMenu()
+	delete:SetWidth(144)
 	delete:SetPoint("TOPLEFT", deleteDesc, "BOTTOMLEFT", -16, -8)
-	delete.label:SetText(L.delete)
+	delete:SetLabel(L.delete)
 	delete.initialize = initializeDropdown
 	delete.func = deleteProfileOnClick
 	delete.menu = defaultProfiles
