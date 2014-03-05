@@ -400,8 +400,8 @@ local function onClick(self)
 	module:SelectList(self.value)
 end
 
-local dropdown = module:CreateDropDownMenu(nil, "CritlineAdvancedDropdown")
-dropdown:SetFrameWidth(140)
+local dropdown = module:CreateDropDownMenu()
+dropdown:SetWidth(140)
 dropdown:SetPoint("BOTTOMLEFT", scrollFrame, "TOPLEFT", -16, 0)
 dropdown:JustifyText("LEFT")
 dropdown.menu = menu
@@ -411,7 +411,7 @@ dropdown.initialize = function(self)
 		info.text = self.menu[v]
 		info.value = v
 		info.func = onClick
-		UIDropDownMenu_AddButton(info)
+		self:AddButton(info)
 	end
 end
 

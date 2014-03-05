@@ -342,7 +342,7 @@ do
 					info.text = v
 					info.func = self.onClick
 					info.owner = self
-					UIDropDownMenu_AddButton(info)
+					self:AddButton(info)
 				end
 			end,
 		},
@@ -373,7 +373,7 @@ local defaults = {
 			-- pre-add form name to hybrid druid abilities, so the user can tell which is cat and which is bear
 			[33878] = format("%s (%s)", GetSpellInfo(33878), GetSpellInfo(5487)), -- Mangle (Bear Form)
 			[33876] = format("%s (%s)", GetSpellInfo(33876), GetSpellInfo(768)), -- Mangle (Cat Form)
-			[779] = format("%s (%s)", GetSpellInfo(779), GetSpellInfo(5487)), -- Swipe (Bear Form)
+			[779]   = format("%s (%s)", GetSpellInfo(779), GetSpellInfo(5487)), -- Swipe (Bear Form)
 			[62078] = format("%s (%s)", GetSpellInfo(62078), GetSpellInfo(768)), -- Swipe (Cat Form)
 		},
 		spellIconOverrides = {},

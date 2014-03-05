@@ -1,4 +1,5 @@
 local addon = Critline
+local Libra = LibStub("Libra")
 
 local NUM_BUTTONS = 8
 local BUTTON_HEIGHT = 32
@@ -98,20 +99,18 @@ local filters = {
 }
 
 local function onClick(self)
-	local menu = self.menu
-	menu.displayMode = "MENU"
-	ToggleDropDownMenu(nil, nil, menu, self, 0, 0)
-	menu.displayMode = nil
+	self.menu:Toggle()
 	PlaySound("igMainMenuOptionCheckBoxOn")
 end
 
 local function createMenuButton(name)
-	local menu = CreateFrame("Frame")
-	
 	local button = CreateFrame("Button", name, frame, "UIMenuButtonStretchTemplate")
 	button:SetScript("OnClick", onClick)
 	button.rightArrow:Show()
-	button.menu = menu
+	button.menu = Libra:CreateDropdown("Menu")
+	button.menu.relativeTo = button
+	button.menu.xOffset = 0
+	button.menu.yOffset = 0
 	return button
 end
 
@@ -151,7 +150,7 @@ do
 			info.arg1 = v.value
 			info.arg2 = v.text
 			info.owner = self
-			UIDropDownMenu_AddButton(info)
+			self:AddButton(info)
 		end
 	end
 end
@@ -189,7 +188,7 @@ do
 			info.func = onClick
 			info.arg1 = v.value
 			info.checked = sortMethod == v.value
-			UIDropDownMenu_AddButton(info)
+			self:AddButton(info)
 		end
 	end
 end
@@ -232,7 +231,7 @@ do
 			info.checked = not filters[v]
 			info.isNotRadio = true
 			info.keepShownOnClick = true
-			UIDropDownMenu_AddButton(info)
+			self:AddButton(info)
 		end
 	end
 end
@@ -264,8 +263,9 @@ local function onClick(self, spellID, arg2, checked)
 	frame:Update()
 end
 
-local menu = CreateFrame("Frame")
-menu.displayMode = "MENU"
+local menu = Libra:CreateDropdown("Menu")
+menu.xOffset = 0
+menu.yOffset = 0
 menu.initialize = function(self)
 	local spellID = UIDROPDOWNMENU_MENU_VALUE
 	
@@ -273,7 +273,7 @@ menu.initialize = function(self)
 	info.text = GetSpellInfo(spellID)
 	info.isTitle = true
 	info.notCheckable = true
-	UIDropDownMenu_AddButton(info)
+	self:AddButton(info)
 	
 	local info = UIDropDownMenu_CreateInfo()
 	info.text = "Filter"
@@ -283,14 +283,14 @@ menu.initialize = function(self)
 	info.disabled = addon.filters:IsFilteredAura(spellID) and not addon.filters.db.global.auras[spellID]
 	info.isNotRadio = true
 	info.keepShownOnClick = true
-	UIDropDownMenu_AddButton(info)
+	self:AddButton(info)
 end
 
 local function onClick(self)
-	if UIDropDownMenu_GetCurrentDropDown() == menu and UIDROPDOWNMENU_MENU_VALUE ~= self.spellID then
-		CloseDropDownMenus()
+	if UIDROPDOWNMENU_MENU_VALUE ~= self.spellID then
+		menu:CloseMenus()
 	end
-	ToggleDropDownMenu(nil, self.spellID, menu, self, 0, 0)
+	menu:Toggle(self.spellID, self)
 	PlaySound("igMainMenuOptionCheckBoxOn")
 end
 
