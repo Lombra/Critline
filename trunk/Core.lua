@@ -1,8 +1,13 @@
-local addonName, Critline = ...
-_G.Critline = Critline
+local Libra = LibStub("Libra")
 
-local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
+local Critline, addonName = Libra:NewAddon(...)
+_G.Critline = Critline
+Libra:EmbedWidgets(Critline)
+
+Critline.L = LibStub("AceLocale-3.0"):GetLocale(addonName)
+local L = Critline.L
 local LSM = LibStub("LibSharedMedia-3.0")
+
 local _, playerClass = UnitClass("player")
 local spellMappings, tooltipMappings, spellNameOverrides, spellIconOverrides
 local debugging
@@ -196,24 +201,21 @@ SLASH_CRITLINE2 = "/cl"
 -- tooltip for level scanning
 local tooltip = CreateFrame("GameTooltip", "CritlineTooltip", nil, "GameTooltipTemplate")
 
-Critline.eventFrame = CreateFrame("Frame")
-function Critline:RegisterEvent(event)
-	self.eventFrame:RegisterEvent(event)
-end
-function Critline:UnregisterEvent(event)
-	self.eventFrame:UnregisterEvent(event)
-end
-Critline:RegisterEvent("ADDON_LOADED")
-Critline:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
-Critline.eventFrame:SetScript("OnEvent", function(self, event, ...)
-	return Critline[event] and Critline[event](Critline, ...)
-end)
 
-local config = Critline:CreateConfigFrame()
+local config = Critline:CreateOptionsFrame(addonName)
+Critline.config = config
 
 do
+	local function set(self, value)
+		Critline.percharDB.profile[self.key] = value
+	end
+	
+	local function get(self)
+		return Critline.percharDB.profile[self.key]
+	end
+	
 	local function toggleTree(self, checked)
-		callbacks:Fire("OnTreeStateChanged", self.setting, checked)
+		callbacks:Fire("OnTreeStateChanged", self.key, checked)
 	end
 	
 	-- summary sort dropdown
@@ -235,53 +237,56 @@ do
 	local options = {
 		{
 			type = "CheckButton",
-			label = L["Record damage"],
-			tooltipText = L["Check to enable damage events to be recorded."],
-			setting = "dmg",
-			perchar = true,
+			text = L["Record damage"],
+			tooltip = L["Check to enable damage events to be recorded."],
+			key = "dmg",
+			set = set,
+			get = get,
 			func = toggleTree,
 		},
 		{
 			type = "CheckButton",
-			label = L["Record healing"],
-			tooltipText = L["Check to enable healing events to be recorded."],
-			setting = "heal",
-			perchar = true,
+			text = L["Record healing"],
+			tooltip = L["Check to enable healing events to be recorded."],
+			key = "heal",
 			func = toggleTree,
+			set = set,
+			get = get,
 		},
 		{
 			type = "CheckButton",
-			label = L["Record pet damage"],
-			tooltipText = L["Check to enable pet damage events to be recorded."],
-			setting = "pet",
-			perchar = true,
+			text = L["Record pet damage"],
+			tooltip = L["Check to enable pet damage events to be recorded."],
+			key = "pet",
 			func = toggleTree,
+			set = set,
+			get = get,
 		},
 		{
 			type = "CheckButton",
-			label = L["Record PvE"],
-			tooltipText = L["Disable to ignore records where the target is an NPC."],
-			setting = "PvE",
-			gap = 8,
+			text = L["Record PvE"],
+			tooltip = L["Disable to ignore records where the target is an NPC."],
+			key = "PvE",
+			padding = 8,
 		},
 		{
 			type = "CheckButton",
-			label = L["Record PvP"],
-			tooltipText = L["Disable to ignore records where the target is a player."],
-			setting = "PvP",
+			text = L["Record PvP"],
+			tooltip = L["Disable to ignore records where the target is a player."],
+			key = "PvP",
 		},
 		{
 			type = "CheckButton",
-			label = L["Ignore vulnerability"],
-			tooltipText = L["Enable to ignore additional damage due to vulnerability."],
-			setting = "ignoreVulnerability",
+			text = L["Ignore vulnerability"],
+			tooltip = L["Enable to ignore additional damage due to vulnerability."],
+			key = "ignoreVulnerability",
 		},
 		{
 			newColumn = true,
 			type = "CheckButton",
-			label = L["Shorten records"],
-			tooltipText = L["Use shorter format for record numbers."],
-			setting = "shortFormat",
+			text = L["Shorten records"],
+			tooltip = L["Use shorter format for record numbers."],
+			key = "shortFormat",
 			func = function(self, checked)
 				callbacks:Fire("FormatChanged")
 				Critline:UpdateTooltips()
@@ -289,66 +294,69 @@ do
 		},
 		{
 			type = "CheckButton",
-			label = L["Records in spell tooltips"],
-			tooltipText = L["Include (unfiltered) records in spell tooltips."],
-			setting = "spellTooltips",
+			text = L["Records in spell tooltips"],
+			tooltip = L["Include (unfiltered) records in spell tooltips."],
+			key = "spellTooltips",
 		},
 		{
 			type = "CheckButton",
-			label = L["Detailed tooltip"],
-			tooltipText = L["Use detailed format in the summary tooltip."],
-			setting = "detailedTooltip",
+			text = L["Detailed tooltip"],
+			tooltip = L["Use detailed format in the summary tooltip."],
+			key = "detailedTooltip",
 			func = "UpdateTooltips",
 		},
 		{
-			type = "DropDownMenu",
-			label = L["Sort tooltips by:"],
-			setting = "tooltipSort",
+			type = "Dropdown",
+			text = L["Sort tooltips by:"],
+			key = "tooltipSort",
 			width = 160,
 			func = "UpdateTooltips",
-			menu = menu,
+			menuList = {
+				"alpha",
+				"normal",
+				"crit",
+			},
+			properties = {
+				text = {
+					alpha = L["Spell name"],
+					normal = L["Normal record"],
+					crit = L["Crit record"],
+				},
+			},
 		},
 		{
 			type = "CheckButton",
-			label = L["Include old record"],
-			tooltipText = L["Includes previous record along with \"New record\" messages."],
-			setting = "oldRecord",
+			text = L["Include old record"],
+			tooltip = L["Includes previous record along with \"New record\" messages."],
+			key = "oldRecord",
 		},
 		{
 			type = "CheckButton",
-			label = L["Chat output"],
-			tooltipText = L["Prints new record notifications to the chat frame."],
-			setting = "chatOutput",
+			text = L["Chat output"],
+			tooltip = L["Prints new record notifications to the chat frame."],
+			key = "chatOutput",
 		},
 		{
 			type = "CheckButton",
-			label = L["Screenshot"],
-			tooltipText = L["Saves a screenshot on a new record."],
-			setting = "screenshot",
+			text = L["Screenshot"],
+			tooltip = L["Saves a screenshot on a new record."],
+			key = "screenshot",
 		},
 		{
-			type = "DropDownMenu",
-			label = L["Sound effect"],
-			setting = "sound",
-			width = 160,
+			type = "Dropdown",
+			text = L["Sound effect"],
+			key = "sound",
 			func = function(self, value)
 				-- hack not to play the sound when settings are loaded from a triggered event
 				if not GetMouseButtonClicked() then return end
 				PlaySoundFile(LSM:Fetch("sound", value))
 			end,
-			initialize = function(self)
-				for _, v in ipairs(LSM:List("sound")) do
-					local info = UIDropDownMenu_CreateInfo()
-					info.text = v
-					info.func = self.onClick
-					info.owner = self
-					self:AddButton(info)
-				end
-			end,
+			width = 160,
+			menuList = function() return LSM:List("sound") end,
 		},
 	}
 	
-	config:CreateOptions(options, Critline)
+	config:CreateOptions(options)
 end
 
 
@@ -373,7 +381,7 @@ local defaults = {
 			-- pre-add form name to hybrid druid abilities, so the user can tell which is cat and which is bear
 			[33878] = format("%s (%s)", GetSpellInfo(33878), GetSpellInfo(5487)), -- Mangle (Bear Form)
 			[33876] = format("%s (%s)", GetSpellInfo(33876), GetSpellInfo(768)), -- Mangle (Cat Form)
-			[779]   = format("%s (%s)", GetSpellInfo(779), GetSpellInfo(5487)), -- Swipe (Bear Form)
+			[779]   = format("%s (%s)", GetSpellInfo(779),   GetSpellInfo(5487)), -- Swipe (Bear Form)
 			[62078] = format("%s (%s)", GetSpellInfo(62078), GetSpellInfo(768)), -- Swipe (Cat Form)
 		},
 		spellIconOverrides = {},
@@ -392,14 +400,13 @@ local treeDefaults = {
 	WARLOCK	= {pet  = true},
 }
 
-function Critline:ADDON_LOADED(addon)
-	if addon ~= addonName then
-		return
-	end
-	
+function Critline:OnInitialize()
 	local AceDB = LibStub("AceDB-3.0")
 	local db = AceDB:New("CritlineDB", defaults, nil)
 	self.db = db
+	
+	config:SetDatabase(self.db, true)
+	config:SetHandler(self)
 	
 	local percharDefaults = {
 		profile = treeDefaults[playerClass] or {},
@@ -431,6 +438,8 @@ function Critline:ADDON_LOADED(addon)
 	percharDB.RegisterCallback(self, "OnProfileCopied", "LoadPerCharSettings")
 	percharDB.RegisterCallback(self, "OnProfileReset", "LoadPerCharSettings")
 	
+	self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+	
 	spellMappings = db.global.spellMappings
 	tooltipMappings = db.global.tooltipMappings
 	spellNameOverrides = db.global.spellNameOverrides
@@ -443,21 +452,13 @@ function Critline:ADDON_LOADED(addon)
 		end
 	end
 	
-	self:UnregisterEvent("ADDON_LOADED")
-	callbacks:Fire("AddonLoaded")
-	
-	-- deprecated
-	self.db.profile.playSound = nil
-	
 	self:LoadSettings()
 	self:LoadPerCharSettings()
-	
-	self.ADDON_LOADED = nil
 end
 
 function Critline:LoadSettings()
 	callbacks:Fire("SettingsLoaded")
-	config:LoadOptions(self)
+	config:SetupControls()
 end
 
 function Critline:LoadPerCharSettings()
@@ -468,7 +469,7 @@ function Critline:LoadPerCharSettings()
 	self:UpdateTopRecords()
 	self:UpdateTooltips()
 	
-	config:LoadOptions(self, true)
+	config:SetupControls()
 end
 
 function Critline:FixSpells()

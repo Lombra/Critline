@@ -1,5 +1,4 @@
-local addon = Critline
-local Libra = LibStub("Libra")
+local Critline = Critline
 
 local NUM_BUTTONS = 8
 local BUTTON_HEIGHT = 32
@@ -56,7 +55,7 @@ end)
 local closeButton = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
 closeButton:SetPoint("TOPRIGHT")
 
-addon.SlashCmdHandlers["aura"] = function() frame:Show() end
+Critline.SlashCmdHandlers["aura"] = function() frame:Show() end
 
 local currentFilter = session
 
@@ -104,10 +103,10 @@ local function onClick(self)
 end
 
 local function createMenuButton(name)
-	local button = CreateFrame("Button", name, frame, "UIMenuButtonStretchTemplate")
+	local button = Critline:CreateButton(frame)
 	button:SetScript("OnClick", onClick)
 	button.rightArrow:Show()
-	button.menu = Libra:CreateDropdown("Menu")
+	button.menu = Critline:CreateDropdown("Menu")
 	button.menu.relativeTo = button
 	button.menu.xOffset = 0
 	button.menu.yOffset = 0
@@ -145,11 +144,10 @@ do
 		for i, v in ipairs(menuList) do
 			local info = UIDropDownMenu_CreateInfo()
 			info.text = format(v.text, currentInstance)
-			info.checked = currentFilter == v.value
 			info.func = onClick
 			info.arg1 = v.value
 			info.arg2 = v.text
-			info.owner = self
+			info.checked = (currentFilter == v.value)
 			self:AddButton(info)
 		end
 	end
@@ -236,34 +234,24 @@ do
 	end
 end
 
-local search = CreateFrame("EditBox", "CritlineAuraTrackerTextFilter", frame, "SearchBoxTemplate")
-search:SetHeight(20)
+local search = Critline:CreateEditbox(frame, true)
 search:SetPoint("TOPLEFT", scopeFilter, "BOTTOMLEFT", 8, -5)
 search:SetPoint("TOPRIGHT", scopeFilter, "BOTTOMRIGHT", 0, -5)
-search:SetFontObject("ChatFontSmall")
-search:SetTextColor(0.5, 0.5, 0.5)
 search:SetScript("OnTextChanged", function() frame:Update() end)
 search:SetScript("OnEscapePressed", search.ClearFocus)
-search:SetScript("OnEnterPressed", EditBox_ClearFocus)
-search:HookScript("OnEditFocusLost", function(self)
-	self:SetFontObject("ChatFontSmall")
-	self:SetTextColor(0.5, 0.5, 0.5)
-end)
-search:HookScript("OnEditFocusGained", function(self)
-	self:SetTextColor(1, 1, 1)
-end)
+search:SetScript("OnEnterPressed", search.ClearFocus)
 
 local function onClick(self, spellID, arg2, checked)
 	if checked then
-		addon.filters:AddFilterEntry("auras", spellID)
+		Critline.filters:AddFilterEntry("auras", spellID)
 	else
-		addon.filters:RemoveFilterEntry("auras", spellID)
+		Critline.filters:RemoveFilterEntry("auras", spellID)
 	end
-	addon.filters.scrollFrame:Update()
+	Critline.filters.scrollFrame:Update()
 	frame:Update()
 end
 
-local menu = Libra:CreateDropdown("Menu")
+local menu = Critline:CreateDropdown("Menu")
 menu.xOffset = 0
 menu.yOffset = 0
 menu.initialize = function(self)
@@ -279,8 +267,8 @@ menu.initialize = function(self)
 	info.text = "Filter"
 	info.func = onClick
 	info.arg1 = spellID
-	info.checked = addon.filters:IsFilteredAura(spellID)
-	info.disabled = addon.filters:IsFilteredAura(spellID) and not addon.filters.db.global.auras[spellID]
+	info.checked = Critline.filters:IsFilteredAura(spellID)
+	info.disabled = Critline.filters:IsFilteredAura(spellID) and not Critline.filters.db.global.auras[spellID]
 	info.isNotRadio = true
 	info.keepShownOnClick = true
 	self:AddButton(info)
@@ -339,7 +327,7 @@ end
 
 local sortedAuras = {}
 
-local scrollFrame = addon.templates.CreateScrollFrame(template, "CritlineAuraTrackerScrollFrame", frame, NUM_BUTTONS, BUTTON_HEIGHT, createButton)
+local scrollFrame = Critline:CreateScrollframe(frame, NUM_BUTTONS, BUTTON_HEIGHT, createButton)
 scrollFrame:SetHeight(NUM_BUTTONS * BUTTON_HEIGHT)
 scrollFrame:SetPoint("BOTTOM", 0, 16)
 scrollFrame:SetPoint("LEFT", 16, 0)
@@ -373,9 +361,9 @@ scrollFrame.OnButtonShow = function(self, button, spellID)
 	button:SetFormattedText("%s (%d)", currentFilter[spellID].spellName, spellID)
 	button.source:SetText(currentFilter[spellID].source)
 	button.target:SetText(currentFilter[spellID].target)
-	button.icon:SetTexture(addon:GetSpellTexture(spellID))
+	button.icon:SetTexture(Critline:GetSpellTexture(spellID))
 	button.spellID = spellID
-	local disabled = addon.filters:IsFilteredAura(spellID)
+	local disabled = Critline.filters:IsFilteredAura(spellID)
 	button.icon:SetDesaturated(disabled)
 	button.text:SetFontObject(disabled and "GameFontDisable" or "GameFontNormal")
 	if GameTooltip:IsOwned(button) then
@@ -394,7 +382,7 @@ end
 function frame:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, sourceGUID, sourceName, sourceFlags, sourceFlags2, destGUID, destName, destFlags, destFlags2, spellID, spellName, spellSchool, auraType)
 	if eventType == "SPELL_AURA_APPLIED" or eventType == "SPELL_AURA_REFRESH" then
 		local targetType
-		if CombatLog_Object_IsA(destFlags, COMBATLOG_FILTER_ME) or addon:IsMyPet(destFlags, destGUID) then
+		if CombatLog_Object_IsA(destFlags, COMBATLOG_FILTER_ME) or Critline:IsMyPet(destFlags, destGUID) then
 			-- register our own and our pet's auras
 			targetType = "self"
 		elseif not self:IsPvPTarget(destGUID) and band(destFlags, COMBATLOG_OBJECT_REACTION_FRIENDLY) == 0 then

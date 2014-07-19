@@ -1,10 +1,10 @@
 local addonName, core = ...
-local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
+local L = core.L
 
 local selectedValue = {}
 local reverseList = {}
 
-local module = core:AddCategory("Advanced", true, true)
+local module = core:NewModule("Advanced", core.config:AddSubCategory("Advanced"))
 
 local editbox
 do
@@ -63,7 +63,7 @@ do
 		self:SetNumeric(isNumeric)
 		self.GetValue = isNumeric and self.GetNumber or self.GetText
 		self:ClearAllPoints()
-		self:SetPoint("TOPLEFT", self.parent)
+		self:SetPoint("TOPLEFT", self.parent, 5, 0)
 		if not isNumeric then
 			-- non-spell ID exclusive editboxes will be wider
 			self:SetPoint("TOPRIGHT", self.parent)
@@ -103,10 +103,11 @@ do
 		self:Hide()
 	end
 	
-	editbox = module:CreateEditBox()
+	editbox = core:CreateEditbox(module)
 	editbox:Hide()
-	editbox:SetFrameStrata("HIGH")
+	-- editbox:SetFrameStrata("HIGH")
 	editbox:SetWidth(56)
+	editbox:SetFontObject("ChatFontNormal")
 	editbox:SetScript("OnShow", onShow)
 	editbox:SetScript("OnHide", onHide)
 	editbox:SetScript("OnEscapePressed", editbox.Hide)
@@ -282,7 +283,7 @@ do
 	local NUM_BUTTONS = 20
 	local BUTTON_HEIGHT = 20
 	
-	scrollFrame = module:CreateScrollFrame("CritlineAdvancedScrollFrame", module, NUM_BUTTONS, BUTTON_HEIGHT, createButton, 0, -4)
+	scrollFrame = core:CreateScrollframe(module, NUM_BUTTONS, BUTTON_HEIGHT, createButton, 0, -4)
 	scrollFrame:SetSize(480, NUM_BUTTONS * BUTTON_HEIGHT + 8)
 	scrollFrame:SetPoint("CENTER")
 	scrollFrame.PreUpdate = preUpdate
@@ -396,30 +397,32 @@ local menu = {
 	},
 }
 
-local function onClick(self)
-	module:SelectList(self.value)
+local function onClick(self, value)
+	module:SelectList(value)
 end
 
-local dropdown = module:CreateDropDownMenu()
+local selectedList
+
+local dropdown = core:CreateDropdown("Frame", module)
 dropdown:SetWidth(140)
 dropdown:SetPoint("BOTTOMLEFT", scrollFrame, "TOPLEFT", -16, 0)
 dropdown:JustifyText("LEFT")
-dropdown.menu = menu
 dropdown.initialize = function(self)
-	for _, v in ipairs(self.menu) do
+	for _, v in ipairs(menu) do
 		local info = UIDropDownMenu_CreateInfo()
-		info.text = self.menu[v]
-		info.value = v
+		info.text = menu[v]
 		info.func = onClick
+		info.arg1 = v
+		info.checked = (v == selectedList)
 		self:AddButton(info)
 	end
 end
 
-local add = module:CreateEditBox()
+local add = core:CreateEditbox(module)
 add:SetNumeric(true)
-add:SetWidth(64)
-add:SetFrameStrata("HIGH")
-add:SetPoint("TOPLEFT", scrollFrame, "BOTTOMLEFT", 0, -16)
+add:SetWidth(59)
+add:SetFontObject("ChatFontNormal")
+add:SetPoint("TOPLEFT", scrollFrame, "BOTTOMLEFT", 5, -16)
 add:SetScript("OnEnterPressed", function(self)
 	local list = module:GetSelectedList()
 	local spellID = self:GetNumber()
@@ -443,7 +446,12 @@ add:SetScript("OnEscapePressed", function(self)
 	self:SetText("")
 	self:ClearFocus()
 end)
-add.label:SetText("Add")
+local label = add:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+label:SetPoint("BOTTOMLEFT", add, "TOPLEFT", -5, -2)
+label:SetPoint("BOTTOMRIGHT", add, "TOPRIGHT", 0, -2)
+label:SetJustifyH("LEFT")
+label:SetHeight(18)
+label:SetText("Add")
 
 local info = module:CreateFontString(nil, nil, "GameFontNormalSmallLeft")
 info:SetPoint("LEFT", add, "RIGHT", 16, 0)
@@ -453,27 +461,28 @@ info:SetJustifyV("TOP")
 
 setmetatable(selectedValue, {
 	__index = function(tbl, key)
-		return menu[key][dropdown:GetSelectedValue()]
+		return menu[key][selectedList]
 	end
 })
 
-core.RegisterCallback(module, "AddonLoaded", function()
-	module:SelectList(menu[1])
-end)
+function module:OnInitialize()
+	self:SelectList(menu[1])
+end
 
 function module:Update()
 	scrollFrame:Update()
 end
 
 function module:SelectList(value)
-	dropdown:SetSelectedValue(value)
+	selectedList = value
+	dropdown:SetText(menu[value])
 	module:BuildReverseList()
 	module:Update()
 	info:SetText(selectedValue.info)
 end
 
 function module:GetSelectedList()
-	return core.db.global[dropdown:GetSelectedValue()]
+	return core.db.global[selectedList]
 end
 
 function module:BuildReverseList()

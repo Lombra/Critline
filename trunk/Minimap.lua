@@ -1,5 +1,5 @@
-local addonName, addon = ...
-local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
+local CRITLINE, Critline = ...
+local L = Critline.L
 
 local function onUpdate(self)
 	local xpos, ypos = GetCursorPosition()
@@ -13,7 +13,7 @@ local function onUpdate(self)
 	self:Move(pos)
 end
 
-local minimap = CreateFrame("Button", "CritlineMinimapButton", Minimap)
+local minimap = Critline:NewModule("Minimap", CreateFrame("Button", "CritlineMinimapButton", Minimap))
 minimap:SetToplevel(true)
 minimap:SetMovable(true)
 minimap:RegisterForClicks("LeftButtonUp", "RightButtonUp")
@@ -23,17 +23,17 @@ minimap:SetHighlightTexture([[Interface\Minimap\UI-Minimap-ZoomButton-Highlight]
 minimap:SetFrameLevel(8)
 minimap:Hide()
 minimap:SetScript("OnClick", function(self, button)
-	local display = addon.display
+	local display = Critline:GetModule("Display")
 	if button == "LeftButton" and display then
 		display:Toggle()
 	elseif button == "RightButton" then
-		addon:OpenConfig()
+		Critline:OpenConfig()
 	end
 end)
 minimap:SetScript("OnEnter", function(self)
 	GameTooltip:SetOwner(self, "ANCHOR_LEFT")
 	GameTooltip:AddLine("Critline")
-	if addon.display then
+	if Critline:GetModule("Display") then
 		GameTooltip:AddLine(L["Left-click to toggle summary frame"], HIGHLIGHT_FONT_COLOR.r, HIGHLIGHT_FONT_COLOR.g, HIGHLIGHT_FONT_COLOR.b)
 	end
 	GameTooltip:AddLine(L["Right-click to open options"], HIGHLIGHT_FONT_COLOR.r, HIGHLIGHT_FONT_COLOR.g, HIGHLIGHT_FONT_COLOR.b)
@@ -50,37 +50,34 @@ minimap:SetScript("OnHide", function(self) self:SetScript("OnUpdate", nil) end)
 local icon = minimap:CreateTexture()
 icon:SetSize(20, 20)
 icon:SetPoint("TOPLEFT", 6, -6)
-icon:SetTexture(addon.trees.dmg.icon)
+icon:SetTexture(Critline.trees.dmg.icon)
 
 local border = minimap:CreateTexture(nil, "OVERLAY")
 border:SetSize(54, 54)
 border:SetPoint("TOPLEFT")
 border:SetTexture([[Interface\Minimap\MiniMap-TrackingBorder]])
 
-local config = addon:AddCategory(L["Minimap"], true)
+local config = Critline.config:AddSubCategory(L["Minimap"])
 
-local options = {
+config:CreateOptions({
 	{
 		type = "CheckButton",
-		label = L["Show"],
-		tooltipText = L["Show minimap button."],
-		setting = "show",
-		func = function(self, checked)
-			minimap:SetShown(checked)
-		end,
+		text = L["Show"],
+		tooltip = L["Show minimap button."],
+		key = "show",
+		func = "SetShown",
 	},
 	{
 		type = "CheckButton",
-		label = L["Locked"],
-		tooltipText = L["Lock minimap button."],
-		setting = "locked",
+		text = L["Locked"],
+		tooltip = L["Lock minimap button."],
+		key = "locked",
 		func = function(self, checked)
 			minimap:RegisterForDrag(not checked and "LeftButton")
 		end,
 	},
-}
+})
 
-config:CreateOptions(options, minimap)
 
 local defaults = {
 	profile = {
@@ -90,15 +87,18 @@ local defaults = {
 	}
 }
 
-function minimap:AddonLoaded()
-	self.db = addon.db:RegisterNamespace("minimap", defaults)
-	addon.RegisterCallback(self, "SettingsLoaded", "LoadSettings")
+function minimap:OnInitialize()
+	self.db = Critline.db:RegisterNamespace("minimap", defaults)
+	Critline.RegisterCallback(self, "SettingsLoaded", "LoadSettings")
+	
+	config:SetDatabase(self.db, true)
+	config:SetHandler(self)
+	
+	self:LoadSettings()
 end
 
-addon.RegisterCallback(minimap, "AddonLoaded")
-
 function minimap:LoadSettings()
-	config:LoadOptions(self)
+	config:SetupControls()
 	self:Move(self.db.profile.pos)
 end
 

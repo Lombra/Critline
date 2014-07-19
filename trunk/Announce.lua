@@ -1,5 +1,5 @@
 local addonName, addon = ...
-local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
+local L = addon.L
 
 assert(addon.spellList, "Announce module requires spellList module.")
 

@@ -1,21 +1,19 @@
 local addonName, addon = ...
-local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
-local Libra = LibStub("Libra")
+local L = addon.L
 
 local NUM_BUTTONS = 12
 local BUTTON_HEIGHT = 36
 
 local selectedTree
 
-local spellList = addon:AddCategory("Spells", true, true)
+local spellList = addon.config:AddSubCategory("Spells")
 addon.spellList = spellList
-
-spellList.desc:SetText(L["Here you can review and manage all your registered spells. Click the button on the right hand side of a spell for options."])
+spellList:SetDescription(L["Here you can review and manage all your registered spells. Click the button on the right hand side of a spell for options."])
 
 -- this table gets populated with "Filter", "Reset", "Announce" etc
 local spellOptions = {}
 
-local dropdown = Libra:CreateDropdown("Menu")
+local dropdown = addon:CreateDropdown("Menu")
 dropdown.initialize = function(self, level, menuList)
 	for i, info in ipairs(menuList) do
 		info.value = UIDROPDOWNMENU_MENU_VALUE
@@ -24,7 +22,7 @@ dropdown.initialize = function(self, level, menuList)
 	end
 end
 
-local spellListContainer = spellList:CreateTabInterface()
+local spellListContainer = addon:CreateTabInterface(spellList)
 spellListContainer:SetHeight(NUM_BUTTONS * BUTTON_HEIGHT + 4)
 spellListContainer:SetPoint("TOP", spellList.title, "BOTTOM", 0, -68)
 spellListContainer:SetPoint("LEFT", 32, 0)
@@ -104,7 +102,7 @@ local function createButton()
 	return item
 end
 
-local scrollFrame = spellList:CreateScrollFrame("CritlineSpellsScrollFrame", spellList, NUM_BUTTONS, BUTTON_HEIGHT, createButton, 4, -2)
+local scrollFrame = addon:CreateScrollframe(spellList, NUM_BUTTONS, BUTTON_HEIGHT, createButton, 4, -2)
 scrollFrame:SetAllPoints(spellListContainer)
 scrollFrame.PostUpdate = function(self, event, tree)
 	-- hide the menu since we can't tell if it's still referring to the same spell (no need if a different tree was updated)

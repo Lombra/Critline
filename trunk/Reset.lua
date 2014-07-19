@@ -1,5 +1,5 @@
 local addonName, addon = ...
-local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
+local L = addon.L
 
 assert(addon.spellList, "Reset module requires spellList module.")
 
@@ -10,12 +10,7 @@ local history = {
 	pet  = {},
 }
 
-local module = CreateFrame("Frame")
-module:RegisterEvent("PLAYER_REGEN_DISABLED")
-module:SetScript("OnEvent", function(self)
-	-- previous records are wiped upon entering combat
-	self:ClearHistory()
-end)
+local module = addon:NewModule("Reset")
 
 local resetButton = CreateFrame("Button", nil, addon.spellList, "UIPanelButtonTemplate")
 resetButton:SetPoint("BOTTOMRIGHT", CritlineSpellsScrollFrame, "TOPRIGHT", 0, 8)
@@ -164,3 +159,4 @@ function module:ClearHistory()
 end
 
 addon.RegisterCallback(module, "PerCharSettingsLoaded", "ClearHistory")
+module:RegisterEvent("PLAYER_REGEN_DISABLED", "ClearHistory")
