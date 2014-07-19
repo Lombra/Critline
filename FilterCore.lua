@@ -1,5 +1,5 @@
 local addonName, addon = ...
-local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
+local L = addon.L
 
 local format = format
 local CombatLog_Object_IsA = CombatLog_Object_IsA
@@ -396,41 +396,25 @@ local defaults = {
 	},
 }
 
-local filters = CreateFrame("Frame")
-filters:SetScript("OnEvent", function(self, event, ...)
-	return self[event] and self[event](self, ...)
-end)
+local filters = addon:NewModule("Filters")
 addon.filters = filters
 
-function filters:AddonLoaded()
+function filters:OnInitialize()
 	self.db = addon.db:RegisterNamespace("filters", defaults)
 	addon.RegisterCallback(self, "SettingsLoaded", "LoadSettings")
 	
-	self:RegisterUnitEvent("UNIT_AURA", "player", "pet")
-	self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+	self.config:SetDatabase(self.db, true)
+	self.config:SetHandler(self)
+	
 	self:RegisterEvent("PLAYER_LOGIN")
+	self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+	self:RegisterEvent("UNIT_AURA")
 	self:RegisterEvent("UNIT_NAME_UPDATE")
 	self:RegisterEvent("PLAYER_REGEN_DISABLED")
 	self:RegisterEvent("PLAYER_CONTROL_LOST")
 	self:RegisterEvent("PLAYER_CONTROL_GAINED")
 	
 	local global = self.db.global
-	
-	-- convert from < 4.5.0 arrays
-	if type(global.auras[1]) == "string" or type(global.mobs[1]) == "string" then
-		local auras = {}
-		for i, aura in ipairs(global.auras) do
-			auras[aura] = true
-		end
-		global.auras = auras
-		
-		local mobs = {}
-		for i, mob in ipairs(global.mobs) do
-			mobs[mob] = true
-		end
-		global.mobs = mobs
-	end
-
 	customPlayerSpells = global.include
 	excludedSpells = global.exclude
 	customFilteredAuras = global.auras
@@ -443,14 +427,20 @@ function filters:AddonLoaded()
 		end
 	end
 	
-	self.AddonLoaded = nil
+	self:LoadSettings()
 end
-
-addon.RegisterCallback(filters, "AddonLoaded")
 
 function filters:LoadSettings()
 	self.profile = self.db.profile
-	self:LoadOptions()
+	self.config:SetupControls()
+	if self.scrollFrame then
+		self.scrollFrame:Update()
+	end
+end
+
+function filters:PLAYER_LOGIN()
+	self:ScanAuras()
+	self:CheckPlayerControl()
 end
 
 function filters:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, sourceGUID, sourceName, sourceFlags, sourceFlags2, destGUID, destName, destFlags, destFlags2, spellID, spellName)
@@ -483,11 +473,6 @@ function filters:UNIT_AURA(unit)
 			addon:Debug("Filtered aura detected. Disabling combat log tracking.")
 		end
 	end
-end
-
-function filters:PLAYER_LOGIN()
-	self:ScanAuras()
-	self:CheckPlayerControl()
 end
 
 -- first reliable event where unit aura API works on login

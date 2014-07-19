@@ -1,15 +1,15 @@
-local addonName, addon = ...
-local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
+local CRITLINE, Critline = ...
+local L = Critline.L
 local LSM = LibStub("LibSharedMedia-3.0")
 
-local splash = CreateFrame("MessageFrame", nil, UIParent)
+local splash = Critline:NewModule("Splash", CreateFrame("MessageFrame", nil, UIParent))
 splash:SetMovable(true)
 splash:RegisterForDrag("LeftButton")
 splash:SetSize(512, 96)
 splash:SetScript("OnMouseUp", function(self, button)
 	if button == "RightButton" then
 		if self.profile.enabled then
-			addon.RegisterCallback(splash, "NewRecord")
+			Critline.RegisterCallback(self, "NewRecord")
 		end
 		self:SetFrameStrata("MEDIUM")
 		self.hitRect:Hide()
@@ -32,129 +32,128 @@ hitRect:SetAllPoints()
 hitRect:Hide()
 splash.hitRect = hitRect
 
-local config = addon:AddCategory(L["Splash frame"], true)
+local config = Critline.config:AddSubCategory(L["Splash frame"])
 
 do
 	local options = {
 		{
 			type = "CheckButton",
-			label = L["Enabled"],
-			tooltipText = L["Shows the new record on the middle of the screen."],
-			setting = "enabled",
+			text = L["Enabled"],
+			tooltip = L["Shows the new record on the middle of the screen."],
+			key = "enabled",
 			func = function(self, checked)
 				if checked then
 					if not splash:IsMouseEnabled() then
-						addon.RegisterCallback(splash, "NewRecord")
+						Critline.RegisterCallback(splash, "NewRecord")
 					end
 				else
-					addon.UnregisterCallback(splash, "NewRecord")
+					Critline.UnregisterCallback(splash, "NewRecord")
 				end
 			end,
 		},
 		{
 			type = "CheckButton",
-			label = L["Use combat text splash"],
-			tooltipText = L["Enable to use scrolling combat text for \"New record\" messages instead of the default splash frame."],
-			setting = "sct",
+			text = L["Use combat text splash"],
+			tooltip = L["Enable to use scrolling combat text for \"New record\" messages instead of the default splash frame."],
+			key = "sct",
 		},
 		{
 			type = "ColorButton",
-			label = L["Spell color"],
-			tooltipText = L["Sets the color for the spell text in the splash frame."],
-			setting = "spellColor",
+			text = L["Spell color"],
+			tooltip = L["Sets the color for the spell text in the splash frame."],
+			key = "spellColor",
 		},
 		{
 			type = "ColorButton",
-			label = L["Amount color"],
-			tooltipText = L["Sets the color for the amount text in the splash frame."],
-			setting = "amountColor",
+			text = L["Amount color"],
+			tooltip = L["Sets the color for the amount text in the splash frame."],
+			key = "amountColor",
 		},
 		{
 			type = "Slider",
-			label = L["Scale"],
-			tooltipText = L["Sets the scale of the splash frame."],
-			setting = "scale",
-			minValue = 0.5,
-			maxValue = 1,
-			valueStep = 0.05,
-			isPercent = true,
+			text = L["Scale"],
+			tooltip = L["Sets the scale of the splash frame."],
+			key = "scale",
 			func = function(self, value)
 				local os = splash:GetScale()
 				splash:SetScale(value)
 				local point, relativeTo, relativePoint, xOff, yOff = splash:GetPoint()
 				splash:SetPoint(point, relativeTo, relativePoint, (xOff*os/value), (yOff*os/value))
 			end,
+			min = 0.5,
+			max = 1,
+			step = 0.05,
+			isPercent = true,
 		},
 		{
 			type = "Slider",
-			label = L["Duration"],
-			tooltipText = L["Sets the time (in seconds) the splash frame is visible before fading out."],
-			setting = "duration",
-			minValue = 0,
-			maxValue = 5,
-			valueStep = 0.5,
+			text = L["Duration"],
+			tooltip = L["Sets the time (in seconds) the splash frame is visible before fading out."],
+			key = "duration",
 			func = "SetTimeVisible",
+			min = 0,
+			max = 5,
+			step = 0.5,
 		},
 		{
 			type = "Slider",
-			label = L["Fade duration"],
-			tooltipText = L["Sets the time between the splash frame starting to fade and being fully faded out."],
-			setting = "fadeDuration",
-			minValue = 0,
-			maxValue = 5,
-			valueStep = 0.5,
+			text = L["Fade duration"],
+			tooltip = L["Sets the time between the splash frame starting to fade and being fully faded out."],
+			key = "fadeDuration",
 			func = "SetFadeDuration",
+			min = 0,
+			max = 5,
+			step = 0.5,
 		},
 		{
 			newColumn = true,
-			type = "DropDownMenu",
-			label = L["Font"],
-			setting = "fontFace",
-			width = 120,
+			type = "Dropdown",
+			text = L["Font"],
+			key = "fontFace",
 			func = "UpdateFont",
-			initialize = function(self)
-				for _, v in ipairs(LSM:List("font")) do
-					local info = UIDropDownMenu_CreateInfo()
-					info.text = v
-					info.func = self.onClick
-					info.owner = self
-					self:AddButton(info)
-				end
-			end,
+			width = 120,
+			menuList = function() return LSM:List("font") end,
 		},
 		{
-			type = "DropDownMenu",
-			label = L["Font outline"],
-			setting = "fontFlags",
-			width = 120,
+			type = "Dropdown",
+			text = L["Font outline"],
+			key = "fontFlags",
 			func = "UpdateFont",
-			menu = {
-				{text = L["None"],   value = ""},
-				{text = L["Normal"], value = "OUTLINE"},
-				{text = L["Thick"],  value = "THICKOUTLINE"},
+			width = 120,
+			menuList = {
+				"",
+				"OUTLINE",
+				"THICKOUTLINE",
+			},
+			properties = {
+				text = {
+					[""] = L["None"],
+					["OUTLINE"] = L["Normal"],
+					["THICKOUTLINE"] = L["Thick"],
+				},
 			}
 		},
 		{
 			type = "Slider",
-			label = L["Font size"],
-			tooltipText = L["Sets the font size of the splash frame."],
-			setting = "fontSize",
-			minValue = 8,
-			maxValue = 30,
-			valueStep = 1,
+			text = L["Font size"],
+			tooltip = L["Sets the font size of the splash frame."],
+			key = "fontSize",
 			func = "UpdateFont",
+			min = 8,
+			max = 30,
+			step = 1,
 		},
 	}
 
 	config:CreateOptions(options, splash)
 
-	local moveSplash = CreateFrame("Button", nil, config, "UIPanelButtonTemplate")
-	moveSplash:SetPoint("TOP", config.registry.fadeDuration, "BOTTOM", 0, -24)
-	moveSplash:SetSize(96, 22)
+	local moveSplash = Critline:CreateButton(config)
+	moveSplash:SetPoint("TOP", config:GetControlByKey("fadeDuration"), "BOTTOM", 0, -24)
+	moveSplash:SetWidth(96)
 	moveSplash:SetText(UNLOCK)
 	moveSplash:SetScript("OnClick", function()
 		-- don't want to be interrupted by new records
-		addon.UnregisterCallback(splash, "NewRecord")
+		Critline.UnregisterCallback(splash, "NewRecord")
 		splash:SetFrameStrata("FULLSCREEN")
 		splash.hitRect:Show()
 		splash:EnableMouse(true)
@@ -184,30 +183,15 @@ local defaults = {
 	}
 }
 
-function splash:AddonLoaded()
-	self.db = addon.db:RegisterNamespace("splash", defaults)
-	addon.RegisterCallback(self, "SettingsLoaded", "LoadSettings")
+function splash:OnInitialize()
+	self.db = Critline.db:RegisterNamespace("splash", defaults)
+	Critline.RegisterCallback(self, "SettingsLoaded", "LoadSettings")
 	
-	-- convert from < 4.4.0
-	for k, profile in pairs(self.db.profiles) do
-		local font = profile.font
-		if font then
-			profile.fontFace = font.name
-			profile.fontSize = font.size
-			profile.fontFlags = font.flags
-			profile.font = nil
-		end
-		
-		if profile.colors then
-			for k, v in pairs(profile.colors) do
-				profile[k.."Color"] = v
-			end
-			profile.colors = nil
-		end
-	end
+	config:SetDatabase(self.db, true)
+	config:SetHandler(self)
+	
+	self:LoadSettings()
 end
-
-addon.RegisterCallback(splash, "AddonLoaded")
 
 function splash:LoadSettings()
 	self.profile = self.db.profile
@@ -218,7 +202,7 @@ function splash:LoadSettings()
 	-- need to set scale separately first to ensure proper positioning
 	self:SetScale(self.profile.scale)
 	
-	config:LoadOptions(self)
+	config:SetupControls()
 	
 	LSM.RegisterCallback(self, "LibSharedMedia_Registered", "UpdateFont")
 	LSM.RegisterCallback(self, "LibSharedMedia_SetGlobal", "UpdateFont")
@@ -238,10 +222,10 @@ function splash:NewRecord(event, tree, spellID, spellName, periodic, amount, cri
 		return
 	end
 	
-	spell = format(L["New %s record!"], addon:GetFullSpellName(spellName, periodic, true))
-	amount = addon:ShortenNumber(amount)
-	if addon.db.profile.oldRecord and prevRecord.amount > 0 then
-		amount = format("%s (%s)", amount, addon:ShortenNumber(prevRecord.amount))
+	spell = format(L["New %s record!"], Critline:GetFullSpellName(spellName, periodic, true))
+	amount = Critline:ShortenNumber(amount)
+	if Critline.db.profile.oldRecord and prevRecord.amount > 0 then
+		amount = format("%s (%s)", amount, Critline:ShortenNumber(prevRecord.amount))
 	end
 	
 	local spellColor = self.profile.spellColor

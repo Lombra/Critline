@@ -1,8 +1,8 @@
 local addonName, addon = ...
-local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
+local L = addon.L
 local LDB = LibStub("LibDataBroker-1.1")
 
-local feeds = {}
+local feeds = addon:NewModule("DataBroker")
 
 local msgFormat = format("%s: %%s - %s: %%s", L["Normal"], L["Crit"])
 
@@ -58,17 +58,23 @@ local function updateRecords(event, tree)
 end
 
 local function onTreeStateChanged(event, tree, enabled)
-	if enabled then
-		updateRecords(event, tree)
+	if tree then
+		if enabled then
+			updateRecords(event, tree)
+		else
+			feeds[tree].text = L["n/a"]
+		end
 	else
-		feeds[tree].text = L["n/a"]
+		for k in pairs(Critline.trees) do
+			onTreeStateChanged(nil, k, Critline.percharDB.profile[k])
+		end
 	end
 end
 
-local function addonLoaded()
+function feeds:OnInitialize()
 	addon.RegisterCallback(feeds, "OnNewTopRecord", updateRecords)
 	addon.RegisterCallback(feeds, "FormatChanged", updateRecords)
 	addon.RegisterCallback(feeds, "OnTreeStateChanged", onTreeStateChanged)
+	updateRecords()
+	onTreeStateChanged()
 end
-
-addon.RegisterCallback(feeds, "AddonLoaded", addonLoaded)

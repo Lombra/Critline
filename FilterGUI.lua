@@ -1,31 +1,32 @@
 local addonName, addon = ...
-local L = LibStub("AceLocale-3.0"):GetLocale(addonName)
+local L = addon.L
 
 local GetSpellInfo, tostring = GetSpellInfo, tostring
 local scrollFrame
 local selectedFilter
 
-local filters = addon:AddCategory(FILTERS, true, nil, addon.filters)
+local filters = addon.filters
+filters.config = addon.config:AddSubCategory(FILTERS)
 
 do
 	local options = {
 		{
 			type = "CheckButton",
-			label = L["Filter new spells"],
-			tooltipText = L["Enable to filter out new spell entries by default."],
-			setting = "filterNew",
+			text = L["Filter new spells"],
+			tooltip = L["Enable to filter out new spell entries by default."],
+			key = "filterNew",
 		},
 		{
 			type = "CheckButton",
-			label = L["Ignore mob filter"],
-			tooltipText = L["Enable to ignore integrated mob filter."],
-			setting = "ignoreMobFilter",
+			text = L["Ignore mob filter"],
+			tooltip = L["Enable to ignore integrated mob filter."],
+			key = "ignoreMobFilter",
 		},
 		{
 			type = "CheckButton",
-			label = L["Ignore aura filter"],
-			tooltipText = L["Enable to ignore integrated aura filter."],
-			setting = "ignoreAuraFilter",
+			text = L["Ignore aura filter"],
+			tooltip = L["Enable to ignore integrated aura filter."],
+			key = "ignoreAuraFilter",
 			func = function(self, checked)
 				if checked then
 					filters:ResetEmpowered()
@@ -36,40 +37,40 @@ do
 		},
 		{
 			type = "CheckButton",
-			label = L["Only known spells"],
-			tooltipText = L["Enable to ignore spells that are not in your (or your pet's) spell book."],
-			setting = "onlyKnown",
+			text = L["Only known spells"],
+			tooltip = L["Enable to ignore spells that are not in your (or your pet's) spell book."],
+			key = "onlyKnown",
 		},
 		{
 			type = "CheckButton",
-			label = L["Suppress mind control"],
-			tooltipText = L["Suppress all records while mind controlled."],
-			setting = "suppressMC",
+			text = L["Suppress mind control"],
+			tooltip = L["Suppress all records while mind controlled."],
+			key = "suppressMC",
 		},
 		{
 			type = "CheckButton",
-			label = L["Don't filter magic"],
-			tooltipText = L["Enable to let magical damage ignore the level filter."],
-			setting = "dontFilterMagic",
+			text = L["Don't filter magic"],
+			tooltip = L["Enable to let magical damage ignore the level filter."],
+			key = "dontFilterMagic",
 		},
 		{
 			type = "Slider",
-			label = L["Level filter"],
-			tooltipText = L["If level difference between you and the target is greater than this setting, records will not be registered."],
-			setting = "levelFilter",
-			minValue = -1,
-			maxValue = 10,
-			valueStep = 1,
-			minText = OFF,
+			text = L["Level filter"],
+			tooltip = L["If level difference between you and the target is greater than this setting, records will not be registered."],
+			key = "levelFilter",
 			func = function(self, value)
 				if value == -1 then
 					self.currentValue:SetText(OFF)
 				end
 			end,
+			min = -1,
+			max = 10,
+			step = 1,
+			minText = OFF,
 		}
 	}
 
-	filters:CreateOptions(options)
+	filters.config:CreateOptions(options)
 end
 
 addon.spellList:AddSpellOption({
@@ -83,12 +84,12 @@ addon.spellList:AddSpellOption({
 	isNotRadio = true,
 })
 
-local NUMFILTERBUTTONS = 22
+local NUMFILTERBUTTONS = 21
 local FILTERBUTTONHEIGHT = 18
 local BUTTON_OFFSET_TOP = 2
 
-local filterList = filters:CreateTabInterface()
-filterList:SetPoint("TOPLEFT", filters.title, "BOTTOM", -32, -40)
+local filterList = addon:CreateTabInterface(filters.config)
+filterList:SetPoint("TOPLEFT", filters.config.desc, "BOTTOM", -32, -20)
 filterList:SetPoint("RIGHT", -48, 0)
 filterList:SetHeight(NUMFILTERBUTTONS * FILTERBUTTONHEIGHT + BUTTON_OFFSET_TOP)
 
@@ -114,7 +115,7 @@ delete:SetScript("OnClick", function(self)
 	addon:Message(L["%s removed from %s."]:format(GetSpellInfo(selection) or selection, self.filterName))
 end)
 
-local info = filters:CreateFontString(nil, nil, "GameFontNormalSmallLeft")
+local info = filters.config:CreateFontString(nil, nil, "GameFontNormalSmallLeft")
 info:SetPoint("TOPLEFT", filterList, "BOTTOMLEFT", 4, -32)
 info:SetPoint("TOPRIGHT", filterList, "BOTTOMRIGHT", -4, -32)
 info:SetPoint("BOTTOM")
@@ -138,7 +139,7 @@ local function filterButtonOnClick(self)
 	end
 	
 	-- enable/disable "Delete" button depending on if selection exists
-	delete:SetEnabled(selection)
+	delete:SetEnabled(selection ~= nil)
 	scrollFrame.selected = selection
 	scrollFrame:Update()
 end
@@ -152,21 +153,31 @@ end
 
 -- template function for mob filter buttons
 local function createFilterButton()
-	local btn = CreateFrame("Button", nil, filterList)
-	btn:SetNormalFontObject("GameFontNormal")
-	btn:SetHighlightFontObject("GameFontHighlight")
-	btn:SetScript("OnClick", filterButtonOnClick)
-	btn:SetScript("OnEnter", onEnter)
-	btn:SetScript("OnLeave", GameTooltip_Hide)
+	local button = CreateFrame("Button", nil, filterList)
+	button:SetNormalFontObject("GameFontNormal")
+	button:SetHighlightFontObject("GameFontHighlight")
+	button:SetScript("OnClick", filterButtonOnClick)
+	button:SetScript("OnEnter", onEnter)
+	button:SetScript("OnLeave", GameTooltip_Hide)
 	
-	local highlight = btn:CreateTexture()
+	button.icon = button:CreateTexture()
+	button.icon:SetSize(16, 16)
+	button.icon:SetPoint("LEFT", 1, 0)
+	
+	button.text = button:CreateFontString()
+	button.text:SetPoint("LEFT", button.icon, "RIGHT", 4, 0)
+	button.text:SetPoint("RIGHT", -2, 0)
+	button.text:SetJustifyH("LEFT")
+	button:SetFontString(button.text)
+	
+	local highlight = button:CreateTexture()
 	highlight:SetPoint("TOPLEFT", 0, 1)
 	highlight:SetPoint("BOTTOMRIGHT", 0, 1)
 	highlight:SetTexture([[Interface\QuestFrame\UI-QuestLogTitleHighlight]])
 	highlight:SetVertexColor(.196, .388, .8)
-	btn:SetHighlightTexture(highlight)
+	button:SetHighlightTexture(highlight)
 	
-	return btn
+	return button
 end
 
 local sortedList = {}
@@ -175,7 +186,8 @@ local function spellSort(a, b)
 	return (GetSpellInfo(a) or tostring(a)) < (GetSpellInfo(b) or tostring(b))
 end
 
-scrollFrame = filters:CreateScrollFrame("CritlineFiltersScrollFrame", filters, NUMFILTERBUTTONS, FILTERBUTTONHEIGHT, createFilterButton, 0, -BUTTON_OFFSET_TOP)
+scrollFrame = addon:CreateScrollframe(filters.config, NUMFILTERBUTTONS, FILTERBUTTONHEIGHT, createFilterButton, 2, -BUTTON_OFFSET_TOP)
+filters.scrollFrame = scrollFrame
 scrollFrame:SetAllPoints(filterList)
 scrollFrame.PreUpdate = function(self)
 	return self.selected
@@ -202,11 +214,12 @@ scrollFrame.OnButtonShow = function(self, button, entry, selected)
 		button:UnlockHighlight()
 	end
 	button.value = entry
-	button:SetText(type(entry) == "number" and GetSpellInfo(entry) or entry)
+	local isSpell = type(entry) == "number"
+	button:SetText(isSpell and GetSpellInfo(entry) or entry)
+	button.icon:SetTexture(GetSpellTexture(entry))
+	button.icon:SetShown(isSpell)
 end
 scrollFrame.doUpdate = true
-
-addon.RegisterCallback(scrollFrame, "SettingsLoaded", "Update")
 
 do	-- filter tabs
 	local function setShown(self, show)
