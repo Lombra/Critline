@@ -13,7 +13,7 @@ local history = {
 local module = addon:NewModule("Reset")
 
 local resetButton = CreateFrame("Button", nil, addon.spellList, "UIPanelButtonTemplate")
-resetButton:SetPoint("BOTTOMRIGHT", CritlineSpellsScrollFrame, "TOPRIGHT", 0, 8)
+resetButton:SetPoint("BOTTOMRIGHT", addon.spellList.scrollFrame, "TOPRIGHT", 0, 8)
 resetButton:SetSize(100, 22)
 resetButton:SetText(L["Reset all"])
 resetButton:SetScript("OnClick", function(self)
