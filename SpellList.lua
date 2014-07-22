@@ -103,6 +103,7 @@ local function createButton()
 end
 
 local scrollFrame = addon:CreateScrollframe(spellList, NUM_BUTTONS, BUTTON_HEIGHT, createButton, 4, -2)
+spellList.scrollFrame = scrollFrame
 scrollFrame:SetAllPoints(spellListContainer)
 scrollFrame.PostUpdate = function(self, event, tree)
 	-- hide the menu since we can't tell if it's still referring to the same spell (no need if a different tree was updated)
