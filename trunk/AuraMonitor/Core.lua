@@ -102,18 +102,16 @@ local function onClick(self)
 	PlaySound("igMainMenuOptionCheckBoxOn")
 end
 
-local function createMenuButton(name)
+local function createMenuButton()
 	local button = Critline:CreateButton(frame)
 	button:SetScript("OnClick", onClick)
-	button.rightArrow:Show()
+	button.arrow:Show()
 	button.menu = Critline:CreateDropdown("Menu")
 	button.menu.relativeTo = button
-	button.menu.xOffset = 0
-	button.menu.yOffset = 0
 	return button
 end
 
-local scopeFilter = createMenuButton("CritlineAuraTrackerScope")
+local scopeFilter = createMenuButton()
 scopeFilter:SetPoint("TOPLEFT", 16, -16)
 scopeFilter:SetWidth(192)
 scopeFilter:SetText("Current session")
@@ -153,7 +151,7 @@ do
 	end
 end
 
-local sortMethodMenu = createMenuButton("CritlineAuraTrackerAuraType")
+local sortMethodMenu = createMenuButton()
 sortMethodMenu:SetWidth(96)
 sortMethodMenu:SetPoint("LEFT", scopeFilter, "RIGHT", 8, 0)
 sortMethodMenu:SetText("Sort by")
@@ -191,7 +189,7 @@ do
 	end
 end
 
-local filterOptions = createMenuButton("CritlineAuraTrackerFilterOptions")
+local filterOptions = createMenuButton()
 filterOptions:SetWidth(96)
 filterOptions:SetPoint("TOP", sortMethodMenu, "BOTTOM", 0, -4)
 filterOptions:SetText(FILTERS)
@@ -252,8 +250,6 @@ local function onClick(self, spellID, arg2, checked)
 end
 
 local menu = Critline:CreateDropdown("Menu")
-menu.xOffset = 0
-menu.yOffset = 0
 menu.initialize = function(self)
 	local spellID = UIDROPDOWNMENU_MENU_VALUE
 	
@@ -444,44 +440,32 @@ end
 frame.PLAYER_LOGIN = frame.ScanAuras
 frame.UNIT_AURA = frame.ScanAuras
 
+local function getUnitInfo(guid)
+	if guid and guid ~= "" then
+		if frame:IsPvPTarget(guid) then
+			-- this is a player or a player's permanent pet
+			return PVP, "pvp"
+		else
+			local _, _, _, _, _, npcID = strsplit("-", guid)
+			return npcID, "npc"
+		end
+	end
+	return "N/A"
+end
+
 function frame:RegisterAura(targetType, spellID, spellName, auraType, sourceName, sourceGUID, destName, destGUID)
 	if session[spellID] and (session[spellID].source or not sourceName) or IsSpellKnown(spellID) or IsPlayerSpell(spellID) then
 		return 
 	end
 
-	local source = "n/a"
-	local sourceType
-	
-	if sourceGUID and sourceGUID ~= "" then
-		if self:IsPvPTarget(sourceGUID) then
-			-- this is a player or a player's permanent pet
-			source = PVP
-			sourceType = "pvp"
-		else
-			source = tonumber(sourceGUID:sub(6, 10), 16)
-			sourceType = "npc"
-		end
-	end
-
-	local dest = "n/a"
-	local destType
-	
-	if destGUID and destGUID ~= "" then
-		if self:IsPvPTarget(destGUID) then
-			-- this is a player or a player's permanent pet
-			dest = PVP
-			destType = "pvp"
-		else
-			dest = tonumber(destGUID:sub(6, 10), 16)
-			destType = "npc"
-		end
-	end
+	local source, sourceType = getUnitInfo(sourceGUID)
+	local dest, destType = getUnitInfo(destGUID)
 	
 	local aura = {
 		[targetType] = true,
 		spellName = spellName,
 		[auraType] = true,
-		source = sourceName and format("%s (%s)", sourceName, source) or source,
+		source = sourceName and format("%s (%s)", sourceName, source or "N/A") or source,
 		sourceName = sourceName or "",
 		target = destName and format("%s (%s)", destName, dest) or dest,
 		targetName = destName or "",
@@ -502,6 +486,6 @@ function frame:RegisterAura(targetType, spellID, spellName, auraType, sourceName
 end
 
 function frame:IsPvPTarget(guid)
-	local unitType = band(guid:sub(1, 5), 0x007)
-	return unitType == 0 or unitType == 4
+	local unitType = strsplit("-", guid)
+	return unitType == "Player" or unitType == "Pet"
 end

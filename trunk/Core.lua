@@ -379,10 +379,10 @@ local defaults = {
 		tooltipMappings = {},
 		spellNameOverrides = {
 			-- pre-add form name to hybrid druid abilities, so the user can tell which is cat and which is bear
-			[33878] = format("%s (%s)", GetSpellInfo(33878), GetSpellInfo(5487)), -- Mangle (Bear Form)
-			[33876] = format("%s (%s)", GetSpellInfo(33876), GetSpellInfo(768)), -- Mangle (Cat Form)
-			[779]   = format("%s (%s)", GetSpellInfo(779),   GetSpellInfo(5487)), -- Swipe (Bear Form)
-			[62078] = format("%s (%s)", GetSpellInfo(62078), GetSpellInfo(768)), -- Swipe (Cat Form)
+			-- [33878] = format("%s (%s)", GetSpellInfo(33878), GetSpellInfo(5487)), -- Mangle (Bear Form)
+			-- [33876] = format("%s (%s)", GetSpellInfo(33876), GetSpellInfo(768)), -- Mangle (Cat Form)
+			-- [779]   = format("%s (%s)", GetSpellInfo(779),   GetSpellInfo(5487)), -- Swipe (Bear Form)
+			-- [62078] = format("%s (%s)", GetSpellInfo(62078), GetSpellInfo(768)), -- Swipe (Cat Form)
 		},
 		spellIconOverrides = {},
 	},
@@ -493,6 +493,13 @@ function Critline:FixSpells()
 	end
 end
 
+local healEvents = {
+	SPELL_HEAL = true,
+	SPELL_PERIODIC_HEAL = true,
+	SPELL_AURA_APPLIED = true,
+	SPELL_AURA_REFRESH = true,
+}
+
 function Critline:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, sourceGUID, sourceName, sourceFlags, sourceFlags2, destGUID, destName, destFlags, destFlags2, ...)
 	local isPet
 	
@@ -512,7 +519,7 @@ function Critline:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, 
 	
 	local isPeriodic
 	local periodic = 1
-	local isHeal = eventType == "SPELL_HEAL" or eventType == "SPELL_PERIODIC_HEAL" or eventType == "SPELL_AURA_APPLIED" or eventType == "SPELL_AURA_REFRESH"
+	local isHeal = healEvents[eventType]
 	-- we don't care about healing done by the pet
 	if isHeal and isPet then
 		self:Debug("Pet healing. Return.")
@@ -549,14 +556,14 @@ function Critline:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, 
 		spellIDCache[spellID] = spellID
 	end
 	
-	-- return if the event has no amount (non-absorbing aura applied)
-	if not amount then
-		return
-	end
-	
 	-- if we don't have a destName (who we hit or healed) and we don't have a sourceName (us or our pets) then we leave
 	if not destName then
 		self:Debug(format("No target info for %s (%d).", spellName, spellID))
+		return
+	end
+	
+	-- return if the event has no amount (non-absorbing aura applied)
+	if not amount then
 		return
 	end
 	
@@ -674,9 +681,10 @@ function Critline:UNIT_LEVEL(unit)
 end
 
 function Critline:IsMyPet(flags, guid)
+	local _, _, _, _, _, npcID = strsplit("-", guid)
 	local isMyPet = CombatLog_Object_IsA(flags, COMBATLOG_FILTER_MY_PET)
 	local isGuardian = band(flags, COMBATLOG_OBJECT_TYPE_GUARDIAN) ~= 0
-	return isMyPet and ((not isGuardian and HasPetUI()) or classPets[tonumber(guid:sub(6, 10), 16)])
+	return isMyPet and ((not isGuardian and HasPetUI()) or classPets[npcID])
 end
 
 local levelCache = {}
