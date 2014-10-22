@@ -102,6 +102,7 @@ L["Don't filter magic"] = true
 L["Enable to let magical damage ignore the level filter."] = true
 L["Level filter"] = true
 L["If level difference between you and the target is greater than this setting, records will not be registered."] = true
+L["Ignore boss creatures outside raids"] = true
 
 -- splash
 L["Splash frame"] = true
