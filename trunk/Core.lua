@@ -57,6 +57,47 @@ Critline.treeIndex = {
 	"pet",
 }
 
+local RAID_BOSS_LEVELS = {
+	[469] = 63, -- Blackwing Lair
+	[409] = 63, -- Molten Core
+	[509] = 63, -- Ruins of Ahn'Qiraj
+	[531] = 63, -- Temple of Ahn'Qiraj
+	
+	[564] = 73, -- Black Temple
+	[565] = 73, -- Gruul's Lair
+	[534] = 73, -- Hyjal Summit
+	[532] = 73, -- Karazhan
+	[544] = 73, -- Magtheridon's Lair
+	[548] = 73, -- Serpentshrine Cavern
+	[580] = 73, -- Sunwell Plateau
+	[550] = 73, -- The Eye
+	
+	[631] = 83, -- Icecrown Citadel
+	[533] = 83, -- Naxxramas
+	[249] = 83, -- Onyxia's Lair
+	[616] = 83, -- The Eye of Eternity
+	[615] = 83, -- The Obsidian Sanctum
+	[724] = 83, -- The Ruby Sanctum
+	[649] = 83, -- Trial of the Crusader
+	[603] = 83, -- Ulduar
+	[624] = 83, -- Vault of Archavon
+	
+	[757] = 88, -- Baradin Hold
+	[669] = 88, -- Blackwing Descent
+	[967] = 88, -- Dragon Soul
+	[720] = 88, -- Firelands
+	[671] = 88, -- The Bastion of Twilight
+	[754] = 88, -- Throne of the Four Winds
+	
+	[1009] = 93, -- Heart of Fear
+	[1008] = 93, -- Mogu'shan Vaults
+	[1136] = 93, -- Siege of Orgrimmar
+	[996]  = 93, -- Terrace of Endless Spring
+	[1098] = 93, -- Throne of Thunder
+}
+
+local bossLevel
+
 -- guardian type pets whose damage we may want to register
 local classPets = {
 	[89] = true, -- Infernal
@@ -439,6 +480,7 @@ function Critline:OnInitialize()
 	percharDB.RegisterCallback(self, "OnProfileReset", "LoadPerCharSettings")
 	
 	self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+	self:RegisterEvent("PLAYER_ENTERING_WORLD")
 	
 	spellMappings = db.global.spellMappings
 	tooltipMappings = db.global.tooltipMappings
@@ -677,7 +719,9 @@ function Critline:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, 
 	end
 end
 
-function Critline:UNIT_LEVEL(unit)
+function Critline:PLAYER_ENTERING_WORLD()
+	local name, instanceType, difficultyID, difficultyName, maxPlayers, dynamicDifficulty, isDynamic, instanceMapID = GetInstanceInfo()
+	bossLevel = RAID_BOSS_LEVELS[instanceMapID] or -1
 end
 
 function Critline:IsMyPet(flags, guid)
@@ -706,14 +750,14 @@ function Critline:GetLevelFromGUID(destGUID)
 	tooltip:SetOwner(UIParent, "ANCHOR_NONE")
 	tooltip:SetHyperlink("unit:"..destGUID)
 	
-	local level = -1
+	local level = bossLevel
 	
 	for i = 1, tooltip:NumLines() do
 		local text = _G["CritlineTooltipTextLeft"..i]:GetText()
 		for i, v in ipairs(levelStrings) do
 			local level = text and text:match(v)
 			if level then
-				level = tonumber(level) or -1
+				level = tonumber(level) or bossLevel
 				levelCache[destGUID] = level
 				return level
 			end

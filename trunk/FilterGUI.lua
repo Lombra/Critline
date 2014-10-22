@@ -67,7 +67,13 @@ do
 			max = 10,
 			step = 1,
 			minText = OFF,
-		}
+		},
+		{
+			type = "CheckButton",
+			text = L["Ignore boss creatures outside raids"],
+			tooltip = L["If level difference between you and the target is greater than this setting, records will not be registered."],
+			key = "ignoreOutdoorBosses",
+		},
 	}
 
 	filters.config:CreateOptions(options)

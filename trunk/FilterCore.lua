@@ -386,7 +386,8 @@ local defaults = {
 		ignoreAuraFilter = false,
 		suppressMC = true,
 		dontFilterMagic = false,
-		levelFilter = -1,
+		levelFilter = 1,
+		ignoreOutdoorBosses = true,
 	},
 	global = {
 		include = {},
@@ -585,6 +586,11 @@ function filters:SpellPassesFilters(tree, spellName, spellID, isPeriodic, destGU
 	
 	if self:IsIgnoredTarget(destGUID) and not self.profile.ignoreAuraFilter then
 		debugTarget(destGUID, destName, "Affected by filtered auras")
+		return
+	end
+	
+	if targetLevel == -1 and self.profile.ignoreOutdoorBosses then
+		debugTarget(destGUID, destName, "Target is a boss outside of a raid.")
 		return
 	end
 	
