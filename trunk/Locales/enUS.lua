@@ -98,11 +98,10 @@ L["Only known spells"] = true
 L["Enable to ignore spells that are not in your (or your pet's) spell book."] = true
 L["Suppress mind control"] = true
 L["Suppress all records while mind controlled."] = true
-L["Don't filter magic"] = true
-L["Enable to let magical damage ignore the level filter."] = true
 L["Level filter"] = true
 L["If level difference between you and the target is greater than this setting, records will not be registered."] = true
-L["Ignore boss creatures outside raids"] = true
+L["Ignore outdoor bosses"] = true
+L["Ignore damage dealt to boss level creatures outside of raid instances."] = true
 
 -- splash
 L["Splash frame"] = true

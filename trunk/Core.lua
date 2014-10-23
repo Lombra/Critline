@@ -120,19 +120,19 @@ local spellTextureCache = {
 }
 
 local swingDamage = function(amount, _, school, resisted, _, _, critical)
-	return AUTO_ATTACK_ID, AUTO_ATTACK, amount, resisted, critical, school
+	return AUTO_ATTACK_ID, AUTO_ATTACK, amount, resisted, critical
 end
 
 local spellDamage = function(spellID, spellName, _, amount, _, school, resisted, _, _, critical)
-	return spellID, spellName, amount, resisted, critical, school
+	return spellID, spellName, amount, resisted, critical
 end
 
 local healing = function(spellID, spellName, _, amount, _, _, critical)
-	return spellID, spellName, amount, 0, critical, 0
+	return spellID, spellName, amount, 0, critical
 end
 
 local absorb = function(spellID, spellName, _, _, amount)
-	return spellID, spellName, amount, 0, critical, 0
+	return spellID, spellName, amount, 0, critical
 end
 
 local combatEvents = {
@@ -578,7 +578,7 @@ function Critline:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, 
 	end
 	
 	-- get the relevants arguments
-	local spellID, spellName, amount, resisted, critical, school = combatEvent(...)
+	local spellID, spellName, amount, resisted, critical = combatEvent(...)
 	
 	local rawID = spellID
 	local cachedID = spellIDCache[spellID]
@@ -639,7 +639,7 @@ function Critline:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, 
 	local targetLevel = self:GetLevelFromGUID(destGUID)
 	local passed, isFiltered
 	if self.filters then
-		passed, isFiltered = self.filters:SpellPassesFilters(tree, spellName, spellID, isPeriodic, destGUID, destName, school, targetLevel, rawID)
+		passed, isFiltered = self.filters:SpellPassesFilters(tree, spellName, spellID, isPeriodic, destGUID, destName, targetLevel, rawID)
 		if not passed then
 			return
 		end

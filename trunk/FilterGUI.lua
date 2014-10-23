@@ -48,12 +48,6 @@ do
 			key = "suppressMC",
 		},
 		{
-			type = "CheckButton",
-			text = L["Don't filter magic"],
-			tooltip = L["Enable to let magical damage ignore the level filter."],
-			key = "dontFilterMagic",
-		},
-		{
 			type = "Slider",
 			text = L["Level filter"],
 			tooltip = L["If level difference between you and the target is greater than this setting, records will not be registered."],
@@ -70,8 +64,8 @@ do
 		},
 		{
 			type = "CheckButton",
-			text = L["Ignore boss creatures outside raids"],
-			tooltip = L["If level difference between you and the target is greater than this setting, records will not be registered."],
+			text = L["Ignore outdoor bosses"],
+			tooltip = L["Ignore damage dealt to boss level creatures outside of raid instances."],
 			key = "ignoreOutdoorBosses",
 		},
 	}

@@ -385,7 +385,6 @@ local defaults = {
 		ignoreMobFilter = false,
 		ignoreAuraFilter = false,
 		suppressMC = true,
-		dontFilterMagic = false,
 		levelFilter = 1,
 		ignoreOutdoorBosses = true,
 	},
@@ -558,7 +557,7 @@ local function debugTarget(guid, name, reason)
 end
 
 -- check if a spell passes the filter settings
-function filters:SpellPassesFilters(tree, spellName, spellID, isPeriodic, destGUID, destName, school, targetLevel, rawID)
+function filters:SpellPassesFilters(tree, spellName, spellID, isPeriodic, destGUID, destName, targetLevel, rawID)
 	local isPet = tree == "pet"
 	
 	if excludedSpells[rawID] or excludedSpells[spellName] then
@@ -599,10 +598,9 @@ function filters:SpellPassesFilters(tree, spellName, spellID, isPeriodic, destGU
 		levelDiff = (UnitLevel("player") - targetLevel)
 	end
 	
-	-- ignore level adjustment if magic damage and the setting is enabled
-	if not isHeal and (self.profile.levelFilter >= 0) and (self.profile.levelFilter < levelDiff) and (school == 1 or not self.profile.dontFilterMagic) then
+	if not isHeal and (self.profile.levelFilter >= 0) and (self.profile.levelFilter < levelDiff) then
 		-- target level is too low to pass level filter
-		debugTarget(destGUID, destName, format("Too low level (%d) and spell school is filtered", targetLevel))
+		debugTarget(destGUID, destName, format("Too low level (%d)", targetLevel))
 		return
 	end
 	

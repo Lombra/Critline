@@ -1,3 +1,9 @@
+4.6.2
+- Update ToC interface version for aura monitor.
+- Boss level creatures inside of raid instances are now treated as their true level. (exp cap + 3)
+- Added option to ignore boss creatures outside of raids. Defaults to enabled.
+- Removed option to avoid filter magical spells on low level targets, as it's hardly useful any longer.
+
 4.6.1
 - Updated for 6.0.
 
