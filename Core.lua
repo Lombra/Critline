@@ -94,6 +94,9 @@ local RAID_BOSS_LEVELS = {
 	[1136] = 93, -- Siege of Orgrimmar
 	[996]  = 93, -- Terrace of Endless Spring
 	[1098] = 93, -- Throne of Thunder
+	
+	[1228] = 103, -- Highmaul
+	[1205] = 103, -- Blackrock Foundry
 }
 
 local bossLevel

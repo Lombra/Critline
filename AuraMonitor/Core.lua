@@ -235,9 +235,7 @@ end
 local search = Critline:CreateEditbox(frame, true)
 search:SetPoint("TOPLEFT", scopeFilter, "BOTTOMLEFT", 8, -5)
 search:SetPoint("TOPRIGHT", scopeFilter, "BOTTOMRIGHT", 0, -5)
-search:SetScript("OnTextChanged", function() frame:Update() end)
-search:SetScript("OnEscapePressed", search.ClearFocus)
-search:SetScript("OnEnterPressed", search.ClearFocus)
+search:HookScript("OnTextChanged", function() frame:Update() end)
 
 local function onClick(self, spellID, arg2, checked)
 	if checked then
