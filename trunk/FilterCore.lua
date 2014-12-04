@@ -74,6 +74,7 @@ local filteredAuras = {
 	[116864] = true, -- Kafa-Crash
 	[116952] = true, -- Kafa-Crash
 	[117164] = true, -- Kafa Rush
+	[120126] = true, -- Unstable Healing Potion (Mad Alchemist)
 	[121164] = true, -- Orb of Power
 	[121175] = true, -- Orb of Power
 	[121176] = true, -- Orb of Power
@@ -351,6 +352,16 @@ local filteredAuras = {
 	[144210] = true, -- Death From Above (Siegecrafter Blackfuse)
 	
 	[147554] = true, -- Blood of Y'Shaarj
+	
+	[166357] = true, -- Ogreblood (Spires of Arak)
+	[169281] = true, -- Power Geode
+	[174935] = true, -- Acid Slagged!
+	[176325] = true, -- Timeless Pact
+	[177847] = true, -- Rally! (Garrison invasion)
+	-- Everbloom
+	[164275] = true, -- Brittle Bark (Witherbark)
+	-- Shadowmoon Burial Grounds
+	[153033] = true, -- Returned Soul (Nhallish)
 }
 
 local mt = {

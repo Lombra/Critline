@@ -1,3 +1,8 @@
+4.6.3
+- Set Highmaul and Blackrock Foundry bosses to level 103 so they can be properly registered.
+- Added a bunch of WoD filtered auras.
+- Fix visual bug in aura monitor search box.
+
 4.6.2
 - Update ToC interface version for aura monitor.
 - Boss level creatures inside of raid instances are now treated as their true level. (exp cap + 3)
