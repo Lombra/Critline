@@ -1,3 +1,7 @@
+4.6.4
+- Fixed adding targets to mob filter.
+- Added various filtered auras.
+
 4.6.3
 - Set Highmaul and Blackrock Foundry bosses to level 103 so they can be properly registered.
 - Added a bunch of WoD filtered auras.

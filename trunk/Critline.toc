@@ -1,4 +1,4 @@
-## Interface: 60000
+## Interface: 60100
 ## Title: Critline
 ## Version: @project-version@
 ## Notes: Saves your normal and critical records and flashes a message if you break the record.

@@ -353,15 +353,29 @@ local filteredAuras = {
 	
 	[147554] = true, -- Blood of Y'Shaarj
 	
+	[138796] = true, -- Charge
+	
+	[157954] = true, -- Ogron Be-Gone
+	[158611] = true, -- Radiant Light
+	[164015] = true, -- Beatface's Bloodthirst
 	[166357] = true, -- Ogreblood (Spires of Arak)
 	[169281] = true, -- Power Geode
+	[171855] = true, -- Rally! (Garrison invasion)
 	[174935] = true, -- Acid Slagged!
 	[176325] = true, -- Timeless Pact
+	[176504] = true, -- Mutagen
+	[176850] = true, -- Hearty Guava
+	[177481] = true, -- Petrified
 	[177847] = true, -- Rally! (Garrison invasion)
+	[177848] = true, -- Rally! (Garrison invasion)
 	-- Everbloom
 	[164275] = true, -- Brittle Bark (Witherbark)
 	-- Shadowmoon Burial Grounds
 	[153033] = true, -- Returned Soul (Nhallish)
+	-- Highmaul
+	[163130] = true, -- Inflamed
+	[163366] = true, -- Crowd Favorite
+	[165223] = true, -- Burning Infusion
 }
 
 local mt = {
@@ -721,9 +735,17 @@ function filters:IsVulnerableTarget(guid)
 end
 
 function filters:IsFilteredTarget(targetName, guid)
-	-- GUID is provided if the function was called from the combat event handler
-	local _, _, _, _, _, npcID = strsplit(":", guid)
-	return (guid and not self.profile.ignoreMobFilter and specialMobs[npcID]) or customFilteredMobs[targetName]
+	if customFilteredMobs[targetName] then
+		return true
+	end
+	if guid then
+		-- GUID is provided if the function was called from the combat event handler
+		local _, _, _, _, _, npcID = strsplit(":", guid)
+		if not self.profile.ignoreMobFilter then
+			return specialMobs[npcID]
+		end
+	end
+	return false
 end
 
 function filters:IsFilteredAura(spellID)
