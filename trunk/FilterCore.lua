@@ -368,6 +368,10 @@ local filteredAuras = {
 	[177481] = true, -- Petrified
 	[177847] = true, -- Rally! (Garrison invasion)
 	[177848] = true, -- Rally! (Garrison invasion)
+	-- Tanaan Jungle
+	[182367] = true, -- Reckless Power
+	[182860] = true, -- Rage of Blood
+	[188520] = true, -- Fel Sludge
 	-- Everbloom
 	[164275] = true, -- Brittle Bark (Witherbark)
 	-- Shadowmoon Burial Grounds
