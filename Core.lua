@@ -97,6 +97,7 @@ local RAID_BOSS_LEVELS = {
 	
 	[1228] = 103, -- Highmaul
 	[1205] = 103, -- Blackrock Foundry
+	[1448] = 103, -- Hellfire Citadel
 }
 
 local bossLevel
