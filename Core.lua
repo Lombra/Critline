@@ -807,7 +807,7 @@ function Critline:NewRecord(tree, spellID, spellName, periodic, amount, critical
 	end
 	
 	if self.db.profile.screenshot then 
-		TakeScreenshot() 
+		Screenshot() 
 	end
 	
 	PlaySoundFile(LSM:Fetch("sound", self.db.profile.sound))

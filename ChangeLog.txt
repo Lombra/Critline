@@ -1,3 +1,6 @@
+4.6.6
+- Fixed screenshot feature.
+
 4.6.5
 - Added Hellfire Citadel NPC level.
 - Added various filtered auras from Tanaan Jungle.
