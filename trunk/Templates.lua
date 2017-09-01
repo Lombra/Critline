@@ -110,18 +110,18 @@ do	-- tab interface
 	end
 	
 	local function onClick(self)
-		PlaySound("igMainMenuOptionCheckBoxOn")
+		PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
 		selectTab(self.container, self:GetID())
 	end
 	
 	local function onEnable(self)
 		self:SetHeight(16)
-		self.bg:SetTexture(0.7, 0.7, 0.7)
+		self.bg:SetColorTexture(0.7, 0.7, 0.7)
 	end
 	
 	local function onDisable(self)
 		self:SetHeight(20)
-		self.bg:SetTexture(0.3, 0.3, 0.3)
+		self.bg:SetColorTexture(0.3, 0.3, 0.3)
 	end
 	
 	local function createTab(frame)
@@ -151,13 +151,13 @@ do	-- tab interface
 		frame.tabs[index] = tab
 		
 		local bg = tab:CreateTexture(nil, "BORDER")
-		bg:SetTexture(0.7, 0.7, 0.7)
+		bg:SetColorTexture(0.7, 0.7, 0.7)
 		bg:SetBlendMode("MOD")
 		bg:SetAllPoints()
 		tab.bg = bg
 
 		local border = tab:CreateTexture(nil, "BORDER", nil, -1)
-		border:SetTexture(0.5, 0.5, 0.5, 0.3)
+		border:SetColorTexture(0.5, 0.5, 0.5, 0.3)
 		border:SetPoint("TOPLEFT", -1, 1)
 		border:SetPoint("BOTTOMRIGHT", 1, 0)
 		
@@ -172,12 +172,12 @@ do	-- tab interface
 		local frame = CreateFrame("Frame", nil, parent)
 		
 		local bg = frame:CreateTexture(nil, "BORDER")
-		bg:SetTexture(0.3, 0.3, 0.3)
+		bg:SetColorTexture(0.3, 0.3, 0.3)
 		bg:SetBlendMode("MOD")
 		bg:SetAllPoints()
 
 		local border = frame:CreateTexture(nil, "BORDER", nil, -1)
-		border:SetTexture(0.5, 0.5, 0.5, 0.3)
+		border:SetColorTexture(0.5, 0.5, 0.5, 0.3)
 		border:SetPoint("TOPLEFT", bg, -1, 1)
 		border:SetPoint("BOTTOMRIGHT", bg, 1, -1)
 

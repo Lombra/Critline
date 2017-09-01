@@ -54,7 +54,7 @@ local function onClick(self)
 	if UIDROPDOWNMENU_MENU_VALUE ~= self.data then
 		dropdown:CloseMenus()
 	end
-	PlaySound("igMainMenuOptionCheckBoxOn")
+	PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
 	dropdown:Toggle(self.data, self, 0, 0, spellOptions)
 end
 
