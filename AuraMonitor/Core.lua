@@ -99,7 +99,7 @@ local filters = {
 
 local function onClick(self)
 	self.menu:Toggle()
-	PlaySound("igMainMenuOptionCheckBoxOn")
+	PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
 end
 
 local function createMenuButton()
@@ -273,7 +273,7 @@ local function onClick(self)
 		menu:CloseMenus()
 	end
 	menu:Toggle(self.spellID, self)
-	PlaySound("igMainMenuOptionCheckBoxOn")
+	PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
 end
 
 local function onEnter(self)

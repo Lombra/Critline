@@ -100,7 +100,10 @@ local RAID_BOSS_LEVELS = {
 	[1448] = 103, -- Hellfire Citadel
 	
 	[1520] = 113, -- The Emerald Nightmare
+	[1648] = 113, -- Trial of Valor
 	[1530] = 113, -- The Nighthold
+	[1676] = 113, -- Tomb of Sargeras
+	[1712] = 113, -- Antorus, the Burning Throne
 }
 
 local bossLevel
