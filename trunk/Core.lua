@@ -598,7 +598,7 @@ function Critline:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, 
 		local spellLink = GetSpellLink(spellName)
 		if spellLink then
 			local id = tonumber(spellLink:match("spell:(%d+)"))
-			if IsPlayerSpell(id) then
+			if id and IsPlayerSpell(id) then
 				spellIDCache[spellID] = id
 				spellID = id
 			end
