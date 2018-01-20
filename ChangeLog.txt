@@ -1,3 +1,6 @@
+4.6.9
+- Fixed error in patch 7.3.5.
+
 4.6.8
 - Added Trial of Valor, Tomb of Sargeras and Antorus NPC levels.
 - Updated for 7.3 (and some older) API changes.
