@@ -10,6 +10,6 @@ externals:
     Libs/CallbackHandler-1.0: https://repos.wowace.com/wow/ace3/trunk/CallbackHandler-1.0
     Libs/AceDB-3.0: https://repos.wowace.com/wow/ace3/trunk/AceDB-3.0
     Libs/AceLocale-3.0: https://repos.wowace.com/wow/ace3/trunk/AceLocale-3.0
-    Libs/LibDualSpec-1.0: https://github.com/AdiAddons/LibDualSpec-1.0.git/trunk
+    Libs/LibDualSpec-1.0: https://github.com/AdiAddons/LibDualSpec-1.0.git
     Libs/LibSharedMedia-3.0: https://repos.wowace.com/wow/libsharedmedia-3-0/trunk/LibSharedMedia-3.0
     Libs/Libra: https://repos.wowace.com/wow/libra/trunk/Libra
