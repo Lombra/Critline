@@ -112,7 +112,14 @@ delete:SetScript("OnClick", function(self)
 	scrollFrame.selected = nil
 	scrollFrame:Update()
 	self:Disable()
-	addon:Message(L["%s removed from %s."]:format(GetSpellInfo(selection) or selection, self.filterName))
+	if DoesSpellExist(selection) then
+		local spell = Spell:CreateFromSpellID(selection)
+		spell:ContinueOnSpellLoad(function()
+			addon:Message(L["%s removed from %s."]:format(GetSpellInfo(selection) or selection, self.filterName))
+		end)
+	else
+		addon:Message(L["%s removed from %s."]:format(selection, self.filterName))
+	end
 end)
 
 local info = filters.config:CreateFontString(nil, nil, "GameFontNormalSmallLeft")
@@ -215,7 +222,14 @@ scrollFrame.OnButtonShow = function(self, button, entry, selected)
 	end
 	button.value = entry
 	local isSpell = type(entry) == "number"
-	button:SetText(isSpell and GetSpellInfo(entry) or entry)
+	if isSpell and DoesSpellExist(entry) then
+		local spell = Spell:CreateFromSpellID(entry)
+		spell:ContinueOnSpellLoad(function()
+			button:SetText(GetSpellInfo(button.value))
+		end)
+	else
+		button:SetText(isSpell and GetSpellInfo(entry) or entry)
+	end
 	button.icon:SetTexture(GetSpellTexture(entry))
 	button.icon:SetShown(isSpell)
 end
@@ -292,7 +306,7 @@ do	-- filter tabs
 				if not id then
 					addon:Message(L["Invalid input. Please enter a spell ID."])
 					return
-				elseif not GetSpellInfo(id) then
+				elseif not DoesSpellExist(id) then
 					addon:Message(L["Invalid spell ID."])
 					return
 				end
