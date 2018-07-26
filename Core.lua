@@ -1175,15 +1175,16 @@ GameTooltip:HookScript("OnTooltipSetSpell", function(self)
 	
 	self.Critline = true
 	
+	local spellName, spellID = self:GetSpell()
+	
 	if debugging then
-		self:AddLine(format("Spell ID: |cffffffff%d|r", select(3, self:GetSpell())))
+		self:AddLine(format("Spell ID: |cffffffff%d|r", spellID))
 	end
 	
 	if not Critline.db.profile.spellTooltips then
 		return
 	end
 	
-	local spellName, spellID = self:GetSpell()
 	spellID = tooltipMappings[spellID] or spellID
 	
 	local dmg1, dmg2 = funcset.dmg(spellID)
