@@ -1183,7 +1183,7 @@ GameTooltip:HookScript("OnTooltipSetSpell", function(self)
 		return
 	end
 	
-	local spellName, rank, spellID = self:GetSpell()
+	local spellName, spellID = self:GetSpell()
 	spellID = tooltipMappings[spellID] or spellID
 	
 	local dmg1, dmg2 = funcset.dmg(spellID)
