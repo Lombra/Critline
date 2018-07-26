@@ -4,6 +4,7 @@ local NUM_BUTTONS = 8
 local BUTTON_HEIGHT = 32
 
 local band = bit.band
+local CombatLogGetCurrentEventInfo = CombatLogGetCurrentEventInfo
 local CombatLog_Object_IsA = CombatLog_Object_IsA
 local IsSpellKnown = IsSpellKnown
 local UnitAura = UnitAura
@@ -373,7 +374,9 @@ for i, btn in ipairs(scrollFrame.buttons) do
 	end
 end
 
-function frame:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, sourceGUID, sourceName, sourceFlags, sourceFlags2, destGUID, destName, destFlags, destFlags2, spellID, spellName, spellSchool, auraType)
+function frame:COMBAT_LOG_EVENT_UNFILTERED()
+	local timestamp, eventType, hideCaster, sourceGUID, sourceName, sourceFlags, sourceFlags2, destGUID, destName, destFlags, destFlags2,
+		spellID, spellName, spellSchool, auraType = CombatLogGetCurrentEventInfo()
 	if eventType == "SPELL_AURA_APPLIED" or eventType == "SPELL_AURA_REFRESH" then
 		local targetType
 		if CombatLog_Object_IsA(destFlags, COMBATLOG_FILTER_ME) or Critline:IsMyPet(destFlags, destGUID) then
@@ -427,7 +430,7 @@ function frame:ScanAuras()
 	local auras = {}
 	for auraType, filter in pairs(auraTypes) do
 		for i = 1, 40 do
-			local spellName, _, _, _, _, _, _, source, _, _, spellID = UnitAura("player", i, filter)
+			local spellName, _, _, _, _, _, source, _, _, spellID = UnitAura("player", i, filter)
 			if not spellID then break end
 			self:RegisterAura("self", spellID, spellName, auraType, source and UnitName(source), source and UnitGUID(source), UnitName("player"), UnitGUID("player"))
 		end

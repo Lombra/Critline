@@ -20,6 +20,7 @@ local AUTO_ATTACK = GetSpellInfo(AUTO_ATTACK_ID)
 
 -- local references to commonly used functions and variables for faster access
 local floor, band, tonumber, format = floor, bit.band, tonumber, format
+local CombatLogGetCurrentEventInfo = CombatLogGetCurrentEventInfo
 local CombatLog_Object_IsA = CombatLog_Object_IsA
 local HasPetUI = HasPetUI
 local GetSpellInfo = GetSpellInfo
@@ -552,7 +553,9 @@ local healEvents = {
 	SPELL_AURA_REFRESH = true,
 }
 
-function Critline:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, sourceGUID, sourceName, sourceFlags, sourceFlags2, destGUID, destName, destFlags, destFlags2, ...)
+function Critline:COMBAT_LOG_EVENT_UNFILTERED()
+	local timestamp, eventType, hideCaster, sourceGUID, sourceName, sourceFlags, sourceFlags2, destGUID, destName, destFlags, destFlags2,
+		arg12, arg13, arg14, arg15, arg16, arg17, arg18, arg19, arg20, arg21 = CombatLogGetCurrentEventInfo()
 	local isPet
 	
 	-- if sourceGUID is not us or our pet, we leave
@@ -588,7 +591,7 @@ function Critline:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, 
 	end
 	
 	-- get the relevants arguments
-	local spellID, spellName, amount, resisted, critical = combatEvent(...)
+	local spellID, spellName, amount, resisted, critical = combatEvent(arg12, arg13, arg14, arg15, arg16, arg17, arg18, arg19, arg20, arg21)
 	
 	local rawID = spellID
 	local cachedID = spellIDCache[spellID]
@@ -848,7 +851,7 @@ function Critline:BuildSpellArray(tree)
 		for i, v in pairs(spell) do
 			array[#array + 1] = {
 				id = spellID,
-				name = self:GetSpellName(spellID),
+				name = self:GetSpellName(spellID) or tostring(spellID),
 				filtered = v.filtered,
 				periodic = i,
 				normal = v.normal,

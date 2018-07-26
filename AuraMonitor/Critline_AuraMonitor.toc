@@ -1,4 +1,4 @@
-## Interface: 70300
+## Interface: 80000
 ## Title: Critline: AuraMonitor
 ## Version: @project-version@
 ## Notes: Aura monitoring module for Critline.

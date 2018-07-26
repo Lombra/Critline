@@ -2,6 +2,7 @@ local addonName, addon = ...
 local L = addon.L
 
 local format = format
+local CombatLogGetCurrentEventInfo = CombatLogGetCurrentEventInfo
 local CombatLog_Object_IsA = CombatLog_Object_IsA
 local IsPlayerSpell = IsPlayerSpell
 local IsSpellKnown = IsSpellKnown
@@ -452,7 +453,10 @@ function filters:OnInitialize()
 	for aura in pairs(filteredAuras) do
 		if customFilteredAuras[aura] then
 			customFilteredAuras[aura] = nil
-			addon:Message(format("%s has been added to default filters and was removed from custom filters.", GetSpellInfo(aura)))
+			local spell = Spell:CreateFromSpellID(aura)
+			spell:ContinueOnSpellLoad(function()
+				addon:Message(format("%s has been added to default filters and was removed from custom filters.", GetSpellInfo(aura)))
+			end)
 		end
 	end
 	
@@ -472,7 +476,9 @@ function filters:PLAYER_LOGIN()
 	self:CheckPlayerControl()
 end
 
-function filters:COMBAT_LOG_EVENT_UNFILTERED(timestamp, eventType, hideCaster, sourceGUID, sourceName, sourceFlags, sourceFlags2, destGUID, destName, destFlags, destFlags2, spellID, spellName)
+function filters:COMBAT_LOG_EVENT_UNFILTERED()
+	local _, eventType, _, sourceGUID, sourceName, sourceFlags, _, destGUID, destName, destFlags, _, spellID, spellName = CombatLogGetCurrentEventInfo()
+	
 	if (eventType == "SPELL_AURA_REMOVED" or eventType == "SPELL_AURA_BROKEN" or eventType == "SPELL_AURA_BROKEN_SPELL" or eventType == "SPELL_AURA_STOLEN") then
 		if self:IsFilteredAura(spellID) and rawget(corruptTargets, destGUID) and corruptTargets[destGUID][spellID] then
 			corruptTargets[destGUID][spellID] = nil
@@ -557,7 +563,7 @@ function filters:ScanAuras(unit)
 	
 	for auraType, filter in pairs(auraTypes) do
 		for i = 1, 40 do
-			local spellName, _, _, _, _, _, _, source, _, _, spellID = UnitAura(unit, i, filter)
+			local spellName, _, _, _, _, _, source, _, _, spellID = UnitAura(unit, i, filter)
 			if not spellID then break end
 			self:UnregisterEvent("UNIT_NAME_UPDATE")
 			if self:IsFilteredAura(spellID) then
