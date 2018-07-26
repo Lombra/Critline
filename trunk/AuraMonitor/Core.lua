@@ -370,7 +370,7 @@ for i, btn in ipairs(scrollFrame.buttons) do
 	if i % 2 == 0 then
 		local bg = btn:CreateTexture(nil, "BACKGROUND")
 		bg:SetAllPoints()
-		bg:SetTexture(1, 1, 1, 0.1)
+		bg:SetColorTexture(1, 1, 1, 0.1)
 	end
 end
 
