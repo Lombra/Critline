@@ -1,3 +1,6 @@
+4.6.11
+- Fixed spell tooltip record info.
+
 4.6.10
 - Mostly update for patch 8.0.
 
