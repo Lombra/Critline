@@ -1,3 +1,7 @@
+4.6.12
+- Fixed sound error when using the provided Level up effect.
+- ToC bump.
+
 4.6.11
 - Fixed spell tooltip record info.
 

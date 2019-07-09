@@ -230,7 +230,7 @@ local topRecords = {
 local spellArrays = {dmg = {}, heal = {}, pet = {}}
 
 
-LSM:Register("sound", "Level up", [[Sound\Interface\LevelUp.ogg]])
+LSM:Register("sound", "Level up", 567431) -- Sound\Interface\LevelUp.ogg
 
 
 Critline.SlashCmdHandlers = {
