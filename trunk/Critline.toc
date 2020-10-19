@@ -1,8 +1,9 @@
-## Interface: 80200
+## Interface: 90001
 ## Title: Critline
 ## Version: @project-version@
 ## Notes: Saves your normal and critical records and flashes a message if you break the record.
 ## Author: Lombra
+
 ## SavedVariables: CritlineDB
 ## SavedVariablesPerCharacter: CritlinePerCharDB
 

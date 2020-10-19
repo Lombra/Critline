@@ -8,7 +8,7 @@ local FRAME_HEIGHT_WIDE = 16
 
 local height = FRAME_HEIGHT
 
-local Display = Critline:NewModule("Display", CreateFrame("Frame", nil, UIParent))
+local Display = Critline:NewModule("Display", CreateFrame("Frame", nil, UIParent, "BackdropTemplate"))
 Display:SetMovable(true)
 Display:SetBackdrop({
 	edgeFile = [[Interface\Tooltips\UI-Tooltip-Border]],
@@ -49,7 +49,7 @@ local backdrop = {
 local trees = {}
 
 for k, tree in pairs(Critline.trees) do
-	local frame = CreateFrame("Frame", nil, Display)
+	local frame = CreateFrame("Frame", nil, Display, "BackdropTemplate")
 	frame:SetFrameStrata("LOW")
 	frame:EnableMouse(true)
 	frame:RegisterForDrag("LeftButton")
