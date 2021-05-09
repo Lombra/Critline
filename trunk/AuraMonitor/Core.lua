@@ -22,7 +22,7 @@ local lastFight = {}
 -- name of current instance
 local currentInstance = "n/a"
 
-local frame = CreateFrame("Frame", nil, UIParent)
+local frame = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
 frame:SetFrameStrata("DIALOG")
 frame:EnableMouse(true)
 frame:SetSize(440, 88 + NUM_BUTTONS * BUTTON_HEIGHT)
