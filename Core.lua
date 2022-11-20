@@ -450,6 +450,7 @@ local treeDefaults = {
 	PRIEST	= {heal = true},
 	SHAMAN	= {heal = true},
 	WARLOCK	= {pet  = true},
+	EVOKER  = {heal = true},
 }
 
 function Critline:OnInitialize()
@@ -1168,7 +1169,7 @@ local function addLine(header, nonTick, tick)
 	Critline:AddTooltipLine(tick)
 end
 
-GameTooltip:HookScript("OnTooltipSetSpell", function(self)
+TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Spell, function(self)
 	if self.Critline then
 		return
 	end
