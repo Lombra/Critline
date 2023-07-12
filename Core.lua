@@ -250,9 +250,6 @@ end
 SLASH_CRITLINE1 = "/critline"
 SLASH_CRITLINE2 = "/cl"
 
--- tooltip for level scanning
-local tooltip = CreateFrame("GameTooltip", "CritlineTooltip", nil, "GameTooltipTemplate")
-
 
 local config = Critline:CreateOptionsFrame(addonName)
 Critline.config = config
@@ -760,13 +757,12 @@ function Critline:GetLevelFromGUID(destGUID)
 		return levelCache[destGUID]
 	end
 	
-	tooltip:SetOwner(UIParent, "ANCHOR_NONE")
-	tooltip:SetHyperlink("unit:"..destGUID)
-	
+	local tooltipData = C_TooltipInfo.GetHyperlink("unit:"..destGUID)
+
 	local level = bossLevel
 	
-	for i = 1, tooltip:NumLines() do
-		local text = _G["CritlineTooltipTextLeft"..i]:GetText()
+	for i, line in ipairs(tooltipData.lines) do
+		local text = line.leftText
 		for i, v in ipairs(levelStrings) do
 			local level = text and text:match(v)
 			if level then
@@ -1168,7 +1164,11 @@ local function addLine(header, nonTick, tick)
 	Critline:AddTooltipLine(tick)
 end
 
-GameTooltip:HookScript("OnTooltipSetSpell", function(self)
+TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Spell, function(self)
+	if self ~= GameTooltip then
+		return
+	end
+	
 	if self.Critline then
 		return
 	end
