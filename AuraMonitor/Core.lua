@@ -375,8 +375,7 @@ for i, btn in ipairs(scrollFrame.buttons) do
 end
 
 function frame:COMBAT_LOG_EVENT_UNFILTERED()
-	local timestamp, eventType, hideCaster, sourceGUID, sourceName, sourceFlags, sourceFlags2, destGUID, destName, destFlags, destFlags2,
-		spellID, spellName, spellSchool, auraType = CombatLogGetCurrentEventInfo()
+	local _, eventType, _, sourceGUID, sourceName, _, _, destGUID, destName, destFlags, _, spellID, spellName, spellSchool, auraType = CombatLogGetCurrentEventInfo()
 	if eventType == "SPELL_AURA_APPLIED" or eventType == "SPELL_AURA_REFRESH" then
 		local targetType
 		if CombatLog_Object_IsA(destFlags, COMBATLOG_FILTER_ME) or Critline:IsMyPet(destFlags, destGUID) then

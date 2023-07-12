@@ -745,10 +745,8 @@ local levelCache = {}
 
 local levelStrings = {
 	TOOLTIP_UNIT_LEVEL:format("(%d+)"),
-	TOOLTIP_UNIT_LEVEL_CLASS:format("(%d+)", ".+"),
-	TOOLTIP_UNIT_LEVEL_CLASS_TYPE:format("(%d+)", ".+", ".+"),
-	TOOLTIP_UNIT_LEVEL_RACE_CLASS:format("(%d+)", ".+", ".+"),
-	TOOLTIP_UNIT_LEVEL_RACE_CLASS_TYPE:format("(%d+)", ".+", ".+", ".+"),
+	TOOLTIP_UNIT_LEVEL_RACE:format("(%d+)", ".+"),
+	TOOLTIP_UNIT_LEVEL_RACE_TYPE:format("(%d+)", ".+", ".+"),
 	TOOLTIP_UNIT_LEVEL_TYPE:format("(%d+)", ".+"),
 }
 
