@@ -5,6 +5,9 @@ move-folders:
 
 enable-nolib-creation: no
 
+ignore:
+  - pkgmeta.yaml
+
 externals:
   Libs/LibStub: https://repos.wowace.com/wow/ace3/trunk/LibStub
   Libs/CallbackHandler-1.0: https://repos.wowace.com/wow/ace3/trunk/CallbackHandler-1.0
