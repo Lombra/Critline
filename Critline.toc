@@ -3,6 +3,8 @@
 ## Version: @project-version@
 ## Notes: Saves your normal and critical records and flashes a message if you break the record.
 ## Author: Lombra
+## X-Curse-Project-ID: 983
+## X-WoWI-ID: 12476
 
 ## SavedVariables: CritlineDB
 ## SavedVariablesPerCharacter: CritlinePerCharDB
