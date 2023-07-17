@@ -100,7 +100,11 @@ do
 			key = "locked",
 			func = function(self, checked)
 				for _, tree in pairs(trees) do
-					tree:RegisterForDrag(not checked and "LeftButton")
+					if checked then
+						tree:RegisterForDrag()
+					else
+						tree:RegisterForDrag("LeftButton")
+					end
 				end
 			end,
 		},
