@@ -1,5 +1,6 @@
 ## Interface: 100105
 ## Title: Critline: AuraMonitor
+## IconTexture: Interface\Icons\Ability_SteelMelee
 ## Version: @project-version@
 ## Notes: Aura monitoring module for Critline.
 ## Author: Lombra
