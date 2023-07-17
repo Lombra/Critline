@@ -789,7 +789,7 @@ function Critline:ToggleDebug()
 end
 
 function Critline:OpenConfig()
-	InterfaceOptionsFrame_OpenToCategory(config)
+	config:Open()
 end
 
 function Critline:NewRecord(tree, spellID, spellName, periodic, amount, critical, prevRecord, isFiltered)
