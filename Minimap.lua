@@ -73,7 +73,11 @@ config:CreateOptions({
 		tooltip = L["Lock minimap button."],
 		key = "locked",
 		func = function(self, checked)
-			minimap:RegisterForDrag(not checked and "LeftButton")
+			if checked then
+				minimap:RegisterForDrag()
+			else
+				minimap:RegisterForDrag("LeftButton")
+			end
 		end,
 	},
 })
