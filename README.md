@@ -15,7 +15,7 @@ This is where you can review and manage all of your registered spells. On its ow
 
 Filters, reset and announce modules are dependent on the spell list module.
 
-This module can be disabled by deleting spellList.lua in your Critline folder.
+This module can be disabled by deleting `SpellList.lua` in your Critline folder.
 
 ### Filters
 
@@ -27,25 +27,25 @@ The module also adds spell filter functionality to the spell list. Enabled spell
 
 This module requires the spell list module.
 
-This module can be disabled by deleting filtersCore.lua and filtersGUI.lua in your Critline folder.
+This module can be disabled by deleting `FilterCore.lua` and `FilterGUI.lua` in your Critline folder.
 
 ### Splash
 
 The splash module, when enabled, will display a message on your screen whenever you break a record. You can choose to use the default style, or have the messages make use of your combat text addon of choice.
 
-This module can be disabled by deleting splash.lua in your Critline folder.
+This module can be disabled by deleting `Splash.lua` in your Critline folder.
 
 ### Display
 
 The display module allows for easy access to all your records. It will show the normal and crit record of each tree, and when you hover over the frame, it will show you a tooltip with all the records.
 
-This module can be disabled by deleting display.lua in your Critline folder.
+This module can be disabled by deleting `Display.lua` in your Critline folder.
 
 ### Minimap
 
 The minimap module provides easy access to the options. Right click it to show the config frame, and left click it to toggle the display frame.
 
-This module can be disabled by deleting minimap.lua in your Critline folder.
+This module can be disabled by deleting `Minimap.lua` in your Critline folder.
 
 ### Announce
 
@@ -53,7 +53,7 @@ This module adds announcing functionality to the spell list. This allows you to 
 
 This module requires the spell list module.
 
-This module can be disabled by deleting announce.lua in your Critline folder.
+This module can be disabled by deleting `Announce.lua` in your Critline folder.
 
 ### Reset
 
@@ -61,28 +61,28 @@ This module adds reset and revert functionality to the spell list. It lets you p
 
 This module requires the spell list module.
 
-This module can be disabled by deleting reset.lua in your Critline folder.
+This module can be disabled by deleting `Reset.lua` in your Critline folder.
 
 ### Broker
 
 This module provides a DataBroker feed for each tree, that shows the records, much like the display module.
 You can shift click it to insert your top records into the chat, or click it normally to open the config.
 
-This module can be disabled by deleting Broker.lua in your Critline folder.
+This module can be disabled by deleting `Broker.lua` in your Critline folder.
 
 ### Advanced
 
 This module lets you manipulate how data is stored and presented, and is not for the faint of heart!
 With it, you can make spells be regarded as a different spell, sharing its records. You can also have spells appear with a different name or icon, or specify which spell should be presented in a given tooltip. Spell IDs are accepted as the soure spell. Be sure to enable debugging with '/cl debug' to reveal spell IDs in tooltips and debug messages.
 
-This module can be disabled by deleting advanced.lua in your Critline folder.
+This module can be disabled by deleting `Advanced.lua` in your Critline folder.
 
 ### Aura tracker
 
 This module mainly exists for debugging purposes and does not actually affect the addon in any way.
 It registers auras that you and neutral and hostile NPCs have gained, and displays them in a sortable and filterable list. Spell ID and NPC ID of the caster is included.
 
-This module can be disabled by deleting AuraTracker.lua in your Critline folder.
+This module can be disabled by disabling the Critline: AuraMonitor addon.
 
 ### Profiles
 
@@ -92,4 +92,4 @@ The "general" profile contains all other settings. This profile is character spe
 This way you can use the same general settings (such as functionality and appearance) on all your characters, while still using separate spell databases.
 The general and spell profiles are stored separately, and will not collide. For example, you can use the 'Default' profile both for the general and the spell profiles. They are not considered the same. Changes made to the general profile would not affect the spell profile.
 
-This module can be disabled by deleting profiles.lua in your Critline folder. Note that profiles will still be used, you are only disabling the ability to manage them.
+This module can be disabled by deleting `Profiles.lua` in your Critline folder. Note that profiles will still be used, you are only disabling the ability to manage them.
