@@ -103,5 +103,5 @@ function minimap:LoadSettings()
 end
 
 function minimap:Move(angle)
-	self:SetPoint("CENTER", 80 * cos(angle), 80 * sin(angle))
+	self:SetPoint("CENTER", 105 * cos(angle), 105 * sin(angle))
 end
