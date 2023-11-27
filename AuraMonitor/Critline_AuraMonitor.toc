@@ -1,4 +1,4 @@
-## Interface: 100105
+## Interface: 100200
 ## Title: Critline: AuraMonitor
 ## IconTexture: Interface\Icons\Ability_SteelMelee
 ## Version: @project-version@

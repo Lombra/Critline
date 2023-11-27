@@ -250,6 +250,15 @@ end
 SLASH_CRITLINE1 = "/critline"
 SLASH_CRITLINE2 = "/cl"
 
+AddonCompartmentFrame:RegisterAddon({
+	text = "Critline",
+	icon = Critline.trees.dmg.icon,
+	notCheckable = true,
+	func = function()
+		Critline:OpenConfig()
+	end,
+})
+
 
 local config = Critline:CreateOptionsFrame(addonName)
 Critline.config = config
