@@ -24,7 +24,7 @@ local CombatLogGetCurrentEventInfo = CombatLogGetCurrentEventInfo
 local CombatLog_Object_IsA = CombatLog_Object_IsA
 local HasPetUI = HasPetUI
 local GetSpellInfo = GetSpellInfo
-local GetSpellLink = GetSpellLink
+local GetSpellLink = C_Spell and C_Spell.GetSpellLink or GetSpellLink
 local IsPlayerSpell = IsPlayerSpell
 
 local COMBATLOG_FILTER_MINE = COMBATLOG_FILTER_MINE

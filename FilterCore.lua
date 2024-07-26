@@ -6,7 +6,7 @@ local CombatLogGetCurrentEventInfo = CombatLogGetCurrentEventInfo
 local CombatLog_Object_IsA = CombatLog_Object_IsA
 local IsPlayerSpell = IsPlayerSpell
 local IsSpellKnown = IsSpellKnown
-local GetSpellLink = GetSpellLink
+local GetSpellLink = C_Spell and C_Spell.GetSpellLink or GetSpellLink
 local UnitAffectingCombat = UnitAffectingCombat
 local UnitAura = UnitAura
 

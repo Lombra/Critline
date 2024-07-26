@@ -1,6 +1,8 @@
 local addonName, core = ...
 local L = core.L
 
+local GetSpellLink = C_Spell and C_Spell.GetSpellLink or GetSpellLink
+
 local selectedValue = {}
 local reverseList = {}
 
