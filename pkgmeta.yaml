@@ -1,9 +1,5 @@
-package-as: Critline
-
 move-folders:
   Critline/AuraMonitor: Critline_AuraMonitor
-
-enable-nolib-creation: no
 
 ignore:
   - pkgmeta.yaml
