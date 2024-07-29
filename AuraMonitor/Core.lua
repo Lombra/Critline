@@ -7,7 +7,7 @@ local band = bit.band
 local CombatLogGetCurrentEventInfo = CombatLogGetCurrentEventInfo
 local CombatLog_Object_IsA = CombatLog_Object_IsA
 local IsSpellKnown = IsSpellKnown
-local UnitAura = UnitAura
+local GetAuraDataByIndex = C_UnitAuras.GetAuraDataByIndex
 local UnitName = UnitName
 local UnitGUID = UnitGUID
 local IsInInstance = IsInInstance
@@ -177,7 +177,7 @@ do
 			value = targetSort,
 		},
 	}
-	
+
 	sortMethodMenu.menu.initialize = function(self)
 		for i, v in ipairs(menuList) do
 			local info = UIDropDownMenu_CreateInfo()
@@ -200,7 +200,7 @@ do
 		filters[key] = not checked
 		frame:Update()
 	end
-	
+
 	local menu = {
 		BUFF = "Buffs",
 		DEBUFF = "Debuffs",
@@ -218,7 +218,7 @@ do
 		"BUFF",
 		"DEBUFF",
 	}
-	
+
 	filterOptions.menu.initialize = function(self)
 		for i, v in ipairs(menuValues) do
 			local info = UIDropDownMenu_CreateInfo()
@@ -251,13 +251,13 @@ end
 local menu = Critline:CreateDropdown("Menu")
 menu.initialize = function(self)
 	local spellID = UIDROPDOWNMENU_MENU_VALUE
-	
+
 	local info = UIDropDownMenu_CreateInfo()
-	info.text = GetSpellInfo(spellID)
+	info.text = C_Spell.GetSpellName(spellID)
 	info.isTitle = true
 	info.notCheckable = true
 	self:AddButton(info)
-	
+
 	local info = UIDropDownMenu_CreateInfo()
 	info.text = "Filter"
 	info.func = onClick
@@ -292,31 +292,31 @@ local function createButton()
 	btn:SetScript("OnClick", onClick)
 	btn:SetScript("OnEnter", onEnter)
 	btn:SetScript("OnLeave", GameTooltip_Hide)
-	
+
 	local icon = btn:CreateTexture()
 	icon:SetSize(28, 28)
 	icon:SetPoint("LEFT", 2, 0)
 	btn.icon = icon
-	
+
 	local text = btn:CreateFontString(nil, nil, "GameFontNormal")
 	text:SetPoint("BOTTOMLEFT", icon, "RIGHT", 4, 1)
 	text:SetPoint("RIGHT")
 	text:SetJustifyH("LEFT")
 	btn:SetFontString(text)
 	btn.text = text
-	
+
 	local source = btn:CreateFontString(nil, nil, "GameFontHighlightSmall")
 	source:SetPoint("TOPLEFT", icon, "RIGHT", 4, -1)
 	source:SetPoint("RIGHT")
 	source:SetJustifyH("LEFT")
 	btn.source = source
-	
+
 	local target = btn:CreateFontString(nil, nil, "GameFontHighlightSmall")
 	target:SetPoint("TOPRIGHT", btn, "RIGHT", -4, -1)
 	-- target:SetPoint("RIGHT")
 	-- target:SetJustifyH("RIGHT")
 	btn.target = target
-	
+
 	return btn
 end
 
@@ -330,7 +330,7 @@ scrollFrame:SetPoint("RIGHT", -36, 0)
 
 scrollFrame.GetList = function(self)
 	wipe(sortedAuras)
-	
+
 	local n = 0
 	local search = search:GetText():lower()
 	for spellID, v in pairs(currentFilter) do
@@ -346,9 +346,9 @@ scrollFrame.GetList = function(self)
 			sortedAuras[n] = spellID
 		end
 	end
-	
+
 	sort(sortedAuras, sortMethod)
-	
+
 	return sortedAuras
 end
 
@@ -385,7 +385,7 @@ function frame:COMBAT_LOG_EVENT_UNFILTERED()
 			-- and also those of non friendly NPCs
 			targetType = "hostile"
 		end
-		
+
 		if targetType then
 			self:RegisterAura(targetType, spellID, spellName, auraType, sourceName, sourceGUID, destName, destGUID)
 		end
@@ -429,9 +429,10 @@ function frame:ScanAuras()
 	local auras = {}
 	for auraType, filter in pairs(auraTypes) do
 		for i = 1, 40 do
-			local spellName, _, _, _, _, _, source, _, _, spellID = UnitAura("player", i, filter)
-			if not spellID then break end
-			self:RegisterAura("self", spellID, spellName, auraType, source and UnitName(source), source and UnitGUID(source), UnitName("player"), UnitGUID("player"))
+			local auraData = GetAuraDataByIndex("player", i, filter)
+			if not auraData then break end
+			local source = auraData.sourceUnit
+			self:RegisterAura("self", auraData.spellId, auraData.name, auraType, source and UnitName(source), source and UnitGUID(source), UnitName("player"), UnitGUID("player"))
 		end
 	end
 	self:Update()
@@ -455,12 +456,12 @@ end
 
 function frame:RegisterAura(targetType, spellID, spellName, auraType, sourceName, sourceGUID, destName, destGUID)
 	if session[spellID] and (session[spellID].source or not sourceName) or IsSpellKnown(spellID) or IsPlayerSpell(spellID) then
-		return 
+		return
 	end
 
 	local source, sourceType = getUnitInfo(sourceGUID)
 	local dest, destType = getUnitInfo(destGUID)
-	
+
 	local aura = {
 		[targetType] = true,
 		spellName = spellName,
@@ -476,7 +477,7 @@ function frame:RegisterAura(targetType, spellID, spellName, auraType, sourceName
 	if destType then
 		aura[destType] = true
 	end
-	
+
 	lastFight[spellID] = aura
 	if IsInInstance() then
 		instance[spellID] = aura

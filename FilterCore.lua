@@ -6,9 +6,9 @@ local CombatLogGetCurrentEventInfo = CombatLogGetCurrentEventInfo
 local CombatLog_Object_IsA = CombatLog_Object_IsA
 local IsPlayerSpell = IsPlayerSpell
 local IsSpellKnown = IsSpellKnown
-local GetSpellLink = GetSpellLink
+local GetSpellLink = C_Spell.GetSpellLink
 local UnitAffectingCombat = UnitAffectingCombat
-local UnitAura = UnitAura
+local GetAuraDataByIndex = C_UnitAuras.GetAuraDataByIndex
 
 local COMBATLOG_FILTER_ME = COMBATLOG_FILTER_ME
 
@@ -129,18 +129,18 @@ local filteredAuras = {
 		[140434] = true, -- Splitting Headache
 	-- Timelss Isle
 		[147284] = true, -- Xuen's Strength
-	
+
 	-- The Deadmines
 	[90932] = true, -- Ragezone (Defias Blood Wizard)
 	[90933] = true, -- Ragezone (Defias Blood Wizard heroic)
-	
+
 	-- Blackwing Lair
 	[18173] = true,	-- Burning Adrenaline (Vaelastrasz the Corrupt)
-	
+
 	-- Magister's Terrace
 	[44335] = true,	-- Energy Feedback (Vexallus)
 	[44406] = true,	-- Energy Infusion (Vexallus)
-	
+
 	-- Karazhan
 	[30423] = true, -- Nether Beam - Dominance (Netherspite)
 	-- Black Temple
@@ -157,12 +157,12 @@ local filteredAuras = {
 	-- Sunwell Plateau
 	[46287] = true, -- Infernal Defense (Apocalypse Guard)
 	[46474] = true, -- Sacrifice of Anveena (Kil'jaeden)
-	
+
 	-- Azjol-Nerub
 	[59348] = true, -- Infected Wound (Hadronox)
 	-- Ahn'kahet: The Old Kingdom
 	[56648] = true,	-- Potent Fungus (Amanitar)
-	
+
 	-- The Eye of Eternity
 	[55849] = true,	-- Power Spark (Malygos)
 	-- Ulduar
@@ -185,14 +185,14 @@ local filteredAuras = {
 	[66758] = true, -- Staggered Daze (Icehowl)
 	-- Icecrown Citadel
 	[73822] = true, -- Hellscream's Warsong (Icecrown Citadel)
-	[73828] = true, -- Strength of Wrynn (Icecrown Citadel) 
+	[73828] = true, -- Strength of Wrynn (Icecrown Citadel)
 	[69871] = true, -- Plague Stream (Plague Scientist)
 	[70227] = true, -- Empowered Blood (Empowered Orb)
 	[72219] = true, -- Gastric Bloat (Festergut)
 	[70867] = true, -- Essence of the Blood Queen (Blood Queen Lana'thel)
 	[70879] = true, -- Essence of the Blood Queen (Blood Queen Lana'thel, bitten by a player)
 	[71532] = true, -- Essence of the Blood Queen (Blood Queen Lana'thel heroic)
-	
+
 	-- Blackrock Caverns
 	[75846] = true, -- Superheated Quicksilver Armor (Karsh Steelbender) ?
 	[76015] = true, -- Superheated Quicksilver Armor (Karsh Steelbender) ?
@@ -204,7 +204,7 @@ local filteredAuras = {
 	[76415] = true, -- Dizzy (Twilight Enforcer - normal)
 	[90666] = true, -- Dizzy (Twilight Enforcer - heroic)
 	[76693] = true, -- Empowering Twilight (Crimsonborne Warlord)
-	[90707] = true, -- Empowering Twilight 
+	[90707] = true, -- Empowering Twilight
 	[75664] = true, -- Shadow Gale (Erudax) ?
 	-- [91086] = true, -- Shadow Gale (Erudax heroic) -- no event
 	-- Halls of Origination
@@ -228,7 +228,7 @@ local filteredAuras = {
 	[102994] = true, -- Shadow Walk (Illidan Stormrage)
 	[103020] = true, -- Shadow Walk (Illidan Stormrage)
 	[103018] = true, -- Shadow Ambusher (Illidan Stormrage)
-	
+
 	-- Bastion of Twilight
 	[87683] = true, -- Dragon's Vengeance (Halfus Wyrmbreaker)
 	[86622] = true, -- Engulfing Magic (Theralion) ?
@@ -280,7 +280,7 @@ local filteredAuras = {
 	[109619] = true, -- Expose Weakness (Deathwing, Nozdormu - LFR)
 	[109637] = true, -- Expose Weakness (Deathwing, Ysera - LFR)
 	[109728] = true, -- Expose Weakness (Deathwing, Kalecgos - LFR)
-	
+
 	[90385] = true, -- Ragezone
 	-- Shado-Pan Monastery
 	[127576] = true, -- Parting Smoke (Sha of Violence)
@@ -351,11 +351,11 @@ local filteredAuras = {
 	[147906] = true, -- Wrecking Ball (Starved Yeti)
 	[147877] = true, -- Adrenaline Bomb (Siegecrafter Blackfuse trash)
 	[144210] = true, -- Death From Above (Siegecrafter Blackfuse)
-	
+
 	[147554] = true, -- Blood of Y'Shaarj
-	
+
 	[138796] = true, -- Charge
-	
+
 	[157954] = true, -- Ogron Be-Gone
 	[158611] = true, -- Radiant Light
 	[164015] = true, -- Beatface's Bloodthirst
@@ -432,10 +432,10 @@ addon.filters = filters
 function filters:OnInitialize()
 	self.db = addon.db:RegisterNamespace("filters", defaults)
 	addon.RegisterCallback(self, "SettingsLoaded", "LoadSettings")
-	
+
 	self.config:SetDatabase(self.db, true)
 	self.config:SetHandler(self)
-	
+
 	self:RegisterEvent("PLAYER_LOGIN")
 	self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
 	self:RegisterEvent("UNIT_AURA")
@@ -443,23 +443,23 @@ function filters:OnInitialize()
 	self:RegisterEvent("PLAYER_REGEN_DISABLED")
 	self:RegisterEvent("PLAYER_CONTROL_LOST")
 	self:RegisterEvent("PLAYER_CONTROL_GAINED")
-	
+
 	local global = self.db.global
 	customPlayerSpells = global.include
 	excludedSpells = global.exclude
 	customFilteredAuras = global.auras
 	customFilteredMobs = global.mobs
-	
+
 	for aura in pairs(filteredAuras) do
 		if customFilteredAuras[aura] then
 			customFilteredAuras[aura] = nil
 			local spell = Spell:CreateFromSpellID(aura)
 			spell:ContinueOnSpellLoad(function()
-				addon:Message(format("%s has been added to default filters and was removed from custom filters.", GetSpellInfo(aura)))
+				addon:Message(format("%s has been added to default filters and was removed from custom filters.", C_Spell.GetSpellName(aura)))
 			end)
 		end
 	end
-	
+
 	self:LoadSettings()
 end
 
@@ -478,14 +478,14 @@ end
 
 function filters:COMBAT_LOG_EVENT_UNFILTERED()
 	local _, eventType, _, sourceGUID, sourceName, sourceFlags, _, destGUID, destName, destFlags, _, spellID, spellName = CombatLogGetCurrentEventInfo()
-	
+
 	if (eventType == "SPELL_AURA_REMOVED" or eventType == "SPELL_AURA_BROKEN" or eventType == "SPELL_AURA_BROKEN_SPELL" or eventType == "SPELL_AURA_STOLEN") then
 		if self:IsFilteredAura(spellID) and rawget(corruptTargets, destGUID) and corruptTargets[destGUID][spellID] then
 			corruptTargets[destGUID][spellID] = nil
 			addon:Debug(format("Filtered aura (%s) faded from %s.", spellName, tostring(destName)))
 		end
 	end
-	
+
 	if eventType == "SPELL_AURA_APPLIED" or eventType == "SPELL_AURA_APPLIED_DOSE" or eventType == "SPELL_AURA_REFRESH" then
 		-- if this is one of the damage-taken-increased auras, we flag this target - along with the aura in question - as corrupt
 		if self:IsFilteredAura(spellID) then
@@ -493,7 +493,7 @@ function filters:COMBAT_LOG_EVENT_UNFILTERED()
 			ignoredTargets[destGUID] = true
 			addon:Debug(format("Target (%s) gained filtered aura. (%s) Ignore received damage.", tostring(destName), spellName))
 		end
-		
+
 		-- auras applied by self
 		local sourceUnit = self:GetUnit(sourceFlags, sourceGUID)
 		if sourceUnit then
@@ -556,23 +556,23 @@ function filters:ScanAuras(unit)
 		self:ScanAuras("pet")
 		return
 	end
-	
+
 	if self.profile.ignoreAuraFilter then
 		return
 	end
-	
+
 	for auraType, filter in pairs(auraTypes) do
 		for i = 1, 40 do
-			local spellName, _, _, _, _, _, source, _, _, spellID = UnitAura(unit, i, filter)
-			if not spellID then break end
+			local auraData = GetAuraDataByIndex(unit, i, filter)
+			if not auraData then break end
 			self:UnregisterEvent("UNIT_NAME_UPDATE")
-			if self:IsFilteredAura(spellID) then
+			if self:IsFilteredAura(auraData.spellId) then
 				isEmpowered[unit] = true
 				return true
 			end
 		end
 	end
-	
+
 	isEmpowered[unit] = false
 end
 
@@ -594,12 +594,12 @@ end
 -- check if a spell passes the filter settings
 function filters:SpellPassesFilters(tree, spellName, spellID, isPeriodic, destGUID, destName, targetLevel, rawID)
 	local isPet = tree == "pet"
-	
+
 	if excludedSpells[rawID] or excludedSpells[spellName] then
 		debugSpell(rawID, "Is excluded")
 		return
 	end
-	
+
 	if self.profile.onlyKnown and not (customPlayerSpells[spellID] or customPlayerSpells[spellName]) then
 		if isPet then
 			if not (IsSpellKnown(spellID, isPet) or spellID == 6603) then
@@ -611,39 +611,39 @@ function filters:SpellPassesFilters(tree, spellName, spellID, isPeriodic, destGU
 			return
 		end
 	end
-	
+
 	local unit = isPet and "pet" or "player"
 	if ((rawget(corruptSpells[unit], spellID) and corruptSpells[unit][spellID][destGUID]) or self:IsEmpowered(unit)) and not self.profile.ignoreAuraFilter then
 		debugSpell(spellID, "Filtered auras are active")
 		return
 	end
-	
+
 	if self:IsIgnoredTarget(destGUID) and not self.profile.ignoreAuraFilter then
 		debugTarget(destGUID, destName, "Affected by filtered auras")
 		return
 	end
-	
+
 	if targetLevel == -1 and self.profile.ignoreOutdoorBosses then
 		debugTarget(destGUID, destName, "Target is a boss outside of a raid.")
 		return
 	end
-	
+
 	local levelDiff = 0
 	if (targetLevel > 0) and (targetLevel < UnitLevel("player")) then
 		levelDiff = (UnitLevel("player") - targetLevel)
 	end
-	
+
 	if not isHeal and (self.profile.levelFilter >= 0) and (self.profile.levelFilter < levelDiff) then
 		-- target level is too low to pass level filter
 		debugTarget(destGUID, destName, format("Too low level (%d)", targetLevel))
 		return
 	end
-	
+
 	if self:IsFilteredTarget(destName, destGUID) then
 		debugTarget(destGUID, destName, "In mob filter")
 		return
 	end
-	
+
 	return true, self:IsFilteredSpell(tree, spellID, isPeriodic and 2 or 1)
 end
 

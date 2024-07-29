@@ -26,7 +26,7 @@ do
 		core:UpdateSpells()
 		module:Update()
 	end
-	
+
 	local function validateKey(self, id)
 		local isValid, reason = true
 		if id ~= self.data and module:GetSelectedList()[id] then
@@ -40,12 +40,12 @@ do
 		end
 		return isValid, reason
 	end
-	
+
 	local function onTextChanged(self)
 		if self.validate:IsShown() then
 			local isValid, reason = self:Validate(self:GetValue())
 			if isValid then
-				if not GetSpellLink(self:GetValue()) then
+				if not C_Spell.GetSpellLink(self:GetValue()) then
 					self.validate.tex:SetTexture([[Interface\RaidFrame\ReadyCheck-Waiting]])
 					reason = L["Invalid spell ID."]
 				else
@@ -75,11 +75,11 @@ do
 		self:HighlightText()
 		self:SetFocus()
 	end
-	
+
 	local function onHide(self)
 		self.parent:Show()
 	end
-	
+
 	local function onEnterPressed(self)
 		local text = self:GetValue()
 		if self.Validate then
@@ -99,10 +99,10 @@ do
 				update(self.key, text)
 			end
 		end
-		
+
 		self:Hide()
 	end
-	
+
 	editbox = core:CreateEditbox(module)
 	editbox:Hide()
 	-- editbox:SetFrameStrata("HIGH")
@@ -114,7 +114,7 @@ do
 	editbox:SetScript("OnEditFocusLost", editbox.Hide)
 	editbox:SetScript("OnEnterPressed", onEnterPressed)
 	editbox:SetScript("OnTextChanged", onTextChanged)
-	
+
 	local validate = CreateFrame("Frame", nil, editbox)
 	validate:SetSize(20, 20)
 	validate:SetPoint("LEFT", editbox, "RIGHT")
@@ -127,7 +127,7 @@ do
 	validate:SetScript("OnLeave", GameTooltip_Hide)
 	validate:Hide()
 	editbox.validate = validate
-	
+
 	local validTex = validate:CreateTexture()
 	validTex:SetAllPoints()
 	validate.tex = validTex
@@ -146,7 +146,7 @@ do
 		module:Update()
 		self:Hide()
 	end)
-	
+
 	local function showDelete(anchor)
 		deleteButton.value = anchor.key.data
 		deleteButton:SetPoint("RIGHT", anchor, "LEFT")
@@ -156,7 +156,7 @@ do
 	local function onEnter(self)
 		if type(self.data) == "number" then
 			GameTooltip:SetOwner(self, "ANCHOR_LEFT")
-			if GetSpellLink(self.data) then
+			if C_Spell.GetSpellLink(self.data) then
 				GameTooltip:SetSpellByID(self.data)
 			else
 				GameTooltip:SetText(L["Invalid spell ID."])
@@ -164,7 +164,7 @@ do
 		end
 		showDelete(self.parent)
 	end
-	
+
 	local function onLeave(self)
 		GameTooltip_Hide()
 		if not deleteButton:IsMouseOver() then
@@ -187,7 +187,7 @@ do
 		editbox:SetParent(self.parent)
 		editbox:Show()
 	end
-	
+
 	local function createCell(frame, valueType)
 		local cell = CreateFrame("Button", nil, frame)
 		cell:SetNormalFontObject("ChatFontNormal")
@@ -210,26 +210,26 @@ do
 		cell.parent = frame
 		return cell
 	end
-	
+
 	local function createButton()
 		local frame = CreateFrame("Frame", nil, module)
 		frame:SetScript("OnEnter", showDelete)
 		frame:SetScript("OnLeave", onLeave)
-		
+
 		local key = createCell(frame, "key")
 		key:SetPoint("TOPLEFT", 4, 0)
 		key:SetPoint("BOTTOMLEFT")
 		key:SetPoint("RIGHT", frame, "CENTER", -8, 0)
-		
+
 		local equals = frame:CreateFontString(nil, nil, "ChatFontNormal")
 		equals:SetPoint("CENTER")
 		equals:SetText("=")
-		
+
 		local value = createCell(frame, "value")
 		value:SetPoint("LEFT", frame, "CENTER", 8, 0)
 		value:SetPoint("TOPRIGHT", -4, 0)
 		value:SetPoint("BOTTOMRIGHT")
-		
+
 		return frame
 	end
 
@@ -243,12 +243,12 @@ do
 			return nameA < nameB
 		end
 	end
-	
+
 	local function preUpdate(self)
 		editbox:Hide()
 		return module:GetSelectedList(), selectedValue.isNumeric
 	end
-	
+
 	local function getList()
 		wipe(sortedList)
 		for k, v in pairs(module:GetSelectedList()) do
@@ -257,10 +257,10 @@ do
 		sort(sortedList)
 		return sortedList
 	end
-	
+
 	local function onButtonShow(self, frame, value, list, isNumeric)
 		frame.key.data = value
-		if GetSpellLink(value) then
+		if C_Spell.GetSpellLink(value) then
 			frame.key:SetText(value)
 		else
 			frame.key:SetFormattedText("|cffff0000%d", value)
@@ -268,7 +268,7 @@ do
 		frame.key.name:SetText(core:GetSpellName(value, true))
 		local text = list[value]
 		frame.value.data = text
-		if not isNumeric or GetSpellLink(text) then
+		if not isNumeric or C_Spell.GetSpellLink(text) then
 			frame.value:SetText(text)
 		else
 			frame.value:SetFormattedText("|cffff0000%s", text)
@@ -279,10 +279,10 @@ do
 			frame.value.name:SetText(nil)
 		end
 	end
-	
+
 	local NUM_BUTTONS = 20
 	local BUTTON_HEIGHT = 20
-	
+
 	scrollFrame = core:CreateScrollframe(module, NUM_BUTTONS, BUTTON_HEIGHT, createButton, 0, -4)
 	scrollFrame:SetSize(480, NUM_BUTTONS * BUTTON_HEIGHT + 8)
 	scrollFrame:SetPoint("CENTER")
@@ -326,7 +326,7 @@ local menu = {
 					end
 					spells[key] = nil
 				end
-				
+
 				core:BuildSpellArray(tree)
 				core:UpdateTopRecords(tree)
 			end
@@ -359,7 +359,7 @@ local menu = {
 				isValid = false
 				reason = L["Conflicting mapping."]
 			end
-			if not GetSpellLink(value) then
+			if not C_Spell.GetSpellLink(value) then
 				isValid = false
 				reason = L["Invalid spell ID."]
 			end
@@ -377,7 +377,7 @@ local menu = {
 			return core:GetSpellName(id, true)
 		end,
 		spellIconOverrides = function(id)
-			return GetSpellTexture(id)
+			return C_Spell.GetSpellTexture(id)
 		end,
 	},
 	info = {

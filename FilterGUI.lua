@@ -1,7 +1,7 @@
 local addonName, addon = ...
 local L = addon.L
 
-local GetSpellInfo, tostring = GetSpellInfo, tostring
+local GetSpellName, tostring = C_Spell.GetSpellName, tostring
 local scrollFrame
 local selectedFilter
 
@@ -115,7 +115,7 @@ delete:SetScript("OnClick", function(self)
 	if DoesSpellExist(selection) then
 		local spell = Spell:CreateFromSpellID(selection)
 		spell:ContinueOnSpellLoad(function()
-			addon:Message(L["%s removed from %s."]:format(GetSpellInfo(selection) or selection, self.filterName))
+			addon:Message(L["%s removed from %s."]:format(GetSpellName(selection) or selection, self.filterName))
 		end)
 	else
 		addon:Message(L["%s removed from %s."]:format(selection, self.filterName))
@@ -144,7 +144,7 @@ local function filterButtonOnClick(self)
 		self:LockHighlight()
 		selection = self.value
 	end
-	
+
 	-- enable/disable "Delete" button depending on if selection exists
 	delete:SetEnabled(selection ~= nil)
 	scrollFrame.selected = selection
@@ -166,31 +166,31 @@ local function createFilterButton()
 	button:SetScript("OnClick", filterButtonOnClick)
 	button:SetScript("OnEnter", onEnter)
 	button:SetScript("OnLeave", GameTooltip_Hide)
-	
+
 	button.icon = button:CreateTexture()
 	button.icon:SetSize(16, 16)
 	button.icon:SetPoint("LEFT", 1, 0)
-	
+
 	button.text = button:CreateFontString()
 	button.text:SetPoint("LEFT", button.icon, "RIGHT", 4, 0)
 	button.text:SetPoint("RIGHT", -2, 0)
 	button.text:SetJustifyH("LEFT")
 	button:SetFontString(button.text)
-	
+
 	local highlight = button:CreateTexture()
 	highlight:SetPoint("TOPLEFT", 0, 1)
 	highlight:SetPoint("BOTTOMRIGHT", 0, 1)
 	highlight:SetTexture([[Interface\QuestFrame\UI-QuestLogTitleHighlight]])
 	highlight:SetVertexColor(.196, .388, .8)
 	button:SetHighlightTexture(highlight)
-	
+
 	return button
 end
 
 local sortedList = {}
 
 local function spellSort(a, b)
-	return (GetSpellInfo(a) or tostring(a)) < (GetSpellInfo(b) or tostring(b))
+	return (GetSpellName(a) or tostring(a)) < (GetSpellName(b) or tostring(b))
 end
 
 scrollFrame = addon:CreateScrollframe(filters.config, NUMFILTERBUTTONS, FILTERBUTTONHEIGHT, createFilterButton, 2, -BUTTON_OFFSET_TOP)
@@ -203,15 +203,15 @@ scrollFrame.GetList = function(self)
 	if not filters.db then
 		return
 	end
-	
+
 	wipe(sortedList)
-	
+
 	for k, v in pairs(filters.db.global[selectedFilter]) do
 		tinsert(sortedList, k)
 	end
-	
+
 	sort(sortedList, spellSort)
-	
+
 	return sortedList
 end
 scrollFrame.OnButtonShow = function(self, button, entry, selected)
@@ -222,15 +222,15 @@ scrollFrame.OnButtonShow = function(self, button, entry, selected)
 	end
 	button.value = entry
 	local isSpell = type(entry) == "number"
-	if isSpell and DoesSpellExist(entry) then
+	if isSpell and C_Spell.DoesSpellExist(entry) then
 		local spell = Spell:CreateFromSpellID(entry)
 		spell:ContinueOnSpellLoad(function()
-			button:SetText(GetSpellInfo(button.value))
+			button:SetText(GetSpellName(button.value))
 		end)
 	else
-		button:SetText(isSpell and GetSpellInfo(entry) or entry)
+		button:SetText(isSpell and GetSpellName(entry) or entry)
 	end
-	button.icon:SetTexture(GetSpellTexture(entry))
+	button.icon:SetTexture(C_Spell.GetSpellTexture(entry))
 	button.icon:SetShown(isSpell)
 end
 scrollFrame.doUpdate = true
@@ -249,7 +249,7 @@ do	-- filter tabs
 			end
 		end
 	end
-	
+
 	-- mob filter frame
 	local addTarget = CreateFrame("Button", nil, filterList, "UIPanelButtonTemplate")
 	addTarget:SetSize(128, 22)
@@ -268,7 +268,7 @@ do	-- filter tabs
 			addon:Message(L["No target selected."])
 		end
 	end)
-	
+
 	local tabs = {
 		{
 			text = L["Include"],
@@ -328,7 +328,7 @@ do	-- filter tabs
 			}
 		},
 	}
-	
+
 	for i, v in ipairs(tabs) do
 		local frame = {
 			SetShown = setShown,
