@@ -1,2 +1,0 @@
-- Updated for WoW 10.2.0.
-- Added addon compartment entry.
