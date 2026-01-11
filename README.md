@@ -1,5 +1,8 @@
 # Critline
 
+> [!WARNING]
+> Archived due to Midnight addon changes making this addon impossible.
+
 - **Original creator:** Sordit
 
 - Previous maintainer: Uggh
